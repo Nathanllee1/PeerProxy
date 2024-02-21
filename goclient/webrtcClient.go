@@ -1,16 +1,18 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/pion/webrtc/v4"
-	"golang.org/x/net/websocket"
+	"nhooyr.io/websocket"
+	"nhooyr.io/websocket/wsjson"
 )
 
-type BaseMesage struct {
+type BaseMessage struct {
 	MType string `json:"mtype"`
 }
 
@@ -37,7 +39,7 @@ type Answer struct {
 	ClientId string                    `json:"clientId"`
 }
 
-func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServer) *webrtc.PeerConnection {
+func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServer, ctx context.Context) *webrtc.PeerConnection {
 	peerConnection, err := webrtc.NewPeerConnection(webrtc.Configuration{
 		ICEServers: *iceServers,
 	})
@@ -61,7 +63,7 @@ func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServ
 			panic(marshalErr)
 		}
 
-		if _, err = ws.Write(outbound); err != nil {
+		if err = ws.Write(ctx, websocket.MessageText, outbound); err != nil {
 			panic(err)
 		}
 	})
@@ -107,7 +109,7 @@ func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServ
 		panic(marshalErr)
 	}
 
-	if _, err = ws.Write(outbound); err != nil {
+	if err = ws.Write(ctx, websocket.MessageText, outbound); err != nil {
 		panic(err)
 	}
 
@@ -116,72 +118,71 @@ func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServ
 }
 
 func Signal() {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
+	defer cancel()
+
 	url := "https://important-eel-61.deno.dev/"
 	iceServers, err := FetchICE(url)
-
 	if err != nil {
 		panic(err)
 	}
-
 	log.Println(iceServers)
 
-	signalingSever := "wss://d1syxz7xf05rvd.cloudfront.net/?role=server&id=foo"
-	signalingDomain := "https://d1syxz7xf05rvd.cloudfront.net/"
+	// baseDomain := "d1syxz7xf05rvd.cloudfront.net/"
+	baseDomain := "localhost:8080"
 
-	// signalingSever := "ws://localhost:8080?role=server"
-	// signalingDomain := "http://localhost:8080"
+	signalingServer := fmt.Sprintf("ws://%s?role=server", baseDomain)
+	signalingDomain := fmt.Sprintf("http://%s", baseDomain)
+	log.Println(signalingDomain, signalingServer)
 
-	ws, err := websocket.Dial(signalingSever, "", signalingDomain)
+	ws, _, err := websocket.Dial(ctx, signalingServer, nil)
 	if err != nil {
 		panic(err)
 	}
+	defer ws.Close(websocket.StatusNormalClosure, "the client is closing")
 
-	defer ws.Close()
-
-	clients := make(map[string]*webrtc.PeerConnection)
+	// clients := make(map[string]*webrtc.PeerConnection)
 
 	go func() {
 		for {
-			var response = make([]byte, 2048)
-			n, err := ws.Read(response)
+			time.Sleep(10 * time.Second)
 
-			var baseMsg BaseMesage
-
-			fmt.Println(n)
-			if err := json.Unmarshal(response[:n], &baseMsg); err != nil {
-				panic(err)
+			// Read message
+			var baseMsg map[string]interface{}
+			err := wsjson.Read(ctx, ws, baseMsg)
+			if err != nil {
+				log.Printf("error reading message: %v", err)
+				continue // or break/return depending on your error handling
 			}
 
-			switch baseMsg.MType {
-			case "idAssgn":
-				var idAssgn IdAssignment
-				if err := json.Unmarshal(response[:n], &idAssgn); err != nil {
-					log.Fatal(err)
+			fmt.Println(baseMsg)
+
+			/*
+				switch baseMsg["MType"] {
+				case "idAssgn":
+
+					log.Printf("Id: %s", baseMsg["id"])
+
+				case "offer":
+					offer := Offer{
+						MTtype: baseMsg["mtype"],
+					}
+
+					clients[offer.ClientId] = createNewPeer(offer, ws, &iceServers)
+
+				case "candidate":
+					var candidate Candidate
+					if err := json.Unmarshal([]byte(baseMsg), &candidate); err != nil {
+						log.Fatal(err)
+					}
+
+					if err = clients[candidate.ClientId].AddICECandidate(candidate.Candidate); err != nil {
+						panic(err)
+					}
+				default:
+					log.Printf("unknown message type: %s", baseMsg.MType)
 				}
-				log.Printf("Id: %s", idAssgn.Id)
-
-			case "offer":
-				var offer Offer
-				if err := json.Unmarshal(response[:n], &offer); err != nil {
-					log.Fatal(err)
-				}
-
-				clients[offer.ClientId] = createNewPeer(offer, ws, &iceServers)
-
-			case "candidate":
-				var canidate Candidate
-				if err := json.Unmarshal(response[:n], &canidate); err != nil {
-					log.Fatal(err)
-				}
-
-				if err = clients[canidate.ClientId].AddICECandidate(canidate.Candidate); err != nil {
-					panic(err)
-				}
-			default:
-				log.Printf("unknown message type: %s", string(response[:n]))
-
-			}
-
+			*/
 		}
 	}()
 }
