@@ -63,6 +63,8 @@ const handleClient = (ws: WebSocket) => {
             return
         }
 
+        console.log(data)
+
         servers[receiver].send(data)
 
     });

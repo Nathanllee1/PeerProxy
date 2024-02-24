@@ -52,13 +52,15 @@ func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServ
 			return
 		}
 
-		canditate := Candidate{
+		candidate := Candidate{
 			MType:     "candidate",
 			Candidate: c.ToJSON(),
 			ClientId:  offer.ClientId,
 		}
 
-		outbound, marshalErr := json.Marshal(canditate)
+		fmt.Println(candidate)
+
+		outbound, marshalErr := json.Marshal(candidate)
 		if marshalErr != nil {
 			panic(marshalErr)
 		}
@@ -117,9 +119,76 @@ func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServ
 
 }
 
-func Signal() {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
+func ws(clients map[string]*webrtc.PeerConnection, iceServers *[]webrtc.ICEServer) {
+	// Specify the WebSocket server URL
+	// url := "ws://localhost:8080/?role=server"
+	url := "wss://d1syxz7xf05rvd.cloudfront.net/?role=server"
+
+	// Create a context with a timeout for the connection
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	// Connect to the WebSocket server
+	c, _, err := websocket.Dial(ctx, url, nil)
+	if err != nil {
+		log.Fatal("error connecting to WebSocket server:", err)
+	}
+	defer c.Close(websocket.StatusInternalError, "the client crashed")
+
+	// Set the connection to receive messages
+	for {
+		// Create a variable to store the received message
+		var rawMsg json.RawMessage
+
+		// Read message using wsjson
+		err := wsjson.Read(ctx, c, &rawMsg)
+		if err != nil {
+			log.Fatal("error reading message:", err)
+		}
+
+		// Print the received message
+		// fmt.Printf("Received: %v\n", rawMsg)
+
+		var baseMsg BaseMessage
+		json.Unmarshal(rawMsg, &baseMsg)
+
+		switch baseMsg.MType {
+		case "idAssgn":
+
+			var idAsgn IdAssignment
+			json.Unmarshal(rawMsg, &idAsgn)
+
+			log.Printf("Id: %s", idAsgn.Id)
+
+		case "offer":
+
+			var offer Offer
+			json.Unmarshal(rawMsg, &offer)
+
+			clients[offer.ClientId] = createNewPeer(offer, c, iceServers, ctx)
+
+		case "candidate":
+			var candidate Candidate
+			if err := json.Unmarshal(rawMsg, &candidate); err != nil {
+				log.Fatal(err)
+			}
+
+			fmt.Println("Received candidate", candidate)
+
+			if err = clients[candidate.ClientId].AddICECandidate(candidate.Candidate); err != nil {
+				panic(err)
+			}
+		default:
+			log.Printf("unknown message type: %s", baseMsg.MType)
+		}
+
+	}
+
+}
+
+func Signal() {
+	// ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
+	// defer cancel()
 
 	url := "https://important-eel-61.deno.dev/"
 	iceServers, err := FetchICE(url)
@@ -128,61 +197,7 @@ func Signal() {
 	}
 	log.Println(iceServers)
 
-	// baseDomain := "d1syxz7xf05rvd.cloudfront.net/"
-	baseDomain := "localhost:8080"
+	clients := make(map[string]*webrtc.PeerConnection)
+	ws(clients, &iceServers)
 
-	signalingServer := fmt.Sprintf("ws://%s?role=server", baseDomain)
-	signalingDomain := fmt.Sprintf("http://%s", baseDomain)
-	log.Println(signalingDomain, signalingServer)
-
-	ws, _, err := websocket.Dial(ctx, signalingServer, nil)
-	if err != nil {
-		panic(err)
-	}
-	defer ws.Close(websocket.StatusNormalClosure, "the client is closing")
-
-	// clients := make(map[string]*webrtc.PeerConnection)
-
-	go func() {
-		for {
-			time.Sleep(10 * time.Second)
-
-			// Read message
-			var baseMsg map[string]interface{}
-			err := wsjson.Read(ctx, ws, baseMsg)
-			if err != nil {
-				log.Printf("error reading message: %v", err)
-				continue // or break/return depending on your error handling
-			}
-
-			fmt.Println(baseMsg)
-
-			/*
-				switch baseMsg["MType"] {
-				case "idAssgn":
-
-					log.Printf("Id: %s", baseMsg["id"])
-
-				case "offer":
-					offer := Offer{
-						MTtype: baseMsg["mtype"],
-					}
-
-					clients[offer.ClientId] = createNewPeer(offer, ws, &iceServers)
-
-				case "candidate":
-					var candidate Candidate
-					if err := json.Unmarshal([]byte(baseMsg), &candidate); err != nil {
-						log.Fatal(err)
-					}
-
-					if err = clients[candidate.ClientId].AddICECandidate(candidate.Candidate); err != nil {
-						panic(err)
-					}
-				default:
-					log.Printf("unknown message type: %s", baseMsg.MType)
-				}
-			*/
-		}
-	}()
 }

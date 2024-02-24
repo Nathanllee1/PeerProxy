@@ -24,8 +24,8 @@ function log(text: string | undefined) {
 async function main() {
   const serverId = (new URLSearchParams(window.location.search)).get("id")
 
-  const signalingServer = "ws://localhost:8080"
-  // const signalingServer = "wss://d1syxz7xf05rvd.cloudfront.net"
+  // const signalingServer = "ws://localhost:8080"
+  const signalingServer = "wss://d1syxz7xf05rvd.cloudfront.net"
 
   
   let clientId: string = ""
@@ -81,7 +81,7 @@ async function main() {
   
   pc.onicecandidate = e => {
     if (e.candidate && e.candidate.candidate !== "") {
-      socket.send(JSON.stringify({mtype: "candidate", id: serverId, canidate: e.candidate, clientId}))
+      socket.send(JSON.stringify({mtype: "candidate", id: serverId, candidate: e.candidate, clientId}))
     }
   }
   
