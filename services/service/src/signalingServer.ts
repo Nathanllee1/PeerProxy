@@ -31,6 +31,10 @@ const handleServer = (ws: WebSocket) => {
 
     ws.on('error', console.error);
 
+    ws.on('close', () => {
+        console.log("Closed")
+    })
+
     ws.on('message', function message(data) {
         const serverData = JSON.parse(data.toString())
 
@@ -38,6 +42,8 @@ const handleServer = (ws: WebSocket) => {
     });
 
     ws.send(JSON.stringify({mtype: "idAssgn", id}))
+
+    console.log("Assigning", id)
 }
 
 const handleClient = (ws: WebSocket) => {
@@ -57,9 +63,18 @@ const handleClient = (ws: WebSocket) => {
             return
         }
 
+        console.log(data)
+
         servers[receiver].send(data)
 
     });
+
+    // Send heartbeat
+    setInterval(() => {
+
+        ws.send(JSON.stringify({mtype: "heartbeat"}))
+
+    }, 5000)
 }
 
 app.get("/", function (req, res) {
@@ -92,4 +107,6 @@ app.ws("/", function (ws, req) {
     
 }); 
 
-app.listen(8080)
+app.listen(8080, "", () => {
+    console.log("Listening")
+})

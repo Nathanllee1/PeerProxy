@@ -62,6 +62,10 @@ async function main() {
       case "answer":
         pc.setRemoteDescription(msg.answer)
         break
+
+      case "heartbeat":
+        
+        break
   
       default:
         console.log("Unknown path: ", msg.mtype)
@@ -77,7 +81,7 @@ async function main() {
   
   pc.onicecandidate = e => {
     if (e.candidate && e.candidate.candidate !== "") {
-      socket.send(JSON.stringify({mtype: "candidate", id: serverId, canidate: e.candidate, clientId}))
+      socket.send(JSON.stringify({mtype: "candidate", id: serverId, candidate: e.candidate, clientId}))
     }
   }
   
