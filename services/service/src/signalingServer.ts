@@ -4,13 +4,13 @@ import expressWS from "express-ws"
 
 const baseApp = express()
 
-const {app} = expressWS(baseApp)
+const { app } = expressWS(baseApp)
 
 const servers: Record<string, WebSocket> = {}
 const clients: Record<string, WebSocket> = {}
 
 function generateRandomCode() {
-    
+
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     const codeLength = 5;
     let randomCode = '';
@@ -41,14 +41,21 @@ const handleServer = (ws: WebSocket) => {
         clients[serverData["clientId"]].send(JSON.stringify(serverData))
     });
 
-    ws.send(JSON.stringify({mtype: "idAssgn", id}))
+    ws.send(JSON.stringify({ mtype: "idAssgn", id }))
 
     console.log("Assigning", id)
+
+    // Send heartbeat
+    setInterval(() => {
+
+        ws.send(JSON.stringify({ mtype: "heartbeat" }))
+
+    }, 5000)
 }
 
 const handleClient = (ws: WebSocket) => {
     const id = generateRandomCode()
-    ws.send(JSON.stringify({mtype: "idAssgn", id}))
+    ws.send(JSON.stringify({ mtype: "idAssgn", id }))
 
     clients[id] = ws;
 
@@ -57,9 +64,9 @@ const handleClient = (ws: WebSocket) => {
 
         const receiver = clientData["id"]
 
-        if (! (receiver in servers)) {
+        if (!(receiver in servers)) {
             console.error(`Id ${receiver} not registered`)
-            ws.send(JSON.stringify({mtype: "Error", msg: `Id ${receiver} not registered`}))
+            ws.send(JSON.stringify({ mtype: "Error", msg: `Id ${receiver} not registered` }))
             return
         }
 
@@ -72,7 +79,7 @@ const handleClient = (ws: WebSocket) => {
     // Send heartbeat
     setInterval(() => {
 
-        ws.send(JSON.stringify({mtype: "heartbeat"}))
+        ws.send(JSON.stringify({ mtype: "heartbeat" }))
 
     }, 5000)
 }
@@ -90,7 +97,7 @@ app.ws("/", function (ws, req) {
 
     const location = req.url
 
-    switch(req.query["role"]) {
+    switch (req.query["role"]) {
         case "server":
             handleServer(ws)
             break
@@ -104,8 +111,8 @@ app.ws("/", function (ws, req) {
     }
 
 
-    
-}); 
+
+});
 
 app.listen(8080, "", () => {
     console.log("Listening")

@@ -47,6 +47,8 @@ func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServ
 		panic(err)
 	}
 
+	ticker := time.NewTicker(time.Second * 3)
+
 	peerConnection.OnICECandidate(func(c *webrtc.ICECandidate) {
 		if c == nil {
 			return
@@ -72,16 +74,35 @@ func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServ
 
 	peerConnection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
 		fmt.Printf("ICE Connection State has changed: %s\n", connectionState.String())
+
+		if connectionState.String() == "closed" {
+			ticker.Stop()
+		}
 	})
 
 	// Send the current time via a DataChannel to the remote peer every 3 seconds
 	peerConnection.OnDataChannel(func(d *webrtc.DataChannel) {
 		d.OnOpen(func() {
-			for range time.Tick(time.Second * 3) {
-				if err = d.SendText(time.Now().String()); err != nil {
-					fmt.Println(err)
+
+			go func() {
+
+				for {
+					<-ticker.C
+					if err = d.SendText(time.Now().String()); err != nil {
+						fmt.Println("Data connection err: ", err)
+					}
+
 				}
-			}
+
+			}()
+
+		})
+
+		d.OnMessage(func(message webrtc.DataChannelMessage) {
+			fmt.Printf("Message from DataChannel '%s': '%s'\n", d.Label(), string(message.Data))
+
+			ProxyDCMessage(message)
+
 		})
 
 		defer d.Close()
@@ -178,6 +199,9 @@ func ws(clients map[string]*webrtc.PeerConnection, iceServers *[]webrtc.ICEServe
 			if err = clients[candidate.ClientId].AddICECandidate(candidate.Candidate); err != nil {
 				panic(err)
 			}
+
+		case "heartbeat":
+
 		default:
 			log.Printf("unknown message type: %s", baseMsg.MType)
 		}
@@ -187,11 +211,8 @@ func ws(clients map[string]*webrtc.PeerConnection, iceServers *[]webrtc.ICEServe
 }
 
 func Signal() {
-	// ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
-	// defer cancel()
-
-	url := "https://important-eel-61.deno.dev/"
-	iceServers, err := FetchICE(url)
+	iceUrl := "https://important-eel-61.deno.dev/"
+	iceServers, err := FetchICE(iceUrl)
 	if err != nil {
 		panic(err)
 	}
