@@ -56,10 +56,8 @@ class HTTPProxy {
 
     handleRequest(reqObj) {
         console.log(this.requests, reqObj)
-
         // resolve promise with data
         this.requests[reqObj.id].resolve(reqObj.body)
-
     }
 
 }
@@ -75,19 +73,43 @@ self.addEventListener('activate', (event) => {
     console.log('Service Worker activated.');
 });
 
-self.addEventListener("fetch", async event => {
+let lastClient
 
+self.addEventListener("fetch", async event => {
+    console.log(event)
     event.respondWith(
         (async () => {
-            if (!peerConnected || ! await self.clients.matchAll()[0]) {
-                return await fetch(event.request)
+
+            if (event.clientId !== lastClient) {
+                lastClient = event.clientId
+                console.log("DIFF")
+                return fetch(event.request)
+            }
+
+            if (!peerConnected) {
+                return fetch(event.request)
             }
 
             console.log(new URL(event.request.url).origin)
             console.log(event.request)
+            console.log(event.request.headers.get("Content-Type"))
             console.log(new URL(event.request.url).pathname)
 
-            // const body = await proxy.makeRequest(event.request)
+            const timeout = new Promise((resolve, reject) => {
+                setTimeout(async () => {
+                    console.log("Timed out")
+
+                    resolve(
+                        fetch(event.request)
+                    )
+                }, 4000)
+            })
+
+            const body = proxy.makeRequest(event.request)
+
+            const res = Promise.race([timeout, body])
+            console.log(res)
+            return res
 
             // console.log(atob(body))
 
@@ -98,12 +120,17 @@ self.addEventListener("fetch", async event => {
 
 var peerConnected = false
 
-
 self.addEventListener("message", (event) => {
     console.log(`Message received: ${event.data}`);
 
     if (event.data === "connected") {
         peerConnected = true
+
+        return
+    }
+
+    if (event.data === "disconnected") {
+        peerConnected = false
         return
     }
 

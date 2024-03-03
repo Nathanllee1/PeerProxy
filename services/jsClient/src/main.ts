@@ -9,19 +9,32 @@ const waitForSW = async () => {
 }
 
 async function main() {
-  const {pc, dc} = await connect()
 
-  const registration = await waitForSW()
+  const [registration, {dc}] = await Promise.all([waitForSW(), connect()])
 
   registration.active?.postMessage("connected")
   
   navigator.serviceWorker.addEventListener("message", (message) => {
+    console.log("From sw", message.data)
     dc.send(message.data)
   })
   
   log("Connected")
 
-  dc.send("Hello world!")
+  const httpHeaders = {
+    "Content-Type": "image/jpeg",
+    "X-My-Custom-Header": "Zeke are cool",
+  };
+  const myHeaders = new Headers(httpHeaders);
+
+  setTimeout(async () => {
+    await fetch("/foobar", {
+      body: "foobar",
+      method: "POST",
+      headers: myHeaders
+    })
+
+  }, 200)
 }
 
 

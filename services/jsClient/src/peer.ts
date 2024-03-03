@@ -34,8 +34,9 @@ export async function connect() {
     const serverId = (new URLSearchParams(window.location.search)).get("id")
 
     // const signalingServer = "ws://localhost:8080"
-    const signalingServer = "wss://d1syxz7xf05rvd.cloudfront.net"
-
+    // const signalingServer = "wss://d1syxz7xf05rvd.cloudfront.net"
+    // const signalingServer = "wss://nathanlee.ngrok.io"
+    const signalingServer = "wss://peepsignal.fly.dev"
 
     let clientId: string = ""
 
@@ -76,6 +77,10 @@ export async function connect() {
         default:
           console.log("Unknown path: ", msg.mtype)
       }
+    }
+
+    socket.onerror = e => {
+      reject(e)
     }
 
     let dc = pc.createDataChannel('data')

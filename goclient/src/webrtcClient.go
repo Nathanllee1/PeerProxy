@@ -60,7 +60,7 @@ func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServ
 			ClientId:  offer.ClientId,
 		}
 
-		fmt.Println(candidate)
+		//fmt.Println(candidate)
 
 		outbound, marshalErr := json.Marshal(candidate)
 		if marshalErr != nil {
@@ -83,18 +83,18 @@ func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServ
 	// Send the current time via a DataChannel to the remote peer every 3 seconds
 	peerConnection.OnDataChannel(func(d *webrtc.DataChannel) {
 		d.OnOpen(func() {
+			/*
+				go func() {
 
-			go func() {
+					for {
+						<-ticker.C
+						if err = d.SendText(time.Now().String()); err != nil {
+							fmt.Println("Data connection err: ", err)
+						}
 
-				for {
-					<-ticker.C
-					if err = d.SendText(time.Now().String()); err != nil {
-						fmt.Println("Data connection err: ", err)
 					}
 
-				}
-
-			}()
+				}()*/
 
 		})
 
@@ -143,7 +143,9 @@ func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServ
 func ws(clients map[string]*webrtc.PeerConnection, iceServers *[]webrtc.ICEServer) {
 	// Specify the WebSocket server URL
 	// url := "ws://localhost:8080/?role=server"
-	url := "wss://d1syxz7xf05rvd.cloudfront.net/?role=server"
+	// url := "wss://d1syxz7xf05rvd.cloudfront.net/?role=server"
+	// url := "wss://nathanlee.ngrok.io/?role=server"
+	url := "wss://peepsignal.fly.dev/?role=server"
 
 	// Create a context with a timeout for the connection
 	ctx, cancel := context.WithCancel(context.Background())
@@ -194,7 +196,7 @@ func ws(clients map[string]*webrtc.PeerConnection, iceServers *[]webrtc.ICEServe
 				log.Fatal(err)
 			}
 
-			fmt.Println("Received candidate", candidate)
+			// fmt.Println("Received candidate", candidate)
 
 			if err = clients[candidate.ClientId].AddICECandidate(candidate.Candidate); err != nil {
 				panic(err)

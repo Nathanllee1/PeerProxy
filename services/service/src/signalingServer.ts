@@ -38,6 +38,12 @@ const handleServer = (ws: WebSocket) => {
     ws.on('message', function message(data) {
         const serverData = JSON.parse(data.toString())
 
+        if (!clients[serverData["clientId"]]) {
+            
+            console.error(serverData["clientId"], "not found")
+            return
+        }
+
         clients[serverData["clientId"]].send(JSON.stringify(serverData))
     });
 
@@ -85,10 +91,12 @@ const handleClient = (ws: WebSocket) => {
 }
 
 app.get("/", function (req, res) {
+    console.log("Root directory hit")
     res.send("Hello World")
 })
 
 app.ws("/", function (ws, req) {
+    console.log("Handling ws")
     if (!req.url) {
         return
     }
@@ -114,6 +122,6 @@ app.ws("/", function (ws, req) {
 
 });
 
-app.listen(8080, "", () => {
+app.listen(3000, "", () => {
     console.log("Listening")
 })
