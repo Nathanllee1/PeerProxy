@@ -20,32 +20,32 @@ class HTTPProxy {
 
     // a list of requests
     // { id: request }
-    requests: Record<string, Deferred<any>> = {}
-
-    async makeRequest(request: Request) {
-
-        // make id
-        const id = crypto.randomUUID()
-        // send request to pc
+    requests: Record<number, Deferred<any>> = {}
+    currentIdentifier = 1
+    async makeRequest(request: Request): Promise<Response> {
         // @ts-ignore
         const clients = await self.clients.matchAll()
 
-        createPackets(request)
+        createPackets(request, this.currentIdentifier, (frame) => {
+            // console.log(frame)
+            clients[0].postMessage(frame)
+
+        })
 
         if (!clients[0]) {
-            return
+            return new Response()
         }
 
-        clients[0].postMessage()
 
-        const prom = new Deferred()
+        const prom = new Deferred<Response>()
 
-        this.requests[id] = prom
+        this.requests[this.currentIdentifier] = prom
+        this.currentIdentifier += 1
 
         return prom.promise
     }
 
-    handleRequest(reqObj) {
+    handleRequest(reqObj: any) {
         console.log(this.requests, reqObj)
         // resolve promise with data
         this.requests[reqObj.id].resolve(reqObj.body)
@@ -64,13 +64,13 @@ self.addEventListener('activate', (event) => {
     console.log('Service Worker activated.');
 });
 
-let lastClient
+let lastClient: string = ""
 
-self.addEventListener("fetch", async event => {
-    // console.log(event)
+self.addEventListener("fetch", async (event) => {
+    console.log(event)
 
     event.respondWith(
-        (async () => {
+        (async (): Promise<Response> => {
 
             if (event.clientId !== lastClient) {
                 lastClient = event.clientId
@@ -87,7 +87,7 @@ self.addEventListener("fetch", async event => {
             console.log(event.request.headers.get("Content-Type"))
             console.log(new URL(event.request.url).pathname)
 
-            const timeout = new Promise((resolve, reject) => {
+            const timeout = new Promise<Response>((resolve, reject) => {
                 setTimeout(async () => {
                     console.log("Timed out")
 

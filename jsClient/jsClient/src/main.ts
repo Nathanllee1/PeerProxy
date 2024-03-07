@@ -12,6 +12,9 @@ async function main() {
 
   const [registration, {dc}] = await Promise.all([waitForSW(), connect()])
 
+  const myImage = await fetch("/test.jpg")
+  const content = await myImage.blob()
+
   registration.active?.postMessage("connected")
   
   navigator.serviceWorker.addEventListener("message", (message) => {
@@ -27,9 +30,10 @@ async function main() {
   };
   const myHeaders = new Headers(httpHeaders);
 
+
   setTimeout(async () => {
     await fetch("/foobar", {
-      body: "foobar",
+      body: content,
       method: "POST",
       headers: myHeaders
     })

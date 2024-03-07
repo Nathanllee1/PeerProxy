@@ -84,6 +84,8 @@ export async function connect() {
     }
 
     let dc = pc.createDataChannel('data')
+    dc.binaryType = "arraybuffer"
+
     dc.onmessage = event => {
       log("From server: " + event.data)
       // logSelectedCandidatePair(pc);
