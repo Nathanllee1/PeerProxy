@@ -19,11 +19,13 @@
     payloadView.set(new Uint8Array(payload));
     return buffer;
   }
-  function createHeaderPacket(headers, currentIdentifier) {
+  function createHeaderPacket(request, currentIdentifier) {
     let formattedHeaders = {};
-    for (const header of headers.keys()) {
-      formattedHeaders[header] = headers.get(header);
+    for (const header of request.headers.keys()) {
+      formattedHeaders[header] = request.headers.get(header);
     }
+    formattedHeaders["method"] = request.method;
+    formattedHeaders["url"] = new URL(request.url).pathname;
     const encodedHeader = new TextEncoder().encode(JSON.stringify(formattedHeaders));
     const frame = createFrame(currentIdentifier, "HEADER", encodedHeader, true, 0);
     return frame;
@@ -31,7 +33,7 @@
   var packetSizeBytes = 16 * 1024;
   var payloadSize = packetSizeBytes - 7;
   async function createPackets(request, currentIdentifier, cb) {
-    cb(createHeaderPacket(request.headers, currentIdentifier));
+    cb(createHeaderPacket(request, currentIdentifier));
     if (!request.body) {
       return;
     }

@@ -38,7 +38,7 @@ type Answer struct {
 	ClientId string                    `json:"clientId"`
 }
 
-func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServer, ctx context.Context) *webrtc.PeerConnection {
+func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServer, ctx context.Context, clients Clients, clientId string) *webrtc.PeerConnection {
 	peerConnection, err := webrtc.NewPeerConnection(webrtc.Configuration{
 		ICEServers: *iceServers,
 	})
@@ -71,6 +71,10 @@ func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServ
 
 	peerConnection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
 		fmt.Printf("ICE Connection State has changed: %s\n", connectionState.String())
+
+		if connectionState == webrtc.ICEConnectionStateClosed {
+			delete(clients, clientId)
+		}
 	})
 
 	// Send the current time via a DataChannel to the remote peer every 3 seconds
@@ -83,7 +87,7 @@ func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServ
 		d.OnMessage(func(message webrtc.DataChannelMessage) {
 			// fmt.Printf("Message from DataChannel '%s': '%s'\n", d.Label(), string(message.Data))
 
-			go ProxyDCMessage(message)
+			go ProxyDCMessage(message, clientId)
 
 		})
 
@@ -122,7 +126,7 @@ func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServ
 
 }
 
-func ws(clients map[string]*webrtc.PeerConnection, iceServers *[]webrtc.ICEServer) {
+func ws(clients Clients, iceServers *[]webrtc.ICEServer) {
 	// Specify the WebSocket server URL
 	// url := "ws://localhost:8080/?role=server"
 	// url := "wss://d1syxz7xf05rvd.cloudfront.net/?role=server"
@@ -170,7 +174,7 @@ func ws(clients map[string]*webrtc.PeerConnection, iceServers *[]webrtc.ICEServe
 			var offer Offer
 			json.Unmarshal(rawMsg, &offer)
 
-			clients[offer.ClientId] = createNewPeer(offer, c, iceServers, ctx)
+			clients[offer.ClientId] = createNewPeer(offer, c, iceServers, ctx, clients, offer.ClientId)
 
 		case "candidate":
 			var candidate Candidate
@@ -194,6 +198,8 @@ func ws(clients map[string]*webrtc.PeerConnection, iceServers *[]webrtc.ICEServe
 
 }
 
+type Clients map[string]*webrtc.PeerConnection
+
 func Signal() {
 	iceUrl := "https://important-eel-61.deno.dev/"
 	iceServers, err := FetchICE(iceUrl)
@@ -202,7 +208,7 @@ func Signal() {
 	}
 	log.Println(iceServers)
 
-	clients := make(map[string]*webrtc.PeerConnection)
+	clients := make(Clients)
 	ws(clients, &iceServers)
 
 }

@@ -60,6 +60,7 @@ export async function connect() {
       switch (msg.mtype) {
         case "idAssgn":
           clientId = msg.id
+          log(clientId)
           break
 
         case "candidate":

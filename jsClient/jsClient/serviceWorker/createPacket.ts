@@ -37,13 +37,16 @@ function createFrame(identifier: number, messageType: MessageType, payload: Uint
 }
 
 
-function createHeaderPacket(headers: Headers, currentIdentifier: number): ArrayBuffer {
+function createHeaderPacket(request: Request, currentIdentifier: number): ArrayBuffer {
     // Create header packet
     let formattedHeaders: Record<string, string> = {}
 
-    for (const header of headers.keys()) {
-        formattedHeaders[header] = headers.get(header)!
+    for (const header of request.headers.keys()) {
+        formattedHeaders[header] = request.headers.get(header)!
     }
+
+    formattedHeaders["method"] = request.method
+    formattedHeaders["url"] = new URL(request.url).pathname
 
     // TODO: come up with a more efficient header representation
     const encodedHeader = new TextEncoder().encode(JSON.stringify(formattedHeaders))
@@ -58,7 +61,7 @@ const payloadSize = packetSizeBytes - 7
 
 export async function createPackets(request: Request, currentIdentifier: number, cb: (buf: ArrayBuffer) => void) {
 
-    cb(createHeaderPacket(request.headers, currentIdentifier))
+    cb(createHeaderPacket(request, currentIdentifier))
 
     // Make body packets
     if (!request.body) {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 
 	"github.com/pion/webrtc/v4"
 )
@@ -17,6 +18,7 @@ type PacketStream struct {
 	nextSequence      int
 	outOfOrderPackets map[int][]byte
 	lastPacketNum     uint32
+	lastPacketFound   bool
 	packetsIngested   int
 }
 
@@ -41,11 +43,12 @@ func (r *PacketStream) Read(p []byte) (int, error) {
 			// fmt.Println(packet, hex.EncodeToString(packet.Payload))
 			if packet.IsFinalMessage {
 				fmt.Println("Final message is", packet.PacketNum)
+				r.lastPacketFound = true
 				r.lastPacketNum = packet.PacketNum
 			}
 
-			if r.packetsIngested == int(r.lastPacketNum) {
-				fmt.Println("packets ingested", r.packetsIngested, r.lastPacketNum)
+			if r.packetsIngested == int(r.lastPacketNum)+1 && r.lastPacketFound {
+				fmt.Println("packets ingested", r.packetsIngested, r.lastPacketNum+1)
 
 				close(r.dataChannel)
 			}
@@ -88,7 +91,8 @@ func (r *PacketStream) Read(p []byte) (int, error) {
 }
 
 var (
-	requests = make(map[uint32]*PacketStream)
+	requests  = make(map[string](map[uint32]*PacketStream))
+	requestMu sync.Mutex
 )
 
 func makeNewPacketStream() *PacketStream {
@@ -98,6 +102,7 @@ func makeNewPacketStream() *PacketStream {
 		outOfOrderPackets: make(map[int][]byte),
 		packetsIngested:   0,
 		lastPacketNum:     0,
+		lastPacketFound:   false,
 	}
 }
 
@@ -111,8 +116,8 @@ func parseHeaders(rawHeaders []byte) Headers {
 
 }
 
-func ProxyDCMessage(rawData webrtc.DataChannelMessage) {
-
+func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string) {
+	// fmt.Println(requests)
 	reader := bytes.NewReader(rawData.Data)
 
 	packet, err := ParsePacket(reader)
@@ -123,12 +128,18 @@ func ProxyDCMessage(rawData webrtc.DataChannelMessage) {
 		fmt.Println("Error parsing packet: ", err)
 	}
 
-	if _, exists := requests[packet.StreamIdentifier]; !exists {
-
-		requests[packet.StreamIdentifier] = makeNewPacketStream()
+	requestMu.Lock()
+	if _, exists := requests[clientId]; !exists {
+		requests[clientId] = make(map[uint32]*PacketStream)
 	}
 
-	stream := requests[packet.StreamIdentifier]
+	if _, exists := requests[clientId][packet.StreamIdentifier]; !exists {
+
+		requests[clientId][packet.StreamIdentifier] = makeNewPacketStream()
+	}
+	requestMu.Unlock()
+
+	stream := requests[clientId][packet.StreamIdentifier]
 
 	if packet.IsHeader {
 
@@ -137,9 +148,9 @@ func ProxyDCMessage(rawData webrtc.DataChannelMessage) {
 		headers := parseHeaders(packet.Payload)
 
 		// Construct and make http request
-		serverUrl := fmt.Sprintf("http://localhost:%s/upload", ProxyPort)
+		serverUrl := fmt.Sprintf("http://localhost:%s%s", ProxyPort, headers["url"])
 		fmt.Println(serverUrl)
-		req, err := http.NewRequest("POST", serverUrl, stream)
+		req, err := http.NewRequest(headers["method"], serverUrl, stream)
 
 		if err != nil {
 			fmt.Println("Error creating request", err)
@@ -154,8 +165,8 @@ func ProxyDCMessage(rawData webrtc.DataChannelMessage) {
 
 		resp, err := client.Do(req)
 
-		// data, err := io.ReadAll(stream)
-		// fmt.Println("Data in stream", data)
+		// clean up request
+		delete(requests[clientId], packet.StreamIdentifier)
 
 		if err != nil {
 			fmt.Println("Error sending request", err)
