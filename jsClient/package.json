@@ -1,25 +1,19 @@
 {
-  "name": "my-sst-app",
-  "version": "0.0.0",
+  "name": "jsclient",
   "private": true,
+  "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "sst dev",
-    "build": "sst build",
-    "deploy": "sst deploy",
-    "remove": "sst remove",
-    "console": "sst console",
-    "typecheck": "tsc --noEmit"
+    "dev": "vite & esbuild serviceWorker/sw.ts --bundle --sourcemap --outfile=public/sw.js --watch",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "devDependencies": {
-    "@tsconfig/node18": "^18.2.2",
-    "aws-cdk-lib": "2.110.1",
-    "constructs": "10.3.0",
-    "sst": "^2.39.7",
+    "esbuild": "0.20.1",
+    "hpack": "^1.0.0",
+    "node-stdlib-browser": "^1.2.0",
     "typescript": "^5.3.3",
-    "vite-plugin-pwa": "^0.19.2"
-  },
-  "workspaces": [
-    "packages/*"
-  ]
+    "vite": "^5.0.8",
+    "vite-plugin-run": "^0.5.1"
+  }
 }

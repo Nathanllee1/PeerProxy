@@ -12,12 +12,5 @@ export default defineConfig({
     ])*/
 
   ],
-  build: {
-    rollupOptions: {
-      input: {
-        sw: './sw/sw.ts',
-        main: 'index.html'
-      }
-    }
-  }
+  
 })
