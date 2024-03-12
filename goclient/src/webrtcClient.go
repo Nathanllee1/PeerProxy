@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/pion/webrtc/v4"
 	"nhooyr.io/websocket"
@@ -47,8 +46,6 @@ func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServ
 		panic(err)
 	}
 
-	ticker := time.NewTicker(time.Second * 3)
-
 	peerConnection.OnICECandidate(func(c *webrtc.ICECandidate) {
 		if c == nil {
 			return
@@ -74,34 +71,19 @@ func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServ
 
 	peerConnection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
 		fmt.Printf("ICE Connection State has changed: %s\n", connectionState.String())
-
-		if connectionState.String() == "closed" {
-			ticker.Stop()
-		}
 	})
 
 	// Send the current time via a DataChannel to the remote peer every 3 seconds
 	peerConnection.OnDataChannel(func(d *webrtc.DataChannel) {
 		d.OnOpen(func() {
-			/*
-				go func() {
-
-					for {
-						<-ticker.C
-						if err = d.SendText(time.Now().String()); err != nil {
-							fmt.Println("Data connection err: ", err)
-						}
-
-					}
-
-				}()*/
+			fmt.Println("Data channel opened")
 
 		})
 
 		d.OnMessage(func(message webrtc.DataChannelMessage) {
-			fmt.Printf("Message from DataChannel '%s': '%s'\n", d.Label(), string(message.Data))
+			// fmt.Printf("Message from DataChannel '%s': '%s'\n", d.Label(), string(message.Data))
 
-			ProxyDCMessage(message)
+			go ProxyDCMessage(message)
 
 		})
 
@@ -199,7 +181,7 @@ func ws(clients map[string]*webrtc.PeerConnection, iceServers *[]webrtc.ICEServe
 			// fmt.Println("Received candidate", candidate)
 
 			if err = clients[candidate.ClientId].AddICECandidate(candidate.Candidate); err != nil {
-				panic(err)
+				fmt.Println(err)
 			}
 
 		case "heartbeat":

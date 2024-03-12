@@ -15,6 +15,12 @@ async function main() {
   const myImage = await fetch("/test.jpg")
   const content = await myImage.blob()
 
+  const formData = new FormData();
+
+  // Append the blob to the FormData instance.
+  // You can give it a filename "image.jpg"
+  formData.append("file", content, "image.jpg");
+
   registration.active?.postMessage("connected")
   
   navigator.serviceWorker.addEventListener("message", (message) => {
@@ -25,7 +31,6 @@ async function main() {
   log("Connected") 
 
   const httpHeaders = {
-    "Content-Type": "image/jpeg",
     "X-My-Custom-Header": "Zeke are cool",
   };
   const myHeaders = new Headers(httpHeaders);
@@ -33,7 +38,7 @@ async function main() {
 
   setTimeout(async () => {
     await fetch("/foobar", {
-      body: content,
+      body: formData,
       method: "POST",
       headers: myHeaders
     })

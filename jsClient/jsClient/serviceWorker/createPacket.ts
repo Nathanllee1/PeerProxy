@@ -14,19 +14,21 @@ type MessageType = "HEADER" | "BODY"
     | flags ( message type (1 bit)) (final message (1 bit))  | 
     | payload                                                |
 */
-function createFrame(identifier: number, messageType: MessageType, payload: Uint8Array, finalMessage: boolean) {
+function createFrame(identifier: number, messageType: MessageType, payload: Uint8Array, finalMessage: boolean, sequenceNum: number) {
 
-    const headerSize = 8
+    const headerSize = 11
 
     let buffer = new ArrayBuffer(headerSize + payload.byteLength)
     let view = new DataView(buffer);
 
     view.setUint32(0, identifier)
-    view.setUint16(4, payload.byteLength & 0xFFFF);
+    view.setUint32(4, sequenceNum)
+    view.setUint16(8, payload.byteLength & 0xFFFF);
 
-    let flags = (0x01 & (messageType === "HEADER" ? 0 : 1)) | ((finalMessage ? 1 : 0))
 
-    view.setUint8(6, flags)
+    let flags = (messageType === "HEADER" ? 0 : 1) | ((finalMessage ? 1 : 0) << 1)
+
+    view.setUint8(10, flags)
 
     let payloadView = new Uint8Array(buffer, headerSize);
     payloadView.set(new Uint8Array(payload));
@@ -39,13 +41,13 @@ function createHeaderPacket(headers: Headers, currentIdentifier: number): ArrayB
     // Create header packet
     let formattedHeaders: Record<string, string> = {}
 
-    for (const header in headers.keys() ) {
+    for (const header of headers.keys()) {
         formattedHeaders[header] = headers.get(header)!
     }
 
     // TODO: come up with a more efficient header representation
     const encodedHeader = new TextEncoder().encode(JSON.stringify(formattedHeaders))
-    const frame = createFrame(currentIdentifier, "HEADER", encodedHeader, true);
+    const frame = createFrame(currentIdentifier, "HEADER", encodedHeader, true, 0);
 
     return frame
 
@@ -69,9 +71,17 @@ export async function createPackets(request: Request, currentIdentifier: number,
         throw Error("Readable stream does not exist on reader")
     }
 
+    let frameNum = 0;
+
     while (true) {
         // Stream the body
         const { done, value } = await reader?.read()
+        if (done) {
+            console.log("Last frame")
+            const frame = createFrame(currentIdentifier, "BODY", new Uint8Array(), true, frameNum);
+            cb(frame); // Assuming cb is a callback function for handling each frame
+            break
+        }
 
         if (!value) {
             break
@@ -84,19 +94,13 @@ export async function createPackets(request: Request, currentIdentifier: number,
 
             // check if last frame
             let lastFrame = false;
-            if (done && readerPosition + payloadSize > value.byteLength) {
-                lastFrame = true
-            }
+           
 
-            const frame = createFrame(currentIdentifier, "BODY", slicedArray, lastFrame);
-
+            const frame = createFrame(currentIdentifier, "BODY", slicedArray, lastFrame, frameNum);
+            frameNum++
             cb(frame)
 
             readerPosition += payloadSize
-        }
-
-        if (done) {
-            return
         }
     }
 

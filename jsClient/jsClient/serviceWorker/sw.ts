@@ -26,7 +26,7 @@ class HTTPProxy {
         // @ts-ignore
         const clients = await self.clients.matchAll()
 
-        createPackets(request, this.currentIdentifier, (frame) => {
+        await createPackets(request, this.currentIdentifier, (frame) => {
             // console.log(frame)
             clients[0].postMessage(frame)
 
@@ -73,6 +73,7 @@ self.addEventListener("fetch", async (event) => {
         (async (): Promise<Response> => {
 
             if (event.clientId !== lastClient) {
+                peerConnected = false
                 lastClient = event.clientId
                 console.log("Detected restart")
                 return fetch(event.request)
@@ -94,13 +95,13 @@ self.addEventListener("fetch", async (event) => {
                     resolve(
                         fetch(event.request)
                     )
-                }, 4000)
+                }, 300)
             })
 
             const body = proxy.makeRequest(event.request)
 
+            // TODO: better lifecycle management
             const res = Promise.race([timeout, body])
-            console.log(res)
             return res
 
             // console.log(atob(body))

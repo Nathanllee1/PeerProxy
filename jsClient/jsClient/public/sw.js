@@ -6,25 +6,26 @@
   var CONTENT_LENGTH = 16;
   var FLAGS = 8;
   var HEADER_LENGTH = IDENTIFIER_LENGTH + TYPE_LEGNTH + CONTENT_LENGTH + FLAGS;
-  function createFrame(identifier, messageType, payload, finalMessage) {
-    const headerSize = 8;
+  function createFrame(identifier, messageType, payload, finalMessage, sequenceNum) {
+    const headerSize = 11;
     let buffer = new ArrayBuffer(headerSize + payload.byteLength);
     let view = new DataView(buffer);
     view.setUint32(0, identifier);
-    view.setUint16(4, payload.byteLength & 65535);
-    let flags = 1 & (messageType === "HEADER" ? 0 : 1) | (finalMessage ? 1 : 0);
-    view.setUint8(6, flags);
+    view.setUint32(4, sequenceNum);
+    view.setUint16(8, payload.byteLength & 65535);
+    let flags = (messageType === "HEADER" ? 0 : 1) | (finalMessage ? 1 : 0) << 1;
+    view.setUint8(10, flags);
     let payloadView = new Uint8Array(buffer, headerSize);
     payloadView.set(new Uint8Array(payload));
     return buffer;
   }
   function createHeaderPacket(headers, currentIdentifier) {
     let formattedHeaders = {};
-    for (const header in headers.keys()) {
+    for (const header of headers.keys()) {
       formattedHeaders[header] = headers.get(header);
     }
     const encodedHeader = new TextEncoder().encode(JSON.stringify(formattedHeaders));
-    const frame = createFrame(currentIdentifier, "HEADER", encodedHeader, true);
+    const frame = createFrame(currentIdentifier, "HEADER", encodedHeader, true, 0);
     return frame;
   }
   var packetSizeBytes = 16 * 1024;
@@ -39,8 +40,15 @@
       console.log(request);
       throw Error("Readable stream does not exist on reader");
     }
+    let frameNum = 0;
     while (true) {
       const { done, value } = await reader?.read();
+      if (done) {
+        console.log("Last frame");
+        const frame = createFrame(currentIdentifier, "BODY", new Uint8Array(), true, frameNum);
+        cb(frame);
+        break;
+      }
       if (!value) {
         break;
       }
@@ -48,15 +56,10 @@
       while (readerPosition < value.byteLength) {
         const slicedArray = value.slice(readerPosition, readerPosition + payloadSize);
         let lastFrame = false;
-        if (done && readerPosition + payloadSize > value.byteLength) {
-          lastFrame = true;
-        }
-        const frame = createFrame(currentIdentifier, "BODY", slicedArray, lastFrame);
+        const frame = createFrame(currentIdentifier, "BODY", slicedArray, lastFrame, frameNum);
+        frameNum++;
         cb(frame);
         readerPosition += payloadSize;
-      }
-      if (done) {
-        return;
       }
     }
     return;
@@ -83,7 +86,7 @@
     currentIdentifier = 1;
     async makeRequest(request) {
       const clients = await self.clients.matchAll();
-      createPackets(request, this.currentIdentifier, (frame) => {
+      await createPackets(request, this.currentIdentifier, (frame) => {
         clients[0].postMessage(frame);
       });
       if (!clients[0]) {
@@ -112,6 +115,7 @@
     event.respondWith(
       (async () => {
         if (event.clientId !== lastClient) {
+          peerConnected = false;
           lastClient = event.clientId;
           console.log("Detected restart");
           return fetch(event.request);
@@ -129,11 +133,10 @@
             resolve(
               fetch(event.request)
             );
-          }, 4e3);
+          }, 300);
         });
         const body = proxy.makeRequest(event.request);
         const res = Promise.race([timeout, body]);
-        console.log(res);
         return res;
       })()
     );
