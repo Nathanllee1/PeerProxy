@@ -87,7 +87,7 @@ func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServ
 		d.OnMessage(func(message webrtc.DataChannelMessage) {
 			// fmt.Printf("Message from DataChannel '%s': '%s'\n", d.Label(), string(message.Data))
 
-			go ProxyDCMessage(message, clientId)
+			go ProxyDCMessage(message, clientId, d)
 
 		})
 
@@ -183,9 +183,16 @@ func ws(clients Clients, iceServers *[]webrtc.ICEServer) {
 			}
 
 			// fmt.Println("Received candidate", candidate)
+			client, ok := clients[candidate.ClientId]
 
-			if err = clients[candidate.ClientId].AddICECandidate(candidate.Candidate); err != nil {
-				fmt.Println(err)
+			if !ok {
+				break
+			}
+
+			err := client.AddICECandidate(candidate.Candidate)
+
+			if err != nil {
+				fmt.Println("Could not add ice candidate", err)
 			}
 
 		case "heartbeat":

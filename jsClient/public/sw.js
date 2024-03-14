@@ -66,8 +66,92 @@
     }
     return;
   }
+  function parsePacket(buffer) {
+    const headerSize = 11;
+    let view = new DataView(buffer);
+    let identifier = view.getUint32(0);
+    let sequenceNum = view.getUint32(4);
+    let payloadLength = view.getUint16(8);
+    let flags = view.getUint8(10);
+    const flagCodes = {
+      0: [false, false],
+      1: [false, true],
+      2: [true, false],
+      3: [true, true]
+    };
+    const [finalMessage, messageType] = flagCodes[flags];
+    let payload = new Uint8Array(buffer, headerSize, payloadLength);
+    return {
+      identifier,
+      sequenceNum,
+      payload,
+      messageType: messageType ? "HEADER" : "BODY",
+      finalMessage
+    };
+  }
 
-  // serviceWorker/sw.ts
+  // serviceWorker/streamHandler.ts
+  var CustomStream = class {
+    controller;
+    stream;
+    lastPacketFound = false;
+    lastPacketNum = 0;
+    packetsIngested = 0;
+    outOfOrderPackets = {};
+    currentPacketNum = 0;
+    constructor() {
+      this.stream = new ReadableStream({
+        start: (controller) => {
+          this.controller = controller;
+        },
+        pull: (controller) => {
+        },
+        cancel: (reason) => {
+          console.log(`Stream cancelled, reason: ${reason}`);
+        }
+      });
+    }
+    // Method to add items to the stream
+    addItem(item) {
+      if (!this.controller) {
+        console.error("Stream controller is not initialized.");
+      }
+      this.packetsIngested++;
+      if (item.finalMessage) {
+        console.log("Final message", item);
+        this.lastPacketFound = true;
+        this.lastPacketNum = item.sequenceNum;
+      }
+      if (item.sequenceNum == this.currentPacketNum) {
+        console.log("enqueing", item);
+        this.controller.enqueue(item.payload);
+        this.currentPacketNum++;
+      } else if (item.sequenceNum > this.currentPacketNum) {
+        this.outOfOrderPackets[item.sequenceNum] = item.payload;
+      }
+      while (true) {
+        if (!(this.currentPacketNum in this.outOfOrderPackets)) {
+          break;
+        }
+        this.controller.enqueue(this.outOfOrderPackets[this.currentPacketNum]);
+        delete this.outOfOrderPackets[this.currentPacketNum];
+        this.currentPacketNum++;
+      }
+      if (this.packetsIngested === this.lastPacketNum + 1 && this.lastPacketFound) {
+        console.log("Closing stream", item);
+        this.closeStream();
+      }
+      return;
+    }
+    // Method to close the stream
+    closeStream() {
+      if (this.controller) {
+        this.controller.close();
+      }
+    }
+  };
+
+  // serviceWorker/requestHandler.ts
   var Deferred = class {
     promise;
     resolve = () => {
@@ -85,6 +169,7 @@
     // a list of requests
     // { id: request }
     requests = {};
+    responses = {};
     currentIdentifier = 1;
     async makeRequest(request) {
       const clients = await self.clients.matchAll();
@@ -100,13 +185,46 @@
       return prom.promise;
     }
     handleRequest(reqObj) {
-      console.log(this.requests, reqObj);
-      this.requests[reqObj.id].resolve(reqObj.body);
+      const packet = parsePacket(reqObj);
+      if (packet.messageType === "BODY") {
+        this.responses[packet.identifier].addItem(packet);
+        return;
+      }
+      const parsedHeaders = JSON.parse(new TextDecoder().decode(packet.payload));
+      const headers = new Headers();
+      let statusText = "200 OK";
+      let status = 200;
+      for (const headerKey in parsedHeaders) {
+        if (headerKey === "status_code") {
+          status = parseInt(parsedHeaders[headerKey][0]);
+          continue;
+        }
+        if (headerKey === "status") {
+          statusText = parsedHeaders[headerKey][0];
+          continue;
+        }
+        headers.append(headerKey, parsedHeaders[headerKey].join(","));
+      }
+      const body = new CustomStream();
+      this.responses[packet.identifier] = body;
+      const response = new Response(body.stream, {
+        headers,
+        status,
+        statusText
+      });
+      this.requests[packet.identifier].resolve(response);
     }
   };
+
+  // serviceWorker/sw.ts
   var proxy = new HTTPProxy();
   self.addEventListener("install", (event) => {
     console.log("Service Worker installing.");
+    event.waitUntil(
+      // Perform installation steps
+      self.skipWaiting()
+      // Forces activation
+    );
   });
   self.addEventListener("activate", (event) => {
     console.log("Service Worker activated.");
@@ -125,27 +243,14 @@
         if (!peerConnected) {
           return fetch(event.request);
         }
-        console.log(new URL(event.request.url).origin);
         console.log(event.request);
-        console.log(event.request.headers.get("Content-Type"));
-        console.log(new URL(event.request.url).pathname);
-        const timeout = new Promise((resolve, reject) => {
-          setTimeout(async () => {
-            console.log("Timed out");
-            resolve(
-              fetch(event.request)
-            );
-          }, 300);
-        });
-        const body = proxy.makeRequest(event.request);
-        const res = Promise.race([timeout, body]);
-        return res;
+        const body = await proxy.makeRequest(event.request);
+        return body;
       })()
     );
   });
   var peerConnected = false;
   self.addEventListener("message", (event) => {
-    console.log(`Message received: ${event.data}`);
     if (event.data === "connected") {
       peerConnected = true;
       return;
@@ -154,6 +259,7 @@
       peerConnected = false;
       return;
     }
+    proxy.handleRequest(event.data);
   });
 })();
 //# sourceMappingURL=sw.js.map

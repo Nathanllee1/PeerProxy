@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/binary"
 	"io"
 )
@@ -12,11 +13,6 @@ type Header struct {
 	Flags            uint8
 }
 
-type Flags struct {
-	IsFinalMessage bool
-	IsHeader       bool
-}
-
 type Packet struct {
 	StreamIdentifier uint32
 	PacketNum        uint32
@@ -24,6 +20,47 @@ type Packet struct {
 	IsHeader         bool
 	IsFinalMessage   bool
 	Payload          []byte
+}
+
+func (p *Packet) Serialize() []byte {
+
+	headerSize := 11
+	buffer := make([]byte, headerSize+int(p.PayloadLength))
+
+	buf := bytes.NewBuffer((buffer[:0]))
+
+	binary.Write(buf, binary.BigEndian, p.StreamIdentifier)
+	binary.Write(buf, binary.BigEndian, p.PacketNum)
+	binary.Write(buf, binary.BigEndian, p.PayloadLength)
+
+	flags := Flags{
+		IsFinalMessage: p.IsFinalMessage,
+		IsHeader:       p.IsHeader,
+	}.MakeFlags()
+
+	buf.WriteByte(flags)
+	buf.Write(p.Payload)
+
+	return buf.Bytes()
+
+}
+
+type Flags struct {
+	IsFinalMessage bool
+	IsHeader       bool
+}
+
+func (flags Flags) MakeFlags() uint8 {
+	var result byte
+	if flags.IsHeader {
+		result = 1
+	} else {
+		result = 0
+	}
+	if flags.IsFinalMessage {
+		result |= 1 << 1 // Shift 1 left by 1 bit and OR it with result
+	}
+	return result
 }
 
 func ParsePacket(rawData io.Reader) (*Packet, error) {

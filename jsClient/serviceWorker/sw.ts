@@ -1,67 +1,27 @@
 /// <reference lib="WebWorker" />
 
-import { createPackets } from "./createPacket";
+import { createPackets, Packet, parsePacket } from "./createPacket";
+import { HTTPProxy } from "./requestHandler";
+import { CustomStream } from "./streamHandler";
 
 
-class Deferred<T> {
-    promise: Promise<T>;
-    resolve: (value: T | PromiseLike<T>) => void = () => {};
-    reject: (reason?: any) => void = () => {};
-
-    constructor() {
-        this.promise = new Promise<T>((resolve, reject) => {
-            this.resolve = resolve;
-            this.reject = reject;
-        });
-    }
-}
-
-class HTTPProxy {
-
-    // a list of requests
-    // { id: request }
-    requests: Record<number, Deferred<any>> = {}
-    currentIdentifier = 1
-    async makeRequest(request: Request): Promise<Response> {
-        // @ts-ignore
-        const clients = await self.clients.matchAll()
-
-        await createPackets(request, this.currentIdentifier, (frame) => {
-            // console.log(frame)
-            clients[0].postMessage(frame)
-
-        })
-
-        if (!clients[0]) {
-            return new Response()
-        }
-
-
-        const prom = new Deferred<Response>()
-
-        this.requests[this.currentIdentifier] = prom
-        this.currentIdentifier += 1
-
-        return prom.promise
-    }
-
-    handleRequest(reqObj: any) {
-        console.log(this.requests, reqObj)
-        // resolve promise with data
-        this.requests[reqObj.id].resolve(reqObj.body)
-    }
-
-}
 
 const proxy = new HTTPProxy()
 
 
 self.addEventListener('install', (event) => {
     console.log('Service Worker installing.');
+
+    event.waitUntil(
+        // Perform installation steps
+        self.skipWaiting() // Forces activation
+    );
 });
 
 self.addEventListener('activate', (event) => {
     console.log('Service Worker activated.');
+    // event.waitUntil(self.clients.claim());
+
 });
 
 let lastClient: string = ""
@@ -79,15 +39,13 @@ self.addEventListener("fetch", async (event) => {
                 return fetch(event.request)
             }
 
+
             if (!peerConnected) {
                 return fetch(event.request)
             }
 
-            console.log(new URL(event.request.url).origin)
             console.log(event.request)
-            console.log(event.request.headers.get("Content-Type"))
-            console.log(new URL(event.request.url).pathname)
-
+            /*
             const timeout = new Promise<Response>((resolve, reject) => {
                 setTimeout(async () => {
                     console.log("Timed out")
@@ -95,17 +53,17 @@ self.addEventListener("fetch", async (event) => {
                     resolve(
                         fetch(event.request)
                     )
-                }, 300)
+                }, 10000)
             })
+            */
 
-            const body = proxy.makeRequest(event.request)
+            const body = await proxy.makeRequest(event.request)
 
             // TODO: better lifecycle management
-            const res = Promise.race([timeout, body])
-            return res
+
+            return body
 
             // console.log(atob(body))
-
             // return new Response(JSON.parse(atob(body)))
         })(),
     );
@@ -114,11 +72,9 @@ self.addEventListener("fetch", async (event) => {
 var peerConnected = false
 
 self.addEventListener("message", (event) => {
-    console.log(`Message received: ${event.data}`);
 
     if (event.data === "connected") {
         peerConnected = true
-
         return
     }
 
@@ -127,5 +83,5 @@ self.addEventListener("message", (event) => {
         return
     }
 
-    // proxy.handleRequest(JSON.parse(event.data))
+    proxy.handleRequest(event.data)
 });

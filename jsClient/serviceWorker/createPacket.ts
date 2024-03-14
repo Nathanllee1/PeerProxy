@@ -109,3 +109,44 @@ export async function createPackets(request: Request, currentIdentifier: number,
 
     return
 }
+
+export type Packet =  {
+    identifier: number
+    sequenceNum: number
+    payload: Uint8Array
+    messageType:  "HEADER"| "BODY",
+    finalMessage: boolean
+};
+
+export function parsePacket(buffer: ArrayBuffer): Packet {
+    // console.log(buffer)
+    const headerSize = 11;
+    let view = new DataView(buffer);
+
+    // Read the values from the buffer
+    let identifier = view.getUint32(0);
+    let sequenceNum = view.getUint32(4);
+    let payloadLength = view.getUint16(8);
+    let flags = view.getUint8(10);
+
+    const flagCodes = {
+        0: [false, false],
+        1: [false, true],
+        2: [true, false],
+        3: [true, true]
+    }
+
+    const [finalMessage, messageType] = flagCodes[flags]
+
+    // Extract the payload
+    let payload = new Uint8Array(buffer, headerSize, payloadLength);
+
+    // Construct the JSON object
+    return {
+        identifier,
+        sequenceNum,
+        payload,
+        messageType: messageType ? "HEADER": "BODY",
+        finalMessage,
+    };
+}
