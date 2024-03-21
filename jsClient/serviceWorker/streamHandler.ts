@@ -23,8 +23,12 @@ export class CustomStream {
             pull: (controller) => {
                 // This is called when the consumer wants to read data
                 // You might not need to implement anything here if you're only pushing data manually
+                
             },
             cancel: (reason) => {
+                if (!this.stream.locked && this.controller) {
+                    this.controller.close();
+                }
                 console.log(`Stream cancelled, reason: ${reason}`);
             }
         });
@@ -59,9 +63,14 @@ export class CustomStream {
 
         while (true) {
 
+            // console.log(this.outOfOrderPackets)
+
             if (! (this.currentPacketNum in this.outOfOrderPackets)) {
                 break
             }
+
+            console.log("Adding packet from out of order",this.currentPacketNum)
+
 
             this.controller.enqueue(this.outOfOrderPackets[this.currentPacketNum])
             delete this.outOfOrderPackets[this.currentPacketNum]
@@ -71,8 +80,9 @@ export class CustomStream {
         }
 
         
-        if (this.packetsIngested === this.lastPacketNum + 1 && this.lastPacketFound) {
+        if (this.packetsIngested === this.lastPacketNum + 1 && this.lastPacketFound && this.currentPacketNum === this.lastPacketNum + 1) {
             console.log("Closing stream", item)
+
             this.closeStream()
             
         }

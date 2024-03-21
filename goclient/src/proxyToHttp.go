@@ -23,6 +23,16 @@ type PacketStream struct {
 	packetsIngested   int
 }
 
+func sendPacket(dc *webrtc.DataChannel, packet *Packet) {
+
+	err := dc.Send(packet.Serialize())
+
+	if err != nil {
+		fmt.Println("Error sending packet", err)
+	}
+
+}
+
 func makePackets(stream io.ReadCloser, dc *webrtc.DataChannel, streamIdentifier uint32) {
 	const payloadSize = 16*1024 - 11
 
@@ -55,7 +65,7 @@ func makePackets(stream io.ReadCloser, dc *webrtc.DataChannel, streamIdentifier 
 			Payload:          payload,
 		}
 
-		dc.Send(serializedPacket.Serialize())
+		sendPacket(dc, &serializedPacket)
 
 		packetNum++
 
@@ -223,7 +233,7 @@ func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *webr
 
 	// Construct and make http request
 	serverUrl := fmt.Sprintf("http://localhost:%s%s", ProxyPort, headers["url"])
-	fmt.Println(headers["method"], serverUrl)
+	// fmt.Println(headers["method"], serverUrl)
 	req, err := http.NewRequest(headers["method"], serverUrl, stream)
 
 	if err != nil {
@@ -238,15 +248,16 @@ func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *webr
 	client := &http.Client{}
 
 	resp, err := client.Do(req)
-	fmt.Println(resp.Status, resp.StatusCode)
-
-	// clean up request
-	delete(requests[clientId], packet.StreamIdentifier)
 
 	if err != nil {
 		fmt.Println("Error sending request", err)
 		return
 	}
+
+	fmt.Println(headers["method"], resp.StatusCode, serverUrl)
+
+	// clean up request
+	delete(requests[clientId], packet.StreamIdentifier)
 
 	headerPacket := makeResponseHeaders(resp, packet.StreamIdentifier)
 	dc.Send(headerPacket.Serialize())

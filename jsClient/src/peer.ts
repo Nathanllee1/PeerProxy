@@ -31,7 +31,7 @@ async function logSelectedCandidatePair(pc: RTCPeerConnection) {
 
 export async function connect() {
   return new Promise<{ pc: RTCPeerConnection, dc: RTCDataChannel }>(async (resolve, reject) => {
-    const serverId = (new URLSearchParams(window.location.search)).get("id")
+    const serverId = (new URLSearchParams(window.location.search)).get("id") ?? "foo"
 
     // const signalingServer = "ws://localhost:8080"
     // const signalingServer = "wss://d1syxz7xf05rvd.cloudfront.net"
@@ -75,6 +75,10 @@ export async function connect() {
 
           break
 
+        case "error":
+          console.error(msg)
+          break
+
         default:
           console.log("Unknown path: ", msg.mtype)
       }
@@ -85,8 +89,17 @@ export async function connect() {
     }
 
     let dc = pc.createDataChannel('data', {
-      ordered: false
+      ordered: true,
     })
+
+    // dc.bufferedAmountLowThreshold = 10
+    dc.onbufferedamountlow = () => {
+      /* use send() to queue more data to be sent */
+      console.log("buffered amount low")
+    };
+
+    console.log(dc.bufferedAmount)
+
     dc.binaryType = "arraybuffer"
 
     dc.onopen = () => {

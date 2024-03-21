@@ -144,6 +144,8 @@ func ws(clients Clients, iceServers *[]webrtc.ICEServer) {
 	}
 	defer c.Close(websocket.StatusInternalError, "the client crashed")
 
+	candidates := make(map[string][]webrtc.ICECandidateInit)
+
 	// Set the connection to receive messages
 	for {
 		// Create a variable to store the received message
@@ -176,6 +178,10 @@ func ws(clients Clients, iceServers *[]webrtc.ICEServer) {
 
 			clients[offer.ClientId] = createNewPeer(offer, c, iceServers, ctx, clients, offer.ClientId)
 
+			for candidate := range candidates[offer.ClientId] {
+				clients[offer.ClientId].AddICECandidate(candidates[offer.ClientId][candidate])
+			}
+
 		case "candidate":
 			var candidate Candidate
 			if err := json.Unmarshal(rawMsg, &candidate); err != nil {
@@ -186,6 +192,7 @@ func ws(clients Clients, iceServers *[]webrtc.ICEServer) {
 			client, ok := clients[candidate.ClientId]
 
 			if !ok {
+				candidates[candidate.ClientId] = append(candidates[candidate.ClientId], candidate.Candidate)
 				break
 			}
 

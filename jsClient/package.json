@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@types/serviceworker": "^0.0.84",
     "esbuild": "0.20.1",
     "hpack": "^1.0.0",
     "node-stdlib-browser": "^1.2.0",

@@ -1,3 +1,4 @@
+import { createDom } from './createDom';
 import { connect } from './peer'
 import './style.css'
 import { log } from './utils'
@@ -13,18 +14,6 @@ async function main() {
   const [registration, { dc }] = await Promise.all([waitForSW(), connect()])
   console.timeEnd("connecting")
 
-  /*
-  const myImage = await fetch("/test.jpg")
-  const content = await myImage.blob()
-  
-
-  const formData = new FormData();
-
-  // Append the blob to the FormData instance.
-  // You can give it a filename "image.jpg"
-  formData.append("file", content, "image.jpg");
-  */
-
   dc.onmessage = event => {
     //console.log(event.data)
 
@@ -39,45 +28,12 @@ async function main() {
 
   log("Connected")
 
+  setTimeout(async() => {
+    console.log("Fetching page for", window.location.pathname)
+    await createDom(window.location.pathname)
 
-  // window.location = window.location
-  
-  const rootdoc = await fetch("/")
+  }, 700)
 
-  const content = await rootdoc.text()
-
-
-  const div = document.createElement('div');
-  div.appendChild(document.createTextNode(content));
-
-  document.querySelector('html')!.innerHTML = content
-
-  document.querySelectorAll('script').forEach(script => {
-    console.log("Evaluating", script.innerText)
-    eval(script.innerText);
-  });
-  
-
-
-  /*
-  //setInterval(async() => {
-  const httpHeaders = {
-    "X-My-Custom-Header": String(new Date().getTime()),
-  };
-  const myHeaders = new Headers(httpHeaders);
-  const res = await fetch("/reflect", {
-    body: formData,
-    method: "POST",
-    headers: myHeaders
-  })
-
-  const url = URL.createObjectURL(await res.blob())
-
-  document.getElementById('displayedImage')!.src = url;
-
-  console.log(url)
-
-  */
 }
 
 main()

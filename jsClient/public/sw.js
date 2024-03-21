@@ -107,6 +107,9 @@
         pull: (controller) => {
         },
         cancel: (reason) => {
+          if (!this.stream.locked && this.controller) {
+            this.controller.close();
+          }
           console.log(`Stream cancelled, reason: ${reason}`);
         }
       });
@@ -133,11 +136,12 @@
         if (!(this.currentPacketNum in this.outOfOrderPackets)) {
           break;
         }
+        console.log("Adding packet from out of order", this.currentPacketNum);
         this.controller.enqueue(this.outOfOrderPackets[this.currentPacketNum]);
         delete this.outOfOrderPackets[this.currentPacketNum];
         this.currentPacketNum++;
       }
-      if (this.packetsIngested === this.lastPacketNum + 1 && this.lastPacketFound) {
+      if (this.packetsIngested === this.lastPacketNum + 1 && this.lastPacketFound && this.currentPacketNum === this.lastPacketNum + 1) {
         console.log("Closing stream", item);
         this.closeStream();
       }
@@ -219,19 +223,16 @@
   // serviceWorker/sw.ts
   var proxy = new HTTPProxy();
   self.addEventListener("install", (event) => {
-    console.log("Service Worker installing.");
-    event.waitUntil(
-      // Perform installation steps
-      self.skipWaiting()
-      // Forces activation
-    );
+    console.log("Service Worker installing.", self);
+    self.skipWaiting();
   });
-  self.addEventListener("activate", (event) => {
-    console.log("Service Worker activated.");
+  self.addEventListener("activate", function(e) {
+    console.log("Activating");
+    Clients.claim();
   });
   var lastClient = "";
-  self.addEventListener("fetch", async (event) => {
-    console.log(event);
+  self.addEventListener("fetch", async (untypedEvent) => {
+    const event = untypedEvent;
     event.respondWith(
       (async () => {
         if (event.clientId !== lastClient) {
@@ -240,8 +241,16 @@
           console.log("Detected restart");
           return fetch(event.request);
         }
-        if (!peerConnected) {
-          return fetch(event.request);
+        if (await self.clients.get(event.clientId) !== void 0) {
+          const clientHostname = new URL((await self.clients.get(event.clientId)).url).hostname;
+          if (new URL(event.request.url).hostname !== clientHostname) {
+            return fetch(event.request);
+          }
+        }
+        if (event) {
+          if (!peerConnected) {
+            return fetch(event.request);
+          }
         }
         console.log(event.request);
         const body = await proxy.makeRequest(event.request);
@@ -251,15 +260,17 @@
   });
   var peerConnected = false;
   self.addEventListener("message", (event) => {
-    if (event.data === "connected") {
-      peerConnected = true;
-      return;
+    switch (event.data) {
+      case "connected":
+        peerConnected = true;
+        break;
+      case "disconnected":
+        peerConnected = false;
+        break;
+      default:
+        proxy.handleRequest(event.data);
+        break;
     }
-    if (event.data === "disconnected") {
-      peerConnected = false;
-      return;
-    }
-    proxy.handleRequest(event.data);
   });
 })();
 //# sourceMappingURL=sw.js.map

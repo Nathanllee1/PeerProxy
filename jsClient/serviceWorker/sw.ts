@@ -1,36 +1,33 @@
 /// <reference lib="WebWorker" />
-
-import { createPackets, Packet, parsePacket } from "./createPacket";
 import { HTTPProxy } from "./requestHandler";
-import { CustomStream } from "./streamHandler";
-
-
 
 const proxy = new HTTPProxy()
 
 
 self.addEventListener('install', (event) => {
-    console.log('Service Worker installing.');
+    console.log('Service Worker installing.', self);
 
-    event.waitUntil(
-        // Perform installation steps
-        self.skipWaiting() // Forces activation
-    );
+    self.skipWaiting()
 });
 
-self.addEventListener('activate', (event) => {
-    console.log('Service Worker activated.');
-    // event.waitUntil(self.clients.claim());
+self.addEventListener('activate', function(e) {
+   //  self.registration.unregister()
+   console.log("Activating")
 
-});
+   Clients.claim()
+  });
 
 let lastClient: string = ""
 
-self.addEventListener("fetch", async (event) => {
-    console.log(event)
+self.addEventListener("fetch", async (untypedEvent) => {
+
+    const event = untypedEvent as FetchEvent
+
 
     event.respondWith(
         (async (): Promise<Response> => {
+            // console.log(new URL(event.request.url).hostname)
+
 
             if (event.clientId !== lastClient) {
                 peerConnected = false
@@ -39,32 +36,29 @@ self.addEventListener("fetch", async (event) => {
                 return fetch(event.request)
             }
 
+            // TODO: implement caching
+            if (await self.clients.get(event.clientId) !== undefined) {
+                const clientHostname = new URL((await self.clients.get(event.clientId)).url).hostname
 
-            if (!peerConnected) {
-                return fetch(event.request)
+                if (new URL(event.request.url).hostname !== clientHostname) {
+                    return fetch(event.request)
+                }
+    
+            }
+           
+            if (event) {
+
+                if (!peerConnected) {
+                    return fetch(event.request)
+                }
             }
 
             console.log(event.request)
-            /*
-            const timeout = new Promise<Response>((resolve, reject) => {
-                setTimeout(async () => {
-                    console.log("Timed out")
-
-                    resolve(
-                        fetch(event.request)
-                    )
-                }, 10000)
-            })
-            */
 
             const body = await proxy.makeRequest(event.request)
 
-            // TODO: better lifecycle management
-
             return body
 
-            // console.log(atob(body))
-            // return new Response(JSON.parse(atob(body)))
         })(),
     );
 });
@@ -73,15 +67,16 @@ var peerConnected = false
 
 self.addEventListener("message", (event) => {
 
-    if (event.data === "connected") {
-        peerConnected = true
-        return
-    }
+    switch (event.data) {
+        case "connected":
+            peerConnected = true;
+            break;
+        case "disconnected":
+            peerConnected = false;
+            break;
 
-    if (event.data === "disconnected") {
-        peerConnected = false
-        return
+        default:
+            proxy.handleRequest(event.data);
+            break;
     }
-
-    proxy.handleRequest(event.data)
 });
