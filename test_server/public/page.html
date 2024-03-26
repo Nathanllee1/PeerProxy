@@ -1,0 +1,36 @@
+<a href="/">Home</a>
+
+<div>A different page</div>
+
+<img src="img.jpg" width="600px"/>
+<img src="img.jpg" width="600px"/>
+
+<img src="img.jpg" width="600px"/>
+
+<img src="img.jpg" width="600px"/>
+
+<img src="img.jpg" width="600px"/>
+
+<img src="img.jpg" width="600px"/>
+
+<img src="img.jpg" width="600px"/>
+
+<img src="img.jpg" width="600px"/>
+
+<img src="small.jpg" width="100px"/>
+
+<script>
+
+    function fetchABunch() {
+        Array(50).fill().forEach(() => {
+            fetch('img.jpg', {
+                // accept gzip
+                headers: {
+                    'Accept-Encoding': 'gzip'
+                }
+            })
+        })
+    }
+    fetchABunch()
+
+</script>

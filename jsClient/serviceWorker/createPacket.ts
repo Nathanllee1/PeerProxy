@@ -60,17 +60,22 @@ const packetSizeBytes = 16 * 1024
 const payloadSize = packetSizeBytes - 7
 
 export async function createPackets(request: Request, currentIdentifier: number, cb: (buf: ArrayBuffer) => void) {
-
+    console.log('Creating packets')
     cb(createHeaderPacket(request, currentIdentifier))
 
     // Make body packets
     if (!request.body) {
+        const endFrame = createFrame(currentIdentifier, "BODY", new Uint8Array(), true, 0);
+        console.log(endFrame)
+        cb(endFrame)
         return
     }
 
     const reader = request.body?.getReader()
+    console.log(reader)
     if (!reader) {
         console.log(request)
+        
         throw Error("Readable stream does not exist on reader")
     }
 
@@ -79,6 +84,7 @@ export async function createPackets(request: Request, currentIdentifier: number,
     while (true) {
         // Stream the body
         const { done, value } = await reader?.read()
+        console.log(done)
         if (done) {
             console.log("Last frame")
             const frame = createFrame(currentIdentifier, "BODY", new Uint8Array(), true, frameNum);
@@ -97,7 +103,7 @@ export async function createPackets(request: Request, currentIdentifier: number,
 
             // check if last frame
             let lastFrame = false;
-           
+
 
             const frame = createFrame(currentIdentifier, "BODY", slicedArray, lastFrame, frameNum);
             frameNum++
@@ -107,19 +113,20 @@ export async function createPackets(request: Request, currentIdentifier: number,
         }
     }
 
+
     return
 }
 
-export type Packet =  {
+export type Packet = {
     identifier: number
     sequenceNum: number
     payload: Uint8Array
-    messageType:  "HEADER"| "BODY",
+    messageType: "HEADER" | "BODY",
     finalMessage: boolean
 };
 
 export function parsePacket(buffer: ArrayBuffer): Packet {
-    // console.log(buffer)
+    console.log(buffer)
     const headerSize = 11;
     let view = new DataView(buffer);
 
@@ -146,7 +153,7 @@ export function parsePacket(buffer: ArrayBuffer): Packet {
         identifier,
         sequenceNum,
         payload,
-        messageType: messageType ? "HEADER": "BODY",
+        messageType: messageType ? "HEADER" : "BODY",
         finalMessage,
     };
 }

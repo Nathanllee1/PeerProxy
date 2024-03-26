@@ -85,14 +85,17 @@ func makePackets(stream io.ReadCloser, dc *webrtc.DataChannel, streamIdentifier 
 }
 
 func (r *PacketStream) Read(p []byte) (int, error) {
-
+	// fmt.Println("Reading")
 	if r.done && len(r.buffer) == 0 && len(r.outOfOrderPackets) == 0 {
-		fmt.Println("Done reading")
+		// fmt.Println("Done reading")
 		return 0, io.EOF
 	}
 
 	for len(r.buffer) == 0 && !r.done {
+		// fmt.Println("Waiting for packet")
 		packet, ok := <-r.dataChannel
+
+		// fmt.Println(packet, ok)
 
 		r.packetsIngested++
 
@@ -224,7 +227,9 @@ func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *webr
 
 	stream := requests[clientId][packet.StreamIdentifier]
 
+	// Handle a body packet
 	if !packet.IsHeader {
+		// fmt.Println("Body", packet)
 		stream.dataChannel <- *packet
 		return
 	}
@@ -245,7 +250,10 @@ func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *webr
 		req.Header.Add(headerName, headerVal)
 	}
 
-	client := &http.Client{}
+	client := &http.Client{CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		fmt.Println("Redirecting")
+		return http.ErrUseLastResponse
+	}}
 
 	resp, err := client.Do(req)
 
@@ -253,6 +261,9 @@ func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *webr
 		fmt.Println("Error sending request", err)
 		return
 	}
+	defer resp.Body.Close()
+
+	//fmt.Println("Response status code:", resp.StatusCode)
 
 	fmt.Println(headers["method"], resp.StatusCode, serverUrl)
 

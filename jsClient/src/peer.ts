@@ -92,13 +92,11 @@ export async function connect() {
       ordered: true,
     })
 
-    // dc.bufferedAmountLowThreshold = 10
+    dc.bufferedAmountLowThreshold = 10240
     dc.onbufferedamountlow = () => {
       /* use send() to queue more data to be sent */
       console.log("buffered amount low")
     };
-
-    console.log(dc.bufferedAmount)
 
     dc.binaryType = "arraybuffer"
 

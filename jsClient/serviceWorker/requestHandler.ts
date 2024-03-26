@@ -28,7 +28,7 @@ export class HTTPProxy {
         const clients = await self.clients.matchAll()
 
         await createPackets(request, this.currentIdentifier, (frame) => {
-            // console.log(frame)
+            console.log(frame)
             clients[0].postMessage(frame)
 
         })

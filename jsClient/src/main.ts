@@ -20,7 +20,9 @@ async function main() {
     registration.active?.postMessage(event.data, [event.data])
   }
 
-  registration.active?.postMessage("connected")
+  registration.active?.postMessage({
+    type: "ready",
+  })
 
   navigator.serviceWorker.addEventListener("message", (message) => {
     dc.send(message.data)
@@ -28,11 +30,9 @@ async function main() {
 
   log("Connected")
 
-  setTimeout(async() => {
-    console.log("Fetching page for", window.location.pathname)
-    await createDom(window.location.pathname)
+  console.log("Fetching page for", window.location.pathname)
+  await createDom(window.location.pathname)
 
-  }, 700)
 
 }
 

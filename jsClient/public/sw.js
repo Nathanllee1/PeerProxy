@@ -33,11 +33,16 @@
   var packetSizeBytes = 16 * 1024;
   var payloadSize = packetSizeBytes - 7;
   async function createPackets(request, currentIdentifier, cb) {
+    console.log("Creating packets");
     cb(createHeaderPacket(request, currentIdentifier));
     if (!request.body) {
+      const endFrame = createFrame(currentIdentifier, "BODY", new Uint8Array(), true, 0);
+      console.log(endFrame);
+      cb(endFrame);
       return;
     }
     const reader = request.body?.getReader();
+    console.log(reader);
     if (!reader) {
       console.log(request);
       throw Error("Readable stream does not exist on reader");
@@ -45,6 +50,7 @@
     let frameNum = 0;
     while (true) {
       const { done, value } = await reader?.read();
+      console.log(done);
       if (done) {
         console.log("Last frame");
         const frame = createFrame(currentIdentifier, "BODY", new Uint8Array(), true, frameNum);
@@ -67,6 +73,7 @@
     return;
   }
   function parsePacket(buffer) {
+    console.log(buffer);
     const headerSize = 11;
     let view = new DataView(buffer);
     let identifier = view.getUint32(0);
@@ -178,6 +185,7 @@
     async makeRequest(request) {
       const clients = await self.clients.matchAll();
       await createPackets(request, this.currentIdentifier, (frame) => {
+        console.log(frame);
         clients[0].postMessage(frame);
       });
       if (!clients[0]) {
@@ -228,7 +236,7 @@
   });
   self.addEventListener("activate", function(e) {
     console.log("Activating");
-    Clients.claim();
+    self.clients.claim();
   });
   var lastClient = "";
   self.addEventListener("fetch", async (untypedEvent) => {

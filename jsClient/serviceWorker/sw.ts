@@ -1,4 +1,5 @@
 /// <reference lib="WebWorker" />
+
 import { HTTPProxy } from "./requestHandler";
 
 const proxy = new HTTPProxy()
@@ -14,7 +15,7 @@ self.addEventListener('activate', function(e) {
    //  self.registration.unregister()
    console.log("Activating")
 
-   Clients.claim()
+   self.clients.claim()
   });
 
 let lastClient: string = ""
