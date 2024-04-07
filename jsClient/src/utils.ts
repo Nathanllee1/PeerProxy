@@ -1,12 +1,17 @@
-export function log(text: string | undefined) {
+export function log(text: string) {
 
     const root = document.getElementById("app")
     const newElement = document.createElement("div")
     console.log(text)
-    newElement.textContent = JSON.stringify(text, undefined, 2)
+    newElement.textContent = text
 
     root?.append(
         newElement
     )
 
+}
+
+
+export function sleep(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms))
 }

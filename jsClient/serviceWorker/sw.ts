@@ -67,17 +67,19 @@ self.addEventListener("fetch", async (untypedEvent) => {
 var peerConnected = false
 
 self.addEventListener("message", (event) => {
-
-    switch (event.data) {
-        case "connected":
+    switch (event.data.type) {
+        case "disconnected":
+            console.log("Disconnected, resetting")
+            peerConnected = false
+            proxy.reset()
+            break;
+        case "ready":
             peerConnected = true;
             break;
-        case "disconnected":
-            peerConnected = false;
-            break;
 
-        default:
-            proxy.handleRequest(event.data);
+        case "data":
+            proxy.handleRequest(event.data.payload);
             break;
     }
+
 });

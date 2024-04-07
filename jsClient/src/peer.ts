@@ -31,7 +31,18 @@ async function logSelectedCandidatePair(pc: RTCPeerConnection) {
 
 export async function connect() {
   return new Promise<{ pc: RTCPeerConnection, dc: RTCDataChannel }>(async (resolve, reject) => {
-    const serverId = (new URLSearchParams(window.location.search)).get("id") ?? "foo"
+    
+    const searchParams = new URLSearchParams(window.location.search)
+
+    const id = searchParams.get("id")
+    let serverId = "foo"
+
+    if (id) {
+      serverId = id
+      if (id.includes("://")) {
+        serverId = id.split("://")[1]
+      }
+    }
 
     // const signalingServer = "ws://localhost:8080"
     // const signalingServer = "wss://d1syxz7xf05rvd.cloudfront.net"
@@ -75,7 +86,7 @@ export async function connect() {
 
           break
 
-        case "error":
+        case "Error":
           console.error(msg)
           break
 
@@ -89,7 +100,8 @@ export async function connect() {
     }
 
     let dc = pc.createDataChannel('data', {
-      ordered: true,
+      // ordered: true,
+      
     })
 
     dc.bufferedAmountLowThreshold = 10240
@@ -125,6 +137,4 @@ export async function connect() {
       })
     }
   })
-
-
 }

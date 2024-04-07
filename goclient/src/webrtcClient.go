@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/pion/webrtc/v4"
 	"nhooyr.io/websocket"
@@ -126,23 +127,7 @@ func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServ
 
 }
 
-func ws(clients Clients, iceServers *[]webrtc.ICEServer) {
-	// Specify the WebSocket server URL
-	// url := "ws://localhost:8080/?role=server"
-	// url := "wss://d1syxz7xf05rvd.cloudfront.net/?role=server"
-	// url := "wss://nathanlee.ngrok.io/?role=server"
-	url := "wss://peepsignal.fly.dev/?role=server"
-
-	// Create a context with a timeout for the connection
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// Connect to the WebSocket server
-	c, _, err := websocket.Dial(ctx, url, nil)
-	if err != nil {
-		log.Fatal("error connecting to WebSocket server:", err)
-	}
-	defer c.Close(websocket.StatusInternalError, "the client crashed")
+func readWSMessages(clients Clients, iceServers *[]webrtc.ICEServer, connection *websocket.Conn, ctx context.Context) {
 
 	candidates := make(map[string][]webrtc.ICECandidateInit)
 
@@ -152,9 +137,10 @@ func ws(clients Clients, iceServers *[]webrtc.ICEServer) {
 		var rawMsg json.RawMessage
 
 		// Read message using wsjson
-		err := wsjson.Read(ctx, c, &rawMsg)
+		err := wsjson.Read(ctx, connection, &rawMsg)
 		if err != nil {
-			log.Fatal("error reading message:", err)
+			fmt.Println("error reading message:", err)
+			return
 		}
 
 		// Print the received message
@@ -176,7 +162,7 @@ func ws(clients Clients, iceServers *[]webrtc.ICEServer) {
 			var offer Offer
 			json.Unmarshal(rawMsg, &offer)
 
-			clients[offer.ClientId] = createNewPeer(offer, c, iceServers, ctx, clients, offer.ClientId)
+			clients[offer.ClientId] = createNewPeer(offer, connection, iceServers, ctx, clients, offer.ClientId)
 
 			for candidate := range candidates[offer.ClientId] {
 				clients[offer.ClientId].AddICECandidate(candidates[offer.ClientId][candidate])
@@ -212,6 +198,36 @@ func ws(clients Clients, iceServers *[]webrtc.ICEServer) {
 
 }
 
+func retryWS(clients Clients, iceServers *[]webrtc.ICEServer) {
+	// keeps trying to reconnect to the websocket server with an exponential backoff
+	// Specify the WebSocket server URL
+	// url := "ws://localhost:8080/?role=server"
+	// url := "wss://d1syxz7xf05rvd.cloudfront.net/?role=server"
+	// url := "wss://nathanlee.ngrok.io/?role=server"
+	url := "wss://peepsignal.fly.dev/?role=server&id=" + ServerId
+
+	// Create a context with a timeout for the connection
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Add logic to retry connection on disconnect with exponential backoff
+
+	// Connect to the WebSocket server
+	for {
+		connection, _, err := websocket.Dial(ctx, url, nil)
+		if err != nil {
+			log.Fatal("error connecting to WebSocket server:", err)
+		}
+
+		readWSMessages(clients, iceServers, connection, ctx)
+		connection.Close(websocket.StatusInternalError, "the client crashed")
+
+		time.Sleep(2 * time.Second)
+		fmt.Println("Retrying")
+	}
+
+}
+
 type Clients map[string]*webrtc.PeerConnection
 
 func Signal() {
@@ -223,6 +239,6 @@ func Signal() {
 	log.Println(iceServers)
 
 	clients := make(Clients)
-	ws(clients, &iceServers)
-
+	retryWS(clients, &iceServers)
+	fmt.Println("Post ws")
 }

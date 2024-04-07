@@ -37,7 +37,6 @@
     cb(createHeaderPacket(request, currentIdentifier));
     if (!request.body) {
       const endFrame = createFrame(currentIdentifier, "BODY", new Uint8Array(), true, 0);
-      console.log(endFrame);
       cb(endFrame);
       return;
     }
@@ -73,7 +72,6 @@
     return;
   }
   function parsePacket(buffer) {
-    console.log(buffer);
     const headerSize = 11;
     let view = new DataView(buffer);
     let identifier = view.getUint32(0);
@@ -106,6 +104,7 @@
     packetsIngested = 0;
     outOfOrderPackets = {};
     currentPacketNum = 0;
+    cancelled = false;
     constructor() {
       this.stream = new ReadableStream({
         start: (controller) => {
@@ -118,6 +117,8 @@
             this.controller.close();
           }
           console.log(`Stream cancelled, reason: ${reason}`);
+          this.outOfOrderPackets = {};
+          this.cancelled = true;
         }
       });
     }
@@ -126,14 +127,15 @@
       if (!this.controller) {
         console.error("Stream controller is not initialized.");
       }
+      if (this.cancelled) {
+        return;
+      }
       this.packetsIngested++;
       if (item.finalMessage) {
-        console.log("Final message", item);
         this.lastPacketFound = true;
         this.lastPacketNum = item.sequenceNum;
       }
       if (item.sequenceNum == this.currentPacketNum) {
-        console.log("enqueing", item);
         this.controller.enqueue(item.payload);
         this.currentPacketNum++;
       } else if (item.sequenceNum > this.currentPacketNum) {
@@ -156,6 +158,8 @@
     }
     // Method to close the stream
     closeStream() {
+      this.outOfOrderPackets = {};
+      console.log(this.outOfOrderPackets);
       if (this.controller) {
         this.controller.close();
       }
@@ -182,10 +186,15 @@
     requests = {};
     responses = {};
     currentIdentifier = 1;
+    reset() {
+      console.log("Resetting requests");
+      this.requests = {};
+      this.responses = {};
+      this.currentIdentifier = 1;
+    }
     async makeRequest(request) {
       const clients = await self.clients.matchAll();
       await createPackets(request, this.currentIdentifier, (frame) => {
-        console.log(frame);
         clients[0].postMessage(frame);
       });
       if (!clients[0]) {
@@ -268,15 +277,17 @@
   });
   var peerConnected = false;
   self.addEventListener("message", (event) => {
-    switch (event.data) {
-      case "connected":
+    switch (event.data.type) {
+      case "disconnected":
+        console.log("Disconnected, resetting");
+        peerConnected = false;
+        proxy.reset();
+        break;
+      case "ready":
         peerConnected = true;
         break;
-      case "disconnected":
-        peerConnected = false;
-        break;
-      default:
-        proxy.handleRequest(event.data);
+      case "data":
+        proxy.handleRequest(event.data.payload);
         break;
     }
   });

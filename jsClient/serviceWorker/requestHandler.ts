@@ -18,17 +18,25 @@ export class HTTPProxy {
 
     // a list of requests
     // { id: request }
-    requests: Record<number, Deferred<any>> = {}
+    requests: Record<number, Deferred<Response>> = {}
 
     responses: Record<number, CustomStream> = {}
 
     currentIdentifier = 1
+
+    reset() {
+        console.log("Resetting requests")
+        this.requests = {}
+        this.responses = {}
+        this.currentIdentifier = 1
+    }
+
     async makeRequest(request: Request): Promise<Response> {
         // @ts-ignore
         const clients = await self.clients.matchAll()
 
         await createPackets(request, this.currentIdentifier, (frame) => {
-            console.log(frame)
+            // console.log(frame)
             clients[0].postMessage(frame)
 
         })

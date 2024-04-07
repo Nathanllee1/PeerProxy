@@ -12,6 +12,8 @@ export class CustomStream {
     outOfOrderPackets = {}
     currentPacketNum = 0
 
+    cancelled = false
+
     constructor() {
         // Keeping a reference to the stream controller
 
@@ -30,6 +32,9 @@ export class CustomStream {
                     this.controller.close();
                 }
                 console.log(`Stream cancelled, reason: ${reason}`);
+                this.outOfOrderPackets = {}
+
+                this.cancelled = true
             }
         });
     }
@@ -40,10 +45,15 @@ export class CustomStream {
             console.error("Stream controller is not initialized.");
         }
 
+        // ignore if stream is cancelled
+        if (this.cancelled) {
+            return
+        }
+
         this.packetsIngested++;
 
         if (item.finalMessage) {
-            console.log("Final message", item)
+            // console.log("Final message", item)
             this.lastPacketFound = true
             this.lastPacketNum = item.sequenceNum
 
@@ -53,7 +63,7 @@ export class CustomStream {
         // console.log(item, item.identifier, this.currentPacketNum)
 
         if (item.sequenceNum == this.currentPacketNum) {
-            console.log("enqueing", item)
+            // console.log("enqueing", item)
             this.controller.enqueue(item.payload);
             this.currentPacketNum ++
         } else if (item.sequenceNum > this.currentPacketNum) {
@@ -94,6 +104,10 @@ export class CustomStream {
 
     // Method to close the stream
     closeStream() {
+        this.outOfOrderPackets = {}
+
+        console.log(this.outOfOrderPackets)
+
         if (this.controller) {
             this.controller.close();
         }

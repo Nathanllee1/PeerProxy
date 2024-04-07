@@ -7,8 +7,12 @@ export async function createDom(pagePath: string) {
     log("Creating dom")
 
     const rootdoc = await fetch(pagePath)
-    const content = await rootdoc.text()
 
+    if (!rootdoc.ok) {
+        log("Server unavailable")
+    }
+
+    const content = await rootdoc.text()
 
     // Assuming `content` holds the HTML content of the root document
     const parser = new DOMParser();
@@ -24,29 +28,49 @@ export async function createDom(pagePath: string) {
     // Replace the current <body> content
     document.body.innerHTML = newBodyContent;
 
-    executeScripts(document.head);
-    executeScripts(document.body);
+    const headScripts = document.head.querySelectorAll("script");
+    const mappedHeadScripts = Array.from(headScripts).map(script => ({type: "head", script}))
+
+    const bodyScripts = document.body.querySelectorAll("script");
+    const mappedBodyScripts = Array.from(bodyScripts).map(script => ({type: "body", script}))
+
+    await executeScripts([...mappedHeadScripts, ...mappedBodyScripts])
+
+    // TODO: make sure async, defer, and module scripts are handled correctly
 }
 
-function executeScripts(container: HTMLElement) {
-    // Find all script elements
-    const scripts = container.querySelectorAll("script");
+async function loadScripts(src: string) {
+    return new Promise((resolve, reject) => {
+        console.log("resolving", src)
+        const script = document.createElement("script");
+        script.src = src
 
-    // For each script, replace it with a new script element to ensure execution
-    scripts.forEach((oldScript) => {
+        script.onload = () => resolve(script)
+        script.onerror = () => reject(new Error(`Script load error for ${src}`));
+        document.head.appendChild(script);
+
+    })
+}
+
+async function executeScripts(scripts: {type: string, script: HTMLScriptElement}[]) {
+    let externalScripts = Array.from(scripts).filter(script => script.script.src);
+
+    await Promise.all(externalScripts.map(script => loadScripts(script.script.src)));
+    console.log("Loaded external scripts")
+
+    // mount non-external scripts
+    const inlineScripts = Array.from(scripts).filter(script => !script.script.src)
+    inlineScripts.forEach(script => {
         const newScript = document.createElement("script");
-        // Copy script attributes (e.g., src, type)
-        Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
 
-        if (oldScript.src) {
-            // For external scripts, set the src attribute
-            newScript.src = oldScript.src;
-        } else {
-            // For inline scripts, set the text content
-            newScript.textContent = oldScript.textContent;
-        }
+        Array.from(script.script.attributes).forEach(attr => {
+            newScript.setAttribute(attr.name, attr.value);
+        });
+        
+        newScript.textContent = script.script.textContent;
 
-        // Replace the old script with the new script to ensure it gets executed
-        oldScript.parentNode?.replaceChild(newScript, oldScript);
-    });
+        const container = script.type === "head" ? document.head : document.body;
+
+        container.appendChild(newScript);
+    })
 }

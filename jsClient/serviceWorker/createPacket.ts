@@ -66,7 +66,7 @@ export async function createPackets(request: Request, currentIdentifier: number,
     // Make body packets
     if (!request.body) {
         const endFrame = createFrame(currentIdentifier, "BODY", new Uint8Array(), true, 0);
-        console.log(endFrame)
+        // console.log(endFrame)
         cb(endFrame)
         return
     }
@@ -126,7 +126,7 @@ export type Packet = {
 };
 
 export function parsePacket(buffer: ArrayBuffer): Packet {
-    console.log(buffer)
+    // console.log(buffer)
     const headerSize = 11;
     let view = new DataView(buffer);
 

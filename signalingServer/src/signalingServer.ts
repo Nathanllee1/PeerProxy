@@ -24,8 +24,8 @@ function generateRandomCode() {
 }
 
 
-const handleServer = (ws: WebSocket) => {
-    const id = "foo" // generateRandomCode()
+const handleServer = (ws: WebSocket, preferredId: string | undefined) => {
+    const id = preferredId ?? generateRandomCode()
 
     servers[id] = ws
 
@@ -107,7 +107,7 @@ app.ws("/", function (ws, req) {
 
     switch (req.query["role"]) {
         case "server":
-            handleServer(ws)
+            handleServer(ws, req.query["id"] as string)
             break
 
         case "client":
