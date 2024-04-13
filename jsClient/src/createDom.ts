@@ -2,8 +2,6 @@ import { log } from "./utils";
 
 
 export async function createDom(pagePath: string) {
-
-
     log("Creating dom")
 
     const rootdoc = await fetch(pagePath)

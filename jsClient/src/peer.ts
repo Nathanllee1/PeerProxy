@@ -1,6 +1,6 @@
 import { log } from "./utils";
 
-async function fetchICE() {
+export async function fetchICE() {
 
   const res = await fetch("https://important-eel-61.deno.dev/")
 
@@ -9,7 +9,7 @@ async function fetchICE() {
 }
 
 
-async function logSelectedCandidatePair(pc: RTCPeerConnection) {
+export async function logSelectedCandidatePair(pc: RTCPeerConnection) {
   const stats = await pc.getStats();
   let selectedCandidatePair;
 
@@ -29,20 +29,8 @@ async function logSelectedCandidatePair(pc: RTCPeerConnection) {
   }
 }
 
-export async function connect() {
+export async function connect(serverId: string) {
   return new Promise<{ pc: RTCPeerConnection, dc: RTCDataChannel }>(async (resolve, reject) => {
-    
-    const searchParams = new URLSearchParams(window.location.search)
-
-    const id = searchParams.get("id")
-    let serverId = "foo"
-
-    if (id) {
-      serverId = id
-      if (id.includes("://")) {
-        serverId = id.split("://")[1]
-      }
-    }
 
     // const signalingServer = "ws://localhost:8080"
     // const signalingServer = "wss://d1syxz7xf05rvd.cloudfront.net"
@@ -61,7 +49,11 @@ export async function connect() {
       }
     )
 
+    console.time("Websocket connection")
     const socket = new WebSocket(`${signalingServer}/?role=client&id=${serverId}`)
+    socket.addEventListener("open", () => {
+      console.timeEnd("Websocket connection")
+    })
 
     socket.onmessage = e => {
       let msg = JSON.parse(e.data)
@@ -101,7 +93,7 @@ export async function connect() {
 
     let dc = pc.createDataChannel('data', {
       // ordered: true,
-      
+
     })
 
     dc.bufferedAmountLowThreshold = 10240
@@ -130,11 +122,11 @@ export async function connect() {
       }
     }
 
-    socket.onopen = () => {
-      pc.createOffer().then(offer => {
-        pc.setLocalDescription(offer)
-        socket.send(JSON.stringify({ mtype: "offer", id: serverId, offer: offer, clientId }))
-      })
+    socket.onopen = async () => {
+      const offer = await pc.createOffer()
+      pc.setLocalDescription(offer)
+      socket.send(JSON.stringify({ mtype: "offer", id: serverId, offer: offer, clientId }))
+
     }
   })
 }

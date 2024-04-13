@@ -68,6 +68,13 @@ const handleClient = (ws: WebSocket) => {
     ws.on('message', function message(data) {
         const clientData = JSON.parse(data.toString())
 
+        if (clientData["mtype"] === "idReq") {
+            const id = generateRandomCode()
+            ws.send(JSON.stringify({ mtype: "idAssgn", id }))
+            clients[id] = ws
+            return
+        }
+
         const receiver = clientData["id"]
 
         if (!(receiver in servers)) {

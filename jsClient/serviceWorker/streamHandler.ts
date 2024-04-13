@@ -106,8 +106,6 @@ export class CustomStream {
     closeStream() {
         this.outOfOrderPackets = {}
 
-        console.log(this.outOfOrderPackets)
-
         if (this.controller) {
             this.controller.close();
         }

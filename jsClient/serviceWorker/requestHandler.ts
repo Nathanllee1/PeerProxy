@@ -31,20 +31,13 @@ export class HTTPProxy {
         this.currentIdentifier = 1
     }
 
-    async makeRequest(request: Request): Promise<Response> {
-        // @ts-ignore
-        const clients = await self.clients.matchAll()
+    async makeRequest(request: Request, client: Client): Promise<Response> {
 
         await createPackets(request, this.currentIdentifier, (frame) => {
             // console.log(frame)
-            clients[0].postMessage(frame)
+            client.postMessage({payload: frame, type: "data"})
 
         })
-
-        if (!clients[0]) {
-            return new Response()
-        }
-
 
         const prom = new Deferred<Response>()
 

@@ -1,9 +1,11 @@
 /// <reference lib="WebWorker" />
 
 import { HTTPProxy } from "./requestHandler";
+import { WsHandler } from "./wsProxy";
 
 const proxy = new HTTPProxy()
 
+let ws: WsHandler
 
 self.addEventListener('install', (event) => {
     console.log('Service Worker installing.', self);
@@ -11,12 +13,12 @@ self.addEventListener('install', (event) => {
     self.skipWaiting()
 });
 
-self.addEventListener('activate', function(e) {
-   //  self.registration.unregister()
-   console.log("Activating")
+self.addEventListener('activate', function (e) {
+    //  self.registration.unregister()
+    console.log("Activating")
 
-   self.clients.claim()
-  });
+    self.clients.claim()
+});
 
 let lastClient: string = ""
 
@@ -24,11 +26,9 @@ self.addEventListener("fetch", async (untypedEvent) => {
 
     const event = untypedEvent as FetchEvent
 
-
     event.respondWith(
         (async (): Promise<Response> => {
             // console.log(new URL(event.request.url).hostname)
-
 
             if (event.clientId !== lastClient) {
                 peerConnected = false
@@ -37,26 +37,22 @@ self.addEventListener("fetch", async (untypedEvent) => {
                 return fetch(event.request)
             }
 
-            // TODO: implement caching
-            if (await self.clients.get(event.clientId) !== undefined) {
-                const clientHostname = new URL((await self.clients.get(event.clientId)).url).hostname
+            const client = await self.clients.get(event.clientId)
 
-                if (new URL(event.request.url).hostname !== clientHostname) {
-                    return fetch(event.request)
-                }
-    
-            }
-           
-            if (event) {
-
-                if (!peerConnected) {
-                    return fetch(event.request)
-                }
+            if (!client || !peerConnected) {
+                return fetch(event.request)
             }
 
-            console.log(event.request)
+            const clientHostname = new URL(client.url).hostname
 
-            const body = await proxy.makeRequest(event.request)
+            // iF the request is not for the proxy, fetch it normally
+            if (new URL(event.request.url).hostname !== clientHostname) {
+                return fetch(event.request)
+            }
+
+            // console.log(event.request)
+
+            const body = await proxy.makeRequest(event.request, client)
 
             return body
 
@@ -66,7 +62,7 @@ self.addEventListener("fetch", async (untypedEvent) => {
 
 var peerConnected = false
 
-self.addEventListener("message", (event) => {
+self.addEventListener("message", async (event) => {
     switch (event.data.type) {
         case "disconnected":
             console.log("Disconnected, resetting")
@@ -80,6 +76,46 @@ self.addEventListener("message", (event) => {
         case "data":
             proxy.handleRequest(event.data.payload);
             break;
+
+        case "createWs":
+
+            const clientObj = event.source as unknown as Client
+            const client = await self.clients.get(clientObj.id)
+
+            console.log("CLIENT", client)
+
+            if (!ws || ws.serverId !== event.data.payload.serverId || ws.needsRestart) {
+                console.log("New WS")
+                ws = new WsHandler(event.data.payload.serverId, client)
+            }
+            ws.setNewClient(client)
+            await ws.ready()
+
+            // Tell client ws is ready
+            client.postMessage({
+                type: "createWs",
+                payload: {
+                    reqId: event.data.payload.reqId
+                }
+            })
+
+            break;
+
+        case "signalingMessage":
+
+            // console.log(event.data.payload)
+
+            if (!ws) {
+                console.error("No ws connection")
+            }
+
+            // console.log(ws)
+
+            ws.ws.send(event.data.payload)
+
+            break;
+
+
     }
 
 });

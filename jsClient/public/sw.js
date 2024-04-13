@@ -33,7 +33,6 @@
   var packetSizeBytes = 16 * 1024;
   var payloadSize = packetSizeBytes - 7;
   async function createPackets(request, currentIdentifier, cb) {
-    console.log("Creating packets");
     cb(createHeaderPacket(request, currentIdentifier));
     if (!request.body) {
       const endFrame = createFrame(currentIdentifier, "BODY", new Uint8Array(), true, 0);
@@ -159,7 +158,6 @@
     // Method to close the stream
     closeStream() {
       this.outOfOrderPackets = {};
-      console.log(this.outOfOrderPackets);
       if (this.controller) {
         this.controller.close();
       }
@@ -192,14 +190,10 @@
       this.responses = {};
       this.currentIdentifier = 1;
     }
-    async makeRequest(request) {
-      const clients = await self.clients.matchAll();
+    async makeRequest(request, client) {
       await createPackets(request, this.currentIdentifier, (frame) => {
-        clients[0].postMessage(frame);
+        client.postMessage({ payload: frame, type: "data" });
       });
-      if (!clients[0]) {
-        return new Response();
-      }
       const prom = new Deferred();
       this.requests[this.currentIdentifier] = prom;
       this.currentIdentifier += 1;
@@ -237,8 +231,48 @@
     }
   };
 
+  // serviceWorker/wsProxy.ts
+  var WsHandler = class {
+    ws;
+    serverId;
+    client;
+    open = false;
+    wsClosed = true;
+    needsRestart = false;
+    constructor(serverId, client) {
+      const signalingServer = "wss://peepsignal.fly.dev";
+      this.serverId = serverId;
+      this.ws = new WebSocket(`${signalingServer}/?role=client&id=${serverId}`);
+      this.setNewClient(client);
+      this.ws.addEventListener("open", () => {
+        this.open = true;
+      });
+      this.ws.addEventListener("close", () => {
+        this.needsRestart = true;
+      });
+    }
+    // Returns when websocket is open
+    async ready() {
+      if (this.open) {
+        return;
+      }
+      return new Promise((resolve, reject) => {
+        this.ws.addEventListener("open", () => {
+          resolve();
+        });
+      });
+    }
+    setNewClient(client) {
+      this.client = client;
+      this.ws.addEventListener("message", (event) => {
+        client.postMessage({ type: "signalingMessage", payload: event.data });
+      });
+    }
+  };
+
   // serviceWorker/sw.ts
   var proxy = new HTTPProxy();
+  var ws;
   self.addEventListener("install", (event) => {
     console.log("Service Worker installing.", self);
     self.skipWaiting();
@@ -258,25 +292,21 @@
           console.log("Detected restart");
           return fetch(event.request);
         }
-        if (await self.clients.get(event.clientId) !== void 0) {
-          const clientHostname = new URL((await self.clients.get(event.clientId)).url).hostname;
-          if (new URL(event.request.url).hostname !== clientHostname) {
-            return fetch(event.request);
-          }
+        const client = await self.clients.get(event.clientId);
+        if (!client || !peerConnected) {
+          return fetch(event.request);
         }
-        if (event) {
-          if (!peerConnected) {
-            return fetch(event.request);
-          }
+        const clientHostname = new URL(client.url).hostname;
+        if (new URL(event.request.url).hostname !== clientHostname) {
+          return fetch(event.request);
         }
-        console.log(event.request);
-        const body = await proxy.makeRequest(event.request);
+        const body = await proxy.makeRequest(event.request, client);
         return body;
       })()
     );
   });
   var peerConnected = false;
-  self.addEventListener("message", (event) => {
+  self.addEventListener("message", async (event) => {
     switch (event.data.type) {
       case "disconnected":
         console.log("Disconnected, resetting");
@@ -288,6 +318,29 @@
         break;
       case "data":
         proxy.handleRequest(event.data.payload);
+        break;
+      case "createWs":
+        const clientObj = event.source;
+        const client = await self.clients.get(clientObj.id);
+        console.log("CLIENT", client);
+        if (!ws || ws.serverId !== event.data.payload.serverId || ws.needsRestart) {
+          console.log("New WS");
+          ws = new WsHandler(event.data.payload.serverId, client);
+        }
+        ws.setNewClient(client);
+        await ws.ready();
+        client.postMessage({
+          type: "createWs",
+          payload: {
+            reqId: event.data.payload.reqId
+          }
+        });
+        break;
+      case "signalingMessage":
+        if (!ws) {
+          console.error("No ws connection");
+        }
+        ws.ws.send(event.data.payload);
         break;
     }
   });

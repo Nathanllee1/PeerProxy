@@ -60,7 +60,6 @@ const packetSizeBytes = 16 * 1024
 const payloadSize = packetSizeBytes - 7
 
 export async function createPackets(request: Request, currentIdentifier: number, cb: (buf: ArrayBuffer) => void) {
-    console.log('Creating packets')
     cb(createHeaderPacket(request, currentIdentifier))
 
     // Make body packets
