@@ -39,7 +39,7 @@ type Answer struct {
 	ClientId string                    `json:"clientId"`
 }
 
-func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServer, ctx context.Context) *webrtc.PeerConnection {
+func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServer, ctx context.Context, clients Clients, clientId string) *webrtc.PeerConnection {
 	peerConnection, err := webrtc.NewPeerConnection(webrtc.Configuration{
 		ICEServers: *iceServers,
 	})
@@ -58,7 +58,7 @@ func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServ
 			ClientId:  offer.ClientId,
 		}
 
-		fmt.Println(candidate)
+		//fmt.Println(candidate)
 
 		outbound, marshalErr := json.Marshal(candidate)
 		if marshalErr != nil {
@@ -72,16 +72,24 @@ func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServ
 
 	peerConnection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
 		fmt.Printf("ICE Connection State has changed: %s\n", connectionState.String())
+
+		if connectionState == webrtc.ICEConnectionStateClosed {
+			delete(clients, clientId)
+		}
 	})
 
 	// Send the current time via a DataChannel to the remote peer every 3 seconds
 	peerConnection.OnDataChannel(func(d *webrtc.DataChannel) {
 		d.OnOpen(func() {
-			for range time.Tick(time.Second * 3) {
-				if err = d.SendText(time.Now().String()); err != nil {
-					fmt.Println(err)
-				}
-			}
+			fmt.Println("Data channel opened")
+
+		})
+
+		d.OnMessage(func(message webrtc.DataChannelMessage) {
+			// fmt.Printf("Message from DataChannel '%s': '%s'\n", d.Label(), string(message.Data))
+
+			go ProxyDCMessage(message, clientId, d)
+
 		})
 
 		defer d.Close()
@@ -119,21 +127,9 @@ func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServ
 
 }
 
-func ws(clients map[string]*webrtc.PeerConnection, iceServers *[]webrtc.ICEServer) {
-	// Specify the WebSocket server URL
-	// url := "ws://localhost:8080/?role=server"
-	url := "wss://d1syxz7xf05rvd.cloudfront.net/?role=server"
+func readWSMessages(clients Clients, iceServers *[]webrtc.ICEServer, connection *websocket.Conn, ctx context.Context) {
 
-	// Create a context with a timeout for the connection
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// Connect to the WebSocket server
-	c, _, err := websocket.Dial(ctx, url, nil)
-	if err != nil {
-		log.Fatal("error connecting to WebSocket server:", err)
-	}
-	defer c.Close(websocket.StatusInternalError, "the client crashed")
+	candidates := make(map[string][]webrtc.ICECandidateInit)
 
 	// Set the connection to receive messages
 	for {
@@ -141,9 +137,10 @@ func ws(clients map[string]*webrtc.PeerConnection, iceServers *[]webrtc.ICEServe
 		var rawMsg json.RawMessage
 
 		// Read message using wsjson
-		err := wsjson.Read(ctx, c, &rawMsg)
+		err := wsjson.Read(ctx, connection, &rawMsg)
 		if err != nil {
-			log.Fatal("error reading message:", err)
+			fmt.Println("error reading message:", err)
+			return
 		}
 
 		// Print the received message
@@ -165,7 +162,11 @@ func ws(clients map[string]*webrtc.PeerConnection, iceServers *[]webrtc.ICEServe
 			var offer Offer
 			json.Unmarshal(rawMsg, &offer)
 
-			clients[offer.ClientId] = createNewPeer(offer, c, iceServers, ctx)
+			clients[offer.ClientId] = createNewPeer(offer, connection, iceServers, ctx, clients, offer.ClientId)
+
+			for candidate := range candidates[offer.ClientId] {
+				clients[offer.ClientId].AddICECandidate(candidates[offer.ClientId][candidate])
+			}
 
 		case "candidate":
 			var candidate Candidate
@@ -173,11 +174,22 @@ func ws(clients map[string]*webrtc.PeerConnection, iceServers *[]webrtc.ICEServe
 				log.Fatal(err)
 			}
 
-			fmt.Println("Received candidate", candidate)
+			// fmt.Println("Received candidate", candidate)
+			client, ok := clients[candidate.ClientId]
 
-			if err = clients[candidate.ClientId].AddICECandidate(candidate.Candidate); err != nil {
-				panic(err)
+			if !ok {
+				candidates[candidate.ClientId] = append(candidates[candidate.ClientId], candidate.Candidate)
+				break
 			}
+
+			err := client.AddICECandidate(candidate.Candidate)
+
+			if err != nil {
+				fmt.Println("Could not add ice candidate", err)
+			}
+
+		case "heartbeat":
+
 		default:
 			log.Printf("unknown message type: %s", baseMsg.MType)
 		}
@@ -186,18 +198,47 @@ func ws(clients map[string]*webrtc.PeerConnection, iceServers *[]webrtc.ICEServe
 
 }
 
-func Signal() {
-	// ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
-	// defer cancel()
+func retryWS(clients Clients, iceServers *[]webrtc.ICEServer) {
+	// keeps trying to reconnect to the websocket server with an exponential backoff
+	// Specify the WebSocket server URL
+	// url := "ws://localhost:8080/?role=server"
+	// url := "wss://d1syxz7xf05rvd.cloudfront.net/?role=server"
+	// url := "wss://nathanlee.ngrok.io/?role=server"
+	url := "wss://peepsignal.fly.dev/?role=server&id=" + ServerId
 
-	url := "https://important-eel-61.deno.dev/"
-	iceServers, err := FetchICE(url)
+	// Create a context with a timeout for the connection
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Add logic to retry connection on disconnect with exponential backoff
+
+	// Connect to the WebSocket server
+	for {
+		connection, _, err := websocket.Dial(ctx, url, nil)
+		if err != nil {
+			log.Fatal("error connecting to WebSocket server:", err)
+		}
+
+		readWSMessages(clients, iceServers, connection, ctx)
+		connection.Close(websocket.StatusInternalError, "the client crashed")
+
+		time.Sleep(2 * time.Second)
+		fmt.Println("Retrying")
+	}
+
+}
+
+type Clients map[string]*webrtc.PeerConnection
+
+func Signal() {
+	iceUrl := "https://important-eel-61.deno.dev/"
+	iceServers, err := FetchICE(iceUrl)
 	if err != nil {
 		panic(err)
 	}
 	log.Println(iceServers)
 
-	clients := make(map[string]*webrtc.PeerConnection)
-	ws(clients, &iceServers)
-
+	clients := make(Clients)
+	retryWS(clients, &iceServers)
+	fmt.Println("Post ws")
 }

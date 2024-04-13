@@ -1,0 +1,1195 @@
+positions: instr line
+events: goroutine(count)
+
+ob=(1) /home/nathanlee/Workspace/WebRTCSignaling/goclient/getconfig
+fl=(1) /usr/local/go/src/runtime/proc.go
+fn=(1) runtime.gopark
+0x43f36d 398 211
+
+ob=(1)
+fl=(2) /usr/local/go/src/runtime/mprof.go
+fn=(2) runtime.goroutineProfileWithLabels
+-43997 853 1
+
+ob=(1)
+fl=(3) /usr/local/go/src/runtime/chan.go
+fn=(3) runtime.chanrecv1
+-169695 442 0
+cfl=(3)
+cfn=(4) runtime.chanrecv
+calls=0 -168676 583
+* * 44
+
+ob=(1)
+fl=(3)
+fn=(5) runtime.chanrecv2
++32 447 0
+cfl=(3)
+cfn=(4)
+calls=0 +1019 583
+* * 65
+
+ob=(1)
+fl=(3)
+fn=(4)
++987 583 0
+cfl=(1)
+cfn=(1)
+calls=0 +213660 398
+* * 109
+
+ob=(1)
+fl=(4) /usr/local/go/src/runtime/netpoll.go
+fn=(6) runtime.netpollblock
++182442 564 0
+cfl=(1)
+cfn=(1)
+calls=0 +212673 398
+* * 27
+
+ob=(1)
+fl=(1)
+fn=(7) runtime.main
++29092 267 0
+cfl=(5) /home/nathanlee/Workspace/WebRTCSignaling/goclient/src/index.go
+cfn=(8) main.main
+calls=0 0x90167a 25
+* * 1
+
+ob=(1)
+fl=(6) /usr/local/go/src/runtime/select.go
+fn=(9) runtime.selectgo
++67818 327 0
+cfl=(1)
+cfn=(1)
+calls=0 +1139 398
+* * 73
+
+ob=(1)
+fl=(2)
+fn=(10) runtime/pprof.runtime_goroutineProfileWithLabels
++116440 844 0
+cfl=(2)
+cfn=(2)
+calls=0 -110676 853
+* * 1
+
+ob=(1)
+fl=(4)
+fn=(11) internal/poll.runtime_pollWait
++968 343 0
+cfl=(4)
+cfn=(6)
+calls=0 -213350 564
+* * 27
+
+ob=(1)
+fl=(1)
+fn=(12) runtime.goparkunlock
++6740 404 0
+cfl=(1)
+cfn=(1)
+calls=0 -184087 398
+* * 2
+
+ob=(1)
+fl=(7) /usr/local/go/src/runtime/sema.go
+fn=(13) sync.runtime_notifyListWait
+* 527 0
+cfl=(1)
+cfn=(12)
+calls=0 * 404
+* * 2
+
+ob=(1)
+fl=(8) /usr/local/go/src/sync/cond.go
+fn=(14) sync.(*Cond).Wait
++52076 70 0
+cfl=(7)
+cfn=(13)
+calls=0 * 527
+* * 2
+
+ob=(1)
+fl=(9) /usr/local/go/src/io/io.go
+fn=(15) io.copyBuffer
++16961 412 0
+cfl=(10) /usr/local/go/src/io/multi.go
+cfn=(16) io.(*multiReader).WriteTo
+calls=0 +20043 45
+* * 44
++64 430 0
+cfl=(11) /usr/local/go/src/net/http/transfer.go
+cfn=(17) net/http.finishAsyncByteRead.Read
+calls=0 0x6f6965 1066
+* * 44
+
+ob=(1)
+fl=(10)
+fn=(16)
++3018 45 0
+cfl=(10)
+cfn=(18) io.(*multiReader).writeToWithBuffer
+calls=0 +3299 54
+* * 44
+
+ob=(1)
+fl=(10)
+fn=(18)
++281 54 0
+cfl=(9)
+cfn=(15)
+calls=0 -3018 430
+* * 44
+
+ob=(1)
+fl=(12) /usr/local/go/src/internal/poll/fd_poll_runtime.go
+fn=(19) internal/poll.(*pollDesc).wait
++385534 84 0
+cfl=(4)
+cfn=(11)
+calls=0 -79140 343
+* * 27
+
+ob=(1)
+fl=(13) /usr/local/go/src/internal/poll/fd_unix.go
+fn=(20) internal/poll.(*FD).Read
++4851 164 0
+cfl=(12)
+cfn=(21) internal/poll.(*pollDesc).waitRead
+calls=0 +4851 89
+* * 7
+
+ob=(1)
+fl=(12)
+fn=(21)
+* 89 0
+cfl=(12)
+cfn=(19)
+calls=0 -4851 84
+* * 7
+
+ob=(1)
+fl=(13)
+fn=(22) internal/poll.(*FD).ReadFromInet4
++2481 247 0
+cfl=(12)
+cfn=(21)
+calls=0 +2481 89
+* * 14
+
+ob=(1)
+fl=(12)
+fn=(21)
+* 89 0
+cfl=(12)
+cfn=(19)
+calls=0 -7332 84
+* * 14
+
+ob=(1)
+fl=(13)
+fn=(23) internal/poll.(*FD).Accept
++14401 611 0
+cfl=(12)
+cfn=(21)
+calls=0 +14401 89
+* * 1
+
+ob=(1)
+fl=(12)
+fn=(21)
+* 89 0
+cfl=(12)
+cfn=(19)
+calls=0 -21733 84
+* * 1
+
+ob=(1)
+fl=(13)
+fn=(24) internal/poll.(*FD).RawRead
++3198 708 0
+cfl=(12)
+cfn=(21)
+calls=0 +3198 89
+* * 5
+
+ob=(1)
+fl=(12)
+fn=(21)
+* 89 0
+cfl=(12)
+cfn=(19)
+calls=0 -24931 84
+* * 5
+
+ob=(1)
+fl=(14) /usr/local/go/src/bytes/buffer.go
+fn=(25) bytes.(*Buffer).ReadFrom
++118926 211 0
+cfl=(15) /usr/local/go/src/crypto/tls/conn.go
+cfn=(26) crypto/tls.(*atLeastReader).Read
+calls=0 0x63281a 805
+* * 1
+
+ob=(1)
+fl=(16) /usr/local/go/src/context/context.go
+fn=(27) context.(*cancelCtx).propagateCancel.func2
++103040 505 0
+cfl=(6)
+cfn=(9)
+calls=0 -725939 327
+* * 5
+
+ob=(1)
+fl=(17) /usr/local/go/src/net/fd_posix.go
+fn=(28) net.(*netFD).Read
++715501 55 0
+cfl=(13)
+cfn=(20)
+calls=0 -242046 164
+* * 7
+
+ob=(1)
+fl=(17)
+fn=(29) net.(*netFD).readFromInet4
++512 66 0
+cfl=(13)
+cfn=(22)
+calls=0 -955066 247
+* * 14
+
+ob=(1)
+fl=(18) /usr/local/go/src/net/fd_unix.go
+fn=(30) net.(*netFD).accept
++7716 172 0
+cfl=(13)
+cfn=(23)
+calls=0 -941177 611
+* * 1
+
+ob=(1)
+fl=(19) /usr/local/go/src/net/net.go
+fn=(31) net.(*conn).Read
++67804 179 0
+cfl=(17)
+cfn=(28)
+calls=0 -8228 55
+* * 7
+
+ob=(1)
+fl=(20) /usr/local/go/src/net/rawconn.go
+fn=(32) net.(*rawConn).Read
++15665 44 0
+cfl=(13)
+cfn=(24)
+calls=0 0x4e3b09 708
+* * 5
+
+ob=(1)
+fl=(21) /usr/local/go/src/net/tcpsock.go
+fn=(33) net.(*TCPListener).Accept
++17594 315 0
+cfl=(22) /usr/local/go/src/net/tcpsock_posix.go
+cfn=(34) net.(*TCPListener).accept
+calls=0 +22056 152
+* * 1
+
+ob=(1)
+fl=(22)
+fn=(34)
++4462 152 0
+cfl=(18)
+cfn=(30)
+calls=0 -101063 172
+* * 1
+
+ob=(1)
+fl=(23) /usr/local/go/src/net/udpsock.go
+fn=(35) net.(*UDPConn).readFromUDP
++3186 149 0
+cfl=(24) /usr/local/go/src/net/udpsock_posix.go
+cfn=(36) net.(*UDPConn).readFrom
+calls=0 +10675 52
+* * 14
+
+ob=(1)
+fl=(23)
+fn=(37) net.(*UDPConn).ReadFrom
++410 158 0
+cfl=(23)
+cfn=(35)
+calls=0 * 149
+* * 14
+
+ob=(1)
+fl=(24)
+fn=(36)
++7079 52 0
+cfl=(17)
+cfn=(29)
+calls=0 -116837 66
+* * 14
+
+ob=(1)
+fl=(15)
+fn=(38) crypto/tls.(*Conn).readRecordOrCCS
++299199 625 0
+cfl=(15)
+cfn=(39) crypto/tls.(*Conn).readFromUntil
+calls=0 +309997 827
+* * 1
+
+ob=(1)
+fl=(15)
+fn=(26)
++10315 805 0
+cfl=(19)
+cfn=(31)
+calls=0 -347595 179
+* * 1
+
+ob=(1)
+fl=(15)
+fn=(39)
++483 827 0
+cfl=(14)
+cfn=(25)
+calls=0 0x500b97 211
+* * 1
+
+ob=(1)
+fl=(15)
+fn=(40) crypto/tls.(*Conn).Read
++14490 1369 0
+cfl=(15)
+cfn=(41) crypto/tls.(*Conn).readRecord
+calls=0 +14490 587
+* * 1
+
+ob=(1)
+fl=(15)
+fn=(41)
+* 587 0
+cfl=(15)
+cfn=(38)
+calls=0 -25288 625
+* * 1
+
+ob=(1)
+fl=(25) /usr/local/go/src/bufio/bufio.go
+fn=(42) bufio.(*Reader).fill
++246667 113 0
+cfl=(26) /usr/local/go/src/net/http/server.go
+cfn=(43) net/http.(*connReader).Read
+calls=0 +706707 791
+* * 1
+cfl=(27) /usr/local/go/src/net/http/transport.go
+cfn=(44) net/http.(*readWriteCloserBody).Read
+calls=0 +838384 2406
+* * 1
+
+ob=(1)
+fl=(25)
+fn=(45) bufio.(*Reader).Peek
++304 151 0
+cfl=(25)
+cfn=(42)
+calls=0 * 113
+* * 1
+
+ob=(1)
+fl=(25)
+fn=(46) bufio.(*Reader).ReadByte
++1524 272 0
+cfl=(25)
+cfn=(42)
+calls=0 -304 113
+* * 1
+
+ob=(1)
+fl=(28) /usr/local/go/src/net/http/request.go
+fn=(47) net/http.(*Request).write
++433286 738 0
+cfl=(11)
+cfn=(48) net/http.(*transferWriter).writeBody
+calls=0 +527338 359
+* * 44
+
+ob=(1)
+fl=(26)
+fn=(49) net/http.(*connReader).backgroundRead
++23850 683 0
+cfl=(19)
+cfn=(31)
+calls=0 0x5db204 179
+* * 1
+
+ob=(1)
+fl=(26)
+fn=(43)
++1076 791 0
+cfl=(19)
+cfn=(31)
+calls=0 0x5db204 179
+* * 1
+
+ob=(1)
+fl=(26)
+fn=(50) net/http.(*conn).serve
++23881 2009 0
+cfl=(26)
+cfn=(51) net/http.serverHandler.ServeHTTP
+calls=0 +40547 2938
+* * 1
++360 2044 0
+cfl=(25)
+cfn=(45)
+calls=0 -483617 151
+* * 1
+
+ob=(1)
+fl=(26)
+fn=(52) net/http.HandlerFunc.ServeHTTP
++4813 2136 0
+cfl=(29) /usr/local/go/src/net/http/pprof/pprof.go
+cfn=(53) net/http/pprof.Index
+calls=0 0x8f1f24 384
+* * 1
+
+ob=(1)
+fl=(26)
+fn=(54) net/http.(*ServeMux).ServeHTTP
++6425 2514 0
+cfl=(26)
+cfn=(52)
+calls=0 * 2136
+* * 1
+
+ob=(1)
+fl=(26)
+fn=(51)
++5068 2938 0
+cfl=(26)
+cfn=(54)
+calls=0 * 2514
+* * 1
+
+ob=(1)
+fl=(26)
+fn=(55) net/http.(*Server).ListenAndServe
++195 2985 0
+cfl=(26)
+cfn=(56) net/http.(*Server).Serve
+calls=0 +1110 3056
+* * 1
+
+ob=(1)
+fl=(26)
+fn=(56)
++915 3056 0
+cfl=(21)
+cfn=(33)
+calls=0 0x5e33ef 315
+* * 1
+
+ob=(1)
+fl=(11)
+fn=(57) net/http.(*transferWriter).probeRequestBody.func1
++24676 211 0
+cfl=(27)
+cfn=(58) net/http.(*readTrackingBody).Read
+calls=0 +47744 653
+* * 44
+
+ob=(1)
+fl=(11)
+fn=(48)
++2793 359 0
+cfl=(11)
+cfn=(59) net/http.(*transferWriter).doBodyCopy
+calls=0 +4384 412
+* * 44
+
+ob=(1)
+fl=(9)
+fn=(60) io.Copy
++1591 389 0
+cfl=(9)
+cfn=(15)
+calls=0 0x47ea85 412
+* * 44
+
+ob=(1)
+fl=(11)
+fn=(59)
+* 412 0
+cfl=(9)
+cfn=(60)
+calls=0 * 389
+* * 44
+
+ob=(1)
+fl=(11)
+fn=(17)
++10750 1066 0
+cfl=(3)
+cfn=(3)
+calls=0 0x40b0b1 442
+* * 44
+
+ob=(1)
+fl=(27)
+fn=(58)
++7934 653 0
+cfl=(30) /home/nathanlee/Workspace/WebRTCSignaling/goclient/src/proxyToHttp.go
+cfn=(61) main.(*PacketStream).Read
+calls=0 0x901e15 85
+* * 44
+
+ob=(1)
+fl=(27)
+fn=(44)
++42276 2406 0
+cfl=(15)
+cfn=(40)
+calls=0 -796108 1369
+* * 1
+
+ob=(1)
+fl=(27)
+fn=(62) net/http.(*persistConn).writeLoop
++519 2424 0
+cfl=(28)
+cfn=(47)
+calls=0 -156603 738
+* * 44
+
+ob=(1)
+fl=(31) /home/nathanlee/go/pkg/mod/github.com/pion/transport/v2@v2.2.4/connctx/connctx.go
+fn=(63) github.com/pion/transport/v2/connctx.(*connCtx).ReadContext
++246470 98 0
+cfl=(32) /home/nathanlee/go/pkg/mod/github.com/pion/webrtc/v4@v4.0.0-beta.7/internal/mux/endpoint.go
+cfn=(64) github.com/pion/webrtc/v4/internal/mux.(*Endpoint).Read
+calls=0 0x86a75b 44
+* * 2
+
+ob=(1)
+fl=(31)
+fn=(65) github.com/pion/transport/v2/connctx.(*connCtx).ReadContext.func1
++707 83 0
+cfl=(6)
+cfn=(9)
+calls=0 0x44f7e4 327
+* * 2
+
+ob=(1)
+fl=(33) /home/nathanlee/go/pkg/mod/golang.org/x/net@v0.20.0/internal/socket/rawconn_msg.go
+fn=(66) golang.org/x/net/internal/socket.(*Conn).recvMsg
++26746 27 0
+cfl=(20)
+cfn=(32)
+calls=0 0x5def35 44
+* * 5
+
+ob=(1)
+fl=(34) /home/nathanlee/go/pkg/mod/golang.org/x/net@v0.20.0/internal/socket/socket.go
+fn=(67) golang.org/x/net/internal/socket.(*Conn).RecvMsg
++37783 247 0
+cfl=(33)
+cfn=(66)
+calls=0 * 27
+* * 5
+
+ob=(1)
+fl=(35) /home/nathanlee/go/pkg/mod/golang.org/x/net@v0.20.0/ipv4/payload_cmsg.go
+fn=(68) golang.org/x/net/ipv4.(*payloadHandler).ReadFrom
+* 31 0
+cfl=(34)
+cfn=(67)
+calls=0 * 247
+* * 5
+
+ob=(1)
+fl=(36) /home/nathanlee/go/pkg/mod/github.com/pion/dtls/v2@v2.2.7/conn.go
+fn=(69) github.com/pion/dtls/v2.(*Conn).Read
++168595 307 0
+cfl=(6)
+cfn=(9)
+calls=0 0x44f7e4 327
+* * 2
+
+ob=(1)
+fl=(36)
+fn=(70) github.com/pion/dtls/v2.(*Conn).readAndBuffer
++8033 588 0
+cfl=(31)
+cfn=(63)
+calls=0 -233831 98
+* * 2
+
+ob=(1)
+fl=(36)
+fn=(71) github.com/pion/dtls/v2.(*Conn).handshake.func3
++10199 870 0
+cfl=(36)
+cfn=(70)
+calls=0 * 588
+* * 2
+
+ob=(1)
+fl=(36)
+fn=(72) github.com/pion/dtls/v2.(*Conn).handshake.func2
++1574 851 0
+cfl=(37) /home/nathanlee/go/pkg/mod/github.com/pion/dtls/v2@v2.2.7/handshaker.go
+cfn=(73) github.com/pion/dtls/v2.(*handshakeFSM).Run
+calls=0 +67465 189
+* * 2
+
+ob=(1)
+fl=(37)
+fn=(73)
++65891 189 0
+cfl=(37)
+cfn=(74) github.com/pion/dtls/v2.(*handshakeFSM).finish
+calls=0 +70013 322
+* * 2
+
+ob=(1)
+fl=(37)
+fn=(74)
++4122 322 0
+cfl=(6)
+cfn=(9)
+calls=0 0x44f7e4 327
+* * 2
+
+ob=(1)
+fl=(38) /home/nathanlee/go/pkg/mod/github.com/pion/sctp@v1.8.9/association.go
+fn=(75) github.com/pion/sctp.(*Association).readLoop
++20116 535 0
+cfl=(36)
+cfn=(69)
+calls=0 -89819 307
+* * 2
+
+ob=(1)
+fl=(38)
+fn=(76) github.com/pion/sctp.(*Association).writeLoop
++2573 584 0
+cfl=(6)
+cfn=(9)
+calls=0 0x44f7e4 327
+* * 2
+
+ob=(1)
+fl=(39) /home/nathanlee/go/pkg/mod/github.com/pion/sctp@v1.8.9/stream.go
+fn=(77) github.com/pion/sctp.(*Stream).ReadSCTP
++111038 147 0
+cfl=(8)
+cfn=(14)
+calls=0 0x47a844 70
+* * 2
+
+ob=(1)
+fl=(40) /home/nathanlee/go/pkg/mod/github.com/pion/datachannel@v1.5.5/datachannel.go
+fn=(78) github.com/pion/datachannel.Accept
++18181 123 0
+cfl=(38)
+cfn=(79) github.com/pion/sctp.(*Association).AcceptStream
+calls=0 +18181 1388
+* * 2
+
+ob=(1)
+fl=(38)
+fn=(79)
+* 1388 0
+cfl=(3)
+cfn=(5)
+calls=0 0x40b0d1 447
+* * 2
+
+ob=(1)
+fl=(40)
+fn=(80) github.com/pion/datachannel.(*DataChannel).ReadDataChannel
++1337 193 0
+cfl=(39)
+cfn=(77)
+calls=0 -18181 147
+* * 2
+
+ob=(1)
+fl=(41) /home/nathanlee/go/pkg/mod/github.com/pion/transport/v3@v3.0.1/packetio/buffer.go
+fn=(81) github.com/pion/transport/v3/packetio.(*Buffer).Read
++67771 267 0
+cfl=(6)
+cfn=(9)
+calls=0 0x44f7e4 327
+* * 8
+
+ob=(1)
+fl=(42) /home/nathanlee/go/pkg/mod/github.com/pion/srtp/v3@v3.0.1/session.go
+fn=(82) github.com/pion/srtp/v3.(*session).start.func1
++12768 144 0
+cfl=(32)
+cfn=(64)
+calls=0 +681325 44
+* * 4
+
+ob=(1)
+fl=(43) /home/nathanlee/go/pkg/mod/github.com/pion/srtp/v3@v3.0.1/session_srtcp.go
+fn=(83) github.com/pion/srtp/v3.(*SessionSRTCP).AcceptStream
++2487 96 0
+cfl=(3)
+cfn=(5)
+calls=0 0x40b0d1 447
+* * 2
+
+ob=(1)
+fl=(44) /home/nathanlee/go/pkg/mod/github.com/pion/srtp/v3@v3.0.1/session_srtp.go
+fn=(84) github.com/pion/srtp/v3.(*SessionSRTP).AcceptStream
++4192 98 0
+cfl=(3)
+cfn=(5)
+calls=0 0x40b0d1 447
+* * 2
+
+ob=(1)
+fl=(45) /home/nathanlee/go/pkg/mod/github.com/pion/mdns@v0.0.9/conn.go
+fn=(85) github.com/pion/mdns.(*Conn).start
++103135 319 0
+cfl=(35)
+cfn=(68)
+calls=0 -498877 31
+* * 5
+
+ob=(1)
+fl=(46) /home/nathanlee/go/pkg/mod/github.com/pion/turn/v3@v3.0.1/internal/client/periodic_timer.go
+fn=(86) github.com/pion/turn/v3/internal/client.(*PeriodicTimer).Start.func1
++22563 50 0
+cfl=(6)
+cfn=(9)
+calls=0 0x44f7e4 327
+* * 12
+
+ob=(1)
+fl=(47) /home/nathanlee/go/pkg/mod/github.com/pion/turn/v3@v3.0.1/internal/client/udp_conn.go
+fn=(87) github.com/pion/turn/v3/internal/client.(*UDPConn).ReadFrom
++16332 102 0
+cfl=(6)
+cfn=(9)
+calls=0 0x44f7e4 327
+* * 6
+
+ob=(1)
+fl=(48) /home/nathanlee/go/pkg/mod/github.com/pion/turn/v3@v3.0.1/client.go
+fn=(88) github.com/pion/turn/v3.(*Client).Listen.func1
++16423 175 0
+cfl=(49) /home/nathanlee/go/pkg/mod/github.com/pion/turn/v3@v3.0.1/stun_conn.go
+cfn=(89) github.com/pion/turn/v3.(*STUNConn).ReadFrom
+calls=0 +33244 85
+* * 4
+cfl=(23)
+cfn=(37)
+calls=0 0x5e5369 158
+* * 2
+
+ob=(1)
+fl=(49)
+fn=(89)
++16821 85 0
+cfl=(19)
+cfn=(31)
+calls=0 0x5db204 179
+* * 4
+
+ob=(1)
+fl=(50) /home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/agent.go
+fn=(90) github.com/pion/ice/v3.(*Agent).taskLoop
++347326 237 0
+cfl=(6)
+cfn=(9)
+calls=0 0x44f7e4 327
+* * 5
+
+ob=(1)
+fl=(50)
+fn=(91) github.com/pion/ice/v3.(*Agent).connectivityChecks
++6993 480 0
+cfl=(6)
+cfn=(9)
+calls=0 0x44f7e4 327
+* * 5
+
+ob=(1)
+fl=(51) /home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/agent_handlers.go
+fn=(92) github.com/pion/ice/v3.(*Agent).candidatePairRoutine
++27864 45 0
+cfl=(3)
+cfn=(5)
+calls=0 0x40b0d1 447
+* * 5
+
+ob=(1)
+fl=(51)
+fn=(93) github.com/pion/ice/v3.(*Agent).connectionStateRoutine
++114 51 0
+cfl=(3)
+cfn=(5)
+calls=0 0x40b0d1 447
+* * 5
+
+ob=(1)
+fl=(51)
+fn=(94) github.com/pion/ice/v3.(*Agent).candidateRoutine
++302 57 0
+cfl=(3)
+cfn=(5)
+calls=0 0x40b0d1 447
+* * 5
+
+ob=(1)
+fl=(52) /home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/candidate_base.go
+fn=(95) github.com/pion/ice/v3.(*candidateBase).recvLoop
++6208 227 0
+cfl=(23)
+cfn=(37)
+calls=0 0x5e5369 158
+* * 12
+cfl=(47)
+cfn=(87)
+calls=0 -415843 102
+* * 6
+
+ob=(1)
+fl=(53) /home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/transport.go
+fn=(96) github.com/pion/ice/v3.(*Agent).connect
++78862 56 0
+cfl=(6)
+cfn=(9)
+calls=0 0x44f7e4 327
+* * 3
+
+ob=(1)
+fl=(53)
+fn=(97) github.com/pion/ice/v3.(*Conn).Read
++480 76 0
+cfl=(41)
+cfn=(81)
+calls=0 -662390 267
+* * 2
+
+ob=(1)
+fl=(32)
+fn=(64)
++18455 44 0
+cfl=(41)
+cfn=(81)
+calls=0 -662870 267
+* * 6
+
+ob=(1)
+fl=(54) /home/nathanlee/go/pkg/mod/github.com/pion/webrtc/v4@v4.0.0-beta.7/internal/mux/mux.go
+fn=(98) github.com/pion/webrtc/v4/internal/mux.(*Mux).readLoop
++2462 110 0
+cfl=(53)
+cfn=(97)
+calls=0 -18455 76
+* * 2
+
+ob=(1)
+fl=(55) /home/nathanlee/go/pkg/mod/github.com/pion/interceptor@v0.1.25/pkg/nack/generator_interceptor.go
+fn=(99) github.com/pion/interceptor/pkg/nack.(*GeneratorInterceptor).loop
++5707 147 0
+cfl=(6)
+cfn=(9)
+calls=0 0x44f7e4 327
+* * 5
+
+ob=(1)
+fl=(56) /home/nathanlee/go/pkg/mod/github.com/pion/interceptor@v0.1.25/pkg/report/receiver_interceptor.go
+fn=(100) github.com/pion/interceptor/pkg/report.(*ReceiverInterceptor).loop
++14744 100 0
+cfl=(6)
+cfn=(9)
+calls=0 0x44f7e4 327
+* * 5
+
+ob=(1)
+fl=(57) /home/nathanlee/go/pkg/mod/github.com/pion/interceptor@v0.1.25/pkg/report/sender_interceptor.go
+fn=(101) github.com/pion/interceptor/pkg/report.(*SenderInterceptor).loop
++7038 116 0
+cfl=(6)
+cfn=(9)
+calls=0 0x44f7e4 327
+* * 5
+
+ob=(1)
+fl=(58) /home/nathanlee/go/pkg/mod/github.com/pion/interceptor@v0.1.25/pkg/twcc/sender_interceptor.go
+fn=(102) github.com/pion/interceptor/pkg/twcc.(*SenderInterceptor).loop
++8939 180 0
+cfl=(6)
+cfn=(9)
+calls=0 0x44f7e4 327
+* * 5
+
+ob=(1)
+fl=(59) /home/nathanlee/go/pkg/mod/github.com/pion/webrtc/v4@v4.0.0-beta.7/datachannel.go
+fn=(103) github.com/pion/webrtc/v4.(*DataChannel).readLoop
++30324 361 0
+cfl=(40)
+cfn=(80)
+calls=0 -787986 193
+* * 2
+
+ob=(1)
+fl=(53)
+fn=(104) github.com/pion/ice/v3.(*Agent).Accept
++45227 24 0
+cfl=(53)
+cfn=(96)
+calls=0 -88149 56
+* * 3
+
+ob=(1)
+fl=(60) /home/nathanlee/go/pkg/mod/github.com/pion/webrtc/v4@v4.0.0-beta.7/icetransport.go
+fn=(105) github.com/pion/webrtc/v4.(*ICETransport).Start
+* 145 0
+cfl=(53)
+cfn=(104)
+calls=0 * 24
+* * 3
+
+ob=(1)
+fl=(61) /home/nathanlee/go/pkg/mod/github.com/pion/webrtc/v4@v4.0.0-beta.7/operations.go
+fn=(106) github.com/pion/webrtc/v4.(*operations).start
++33967 93 0
+cfl=(62) /home/nathanlee/go/pkg/mod/github.com/pion/webrtc/v4@v4.0.0-beta.7/peerconnection.go
+cfn=(107) github.com/pion/webrtc/v4.(*PeerConnection).SetRemoteDescription.func2
+calls=0 +71350 1218
+* * 3
+
+ob=(1)
+fl=(62)
+fn=(107)
++37383 1218 0
+cfl=(62)
+cfn=(108) github.com/pion/webrtc/v4.(*PeerConnection).startTransports
+calls=0 +71905 2268
+* * 3
+
+ob=(1)
+fl=(62)
+fn=(109) github.com/pion/webrtc/v4.(*PeerConnection).undeclaredRTPMediaProcessor
++18166 1661 0
+cfl=(44)
+cfn=(84)
+calls=0 -847669 98
+* * 2
+
+ob=(1)
+fl=(62)
+fn=(110) github.com/pion/webrtc/v4.(*PeerConnection).undeclaredRTCPMediaProcessor
++1576 1705 0
+cfl=(43)
+cfn=(83)
+calls=0 -870027 96
+* * 2
+
+ob=(1)
+fl=(62)
+fn=(108)
++14780 2268 0
+cfl=(60)
+cfn=(105)
+calls=0 -91092 145
+* * 3
+
+ob=(1)
+fl=(63) /home/nathanlee/go/pkg/mod/github.com/pion/webrtc/v4@v4.0.0-beta.7/sctptransport.go
+fn=(111) github.com/pion/webrtc/v4.(*SCTPTransport).acceptDataChannels
++61585 178 0
+cfl=(40)
+cfn=(78)
+calls=0 -970746 123
+* * 2
+
+ob=(1)
+fl=(64) /usr/local/go/src/runtime/pprof/pprof.go
+fn=(112) runtime/pprof.(*Profile).WriteTo
++199936 329 0
+cfl=(64)
+cfn=(113) runtime/pprof.writeGoroutine
+calls=0 +213599 694
+* * 1
+
+ob=(1)
+fl=(64)
+fn=(113)
++13663 694 0
+cfl=(64)
+cfn=(114) runtime/pprof.writeRuntimeProfile
+calls=0 +14123 734
+* * 1
+
+ob=(1)
+fl=(64)
+fn=(114)
++460 734 0
+cfl=(2)
+cfn=(10)
+calls=0 0x46bebc 844
+* * 1
+
+ob=(1)
+fl=(29)
+fn=(115) net/http/pprof.handler.ServeHTTP
++56183 267 0
+cfl=(64)
+cfn=(112)
+calls=0 -14123 329
+* * 1
+
+ob=(1)
+fl=(29)
+fn=(53)
++2813 384 0
+cfl=(29)
+cfn=(115)
+calls=0 * 267
+* * 1
+
+ob=(1)
+fl=(65) /home/nathanlee/go/pkg/mod/nhooyr.io/websocket@v1.8.10/conn.go
+fn=(116) nhooyr.io/websocket.newConn.func2
++16429 137 0
+cfl=(65)
+cfn=(117) nhooyr.io/websocket.(*Conn).timeoutLoop
+calls=0 +17902 182
+* * 1
+
+ob=(1)
+fl=(65)
+fn=(117)
++1473 182 0
+cfl=(6)
+cfn=(9)
+calls=0 0x44f7e4 327
+* * 1
+
+ob=(1)
+fl=(66) /home/nathanlee/go/pkg/mod/nhooyr.io/websocket@v1.8.10/frame.go
+fn=(118) nhooyr.io/websocket.readFrameHeader
++13886 56 0
+cfl=(25)
+cfn=(46)
+calls=0 0x672d46 272
+* * 1
+
+ob=(1)
+fl=(67) /home/nathanlee/go/pkg/mod/nhooyr.io/websocket@v1.8.10/read.go
+fn=(119) nhooyr.io/websocket.(*Conn).readLoop
++5172 175 0
+cfl=(67)
+cfn=(120) nhooyr.io/websocket.(*Conn).readFrameHeader
+calls=0 +7048 217
+* * 1
+
+ob=(1)
+fl=(67)
+fn=(120)
++1876 217 0
+cfl=(66)
+cfn=(118)
+calls=0 -5172 56
+* * 1
+
+ob=(1)
+fl=(67)
+fn=(121) nhooyr.io/websocket.(*Conn).reader
++3980 344 0
+cfl=(67)
+cfn=(119)
+calls=0 -1876 175
+* * 1
+
+ob=(1)
+fl=(67)
+fn=(122) nhooyr.io/websocket.(*Conn).Reader
++17136 37 0
+cfl=(67)
+cfn=(121)
+calls=0 * 344
+* * 1
+
+ob=(1)
+fl=(68) /home/nathanlee/go/pkg/mod/nhooyr.io/websocket@v1.8.10/wsjson/wsjson.go
+fn=(123) nhooyr.io/websocket/wsjson.read
+* 24 0
+cfl=(67)
+cfn=(122)
+calls=0 * 37
+* * 1
+
+ob=(1)
+fl=(5)
+fn=(8)
++3366 25 0
+cfl=(69) /home/nathanlee/Workspace/WebRTCSignaling/goclient/src/webrtcClient.go
+cfn=(124) main.Signal
+calls=0 +15440 219
+* * 1
+
+ob=(1)
+fl=(30)
+fn=(61)
++1947 85 0
+cfl=(3)
+cfn=(5)
+calls=0 0x40b0d1 447
+* * 44
+
+ob=(1)
+fl=(69)
+fn=(125) main.ws
++8183 153 0
+cfl=(68)
+cfn=(126) nhooyr.io/websocket/wsjson.Read
+calls=0 +8183 18
+* * 1
+
+ob=(1)
+fl=(68)
+fn=(126)
+* 18 0
+cfl=(68)
+cfn=(123)
+calls=0 -13496 24
+* * 1
+
+ob=(1)
+fl=(69)
+fn=(124)
++1944 219 0
+cfl=(69)
+cfn=(125)
+calls=0 * 153
+* * 1
+
+ob=(1)
+fl=(5)
+fn=(127) main.main.func1
++309 16 0
+cfl=(26)
+cfn=(128) net/http.ListenAndServe
+calls=0 +309 3239
+* * 1
+
+ob=(1)
+fl=(26)
+fn=(128)
+* 3239 0
+cfl=(26)
+cfn=(55)
+calls=0 0x6eca50 2985
+* * 1
