@@ -3,8 +3,9 @@ import { connect } from './peer'
 import { connectSW } from './peer2';
 import './style.css'
 import { log, sleep } from './utils'
+import { test_connection } from './wrtcBenchmarks';
 
-const waitForSW = async () => {
+export const waitForSW = async () => {
   const registration = await navigator.serviceWorker.ready;
 
   return registration
@@ -14,6 +15,11 @@ const debug = false
 
 document.getElementById("makeDom")?.addEventListener("click", async () => {
   await createDom(window.location.pathname)
+})
+
+document.getElementById("connectionTest")?.addEventListener("click", async () => {
+  
+  await test_connection(getId())
 })
 
 async function initializeSW() {
@@ -46,6 +52,25 @@ function getId() {
   return serverId
 }
 
+function waitForSWReady(registration: ServiceWorkerRegistration) {
+
+  return new Promise<void>((resolve, reject) => {
+
+    registration.active?.postMessage({
+      type: "ready",
+    })
+
+    navigator.serviceWorker.addEventListener("message", (message) => {
+      //console.log(message.data)
+      if (message.data.type === "ready") {
+        resolve()
+      }
+    })  
+  
+  });
+
+}
+
 async function main() {
   console.time("connecting")
 
@@ -53,7 +78,10 @@ async function main() {
   const registration = await initializeSW()
 
   // const [{ dc, pc }] = await Promise.all([connect(id)])
+
+  console.time("connecting sw")
   const {dc, pc} = await connectSW(id, registration)
+  console.timeEnd("connecting sw")
 
   console.timeEnd("connecting")
 
@@ -67,26 +95,23 @@ async function main() {
   })
 
   dc.onmessage = event => {
-    //console.log(event.data)
+    // console.log( event.data)
     registration.active?.postMessage({ type: "data", payload: event.data }, [event.data])
   }
 
-  registration.active?.postMessage({
-    type: "ready",
-  })
-
-
+  console.time("waiting for connection")
+  await waitForSWReady(registration)
+  console.timeEnd("waiting for connection")
 
   log("Connected")
 
   console.log("Fetching page for", window.location.pathname)
 
   const stats = await pc.getStats()
-  stats.entries().forEach((entry) => {
-    // console.log(entry)
-  })
+
 
   if (!debug) {
+    // await sleep(2000)
     await createDom(window.location.pathname)
   }
 }

@@ -286,7 +286,7 @@
     const event = untypedEvent;
     event.respondWith(
       (async () => {
-        if (event.clientId !== lastClient) {
+        if (event.clientId !== lastClient || !peerConnected) {
           peerConnected = false;
           lastClient = event.clientId;
           console.log("Detected restart");
@@ -307,6 +307,8 @@
   });
   var peerConnected = false;
   self.addEventListener("message", async (event) => {
+    const clientObj = event.source;
+    const client = await self.clients.get(clientObj.id);
     switch (event.data.type) {
       case "disconnected":
         console.log("Disconnected, resetting");
@@ -315,13 +317,14 @@
         break;
       case "ready":
         peerConnected = true;
+        client.postMessage({
+          type: "ready"
+        });
         break;
       case "data":
         proxy.handleRequest(event.data.payload);
         break;
       case "createWs":
-        const clientObj = event.source;
-        const client = await self.clients.get(clientObj.id);
         console.log("CLIENT", client);
         if (!ws || ws.serverId !== event.data.payload.serverId || ws.needsRestart) {
           console.log("New WS");

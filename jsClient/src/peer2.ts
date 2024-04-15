@@ -1,5 +1,5 @@
-import { fetchICE, logSelectedCandidatePair } from "./peer"
-import { log } from "./utils"
+import { fetchICE } from "./peer"
+import { log, logSelectedCandidatePair, timers } from "./utils"
 
 // Waits for the service worker ws to be ready
 async function waitForWS(serverId: string, registration: ServiceWorkerRegistration) {
@@ -74,7 +74,7 @@ function generateRandomCode() {
 }
 
 export async function connectSW(serverId: string, registration: ServiceWorkerRegistration) {
-    return new Promise<{ dc: RTCDataChannel, pc: RTCPeerConnection }>(async (resolve, reject) => {
+    return new Promise<{ dc: RTCDataChannel, pc: RTCPeerConnection, stats: { wsTime: number } }>(async (resolve, reject) => {
 
         const iceServers = await fetchICE()
         let pc = new RTCPeerConnection(
@@ -93,9 +93,11 @@ export async function connectSW(serverId: string, registration: ServiceWorkerReg
 
         let dc = pc.createDataChannel('data', {})
         dc.bufferedAmountLowThreshold = 10240
+        dc.binaryType = "arraybuffer"
 
+        let wsTime = 0
         dc.onopen = () => {
-            resolve({ dc, pc })
+            resolve({ dc, pc, stats: { wsTime }} )
         }
 
 
@@ -123,8 +125,8 @@ export async function connectSW(serverId: string, registration: ServiceWorkerReg
                 return
             }
 
-
             const msg = JSON.parse(message.data.payload)
+
             switch (msg.mtype) {
                 case "idAssgn":
                     // clientId = msg.id
@@ -151,9 +153,10 @@ export async function connectSW(serverId: string, registration: ServiceWorkerReg
                     console.log("Unknown path: ", msg.mtype)
             }
         })
-        console.time("ws connecting")
+
+        timers.start("Websocket connection")
         await waitForWS(serverId, registration)
-        console.timeEnd("ws connecting")
+        wsTime = timers.end("Websocket connection")
 
         console.log("Waiting for ID")
         console.time("id assigned in")
