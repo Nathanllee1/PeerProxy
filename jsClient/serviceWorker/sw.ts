@@ -31,6 +31,7 @@ self.addEventListener("fetch", async (untypedEvent) => {
             // console.log(new URL(event.request.url).hostname)
 
             if (event.clientId !== lastClient || !peerConnected) {
+                console.log(event.clientId, lastClient, peerConnected)
                 peerConnected = false
                 lastClient = event.clientId
                 console.log("Detected restart")

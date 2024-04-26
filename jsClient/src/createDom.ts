@@ -1,13 +1,24 @@
 import { log } from "./utils";
 
-
 export async function createDom(pagePath: string) {
     log("Creating dom")
 
     const rootdoc = await fetch(pagePath)
 
     if (!rootdoc.ok) {
-        log("Server unavailable")
+        log("Server unavailable", rootdoc.statusText)
+
+        // Make a new document to display the error
+        const errorDoc = document.implementation.createHTMLDocument("Error")
+
+        const errorContent = document.createElement("h3")
+        errorContent.innerText = rootdoc.statusText
+
+        errorDoc.body.appendChild(errorContent)
+        
+        document.body.innerHTML = errorDoc.body.innerHTML
+
+        return
     }
 
     const content = await rootdoc.text()
@@ -26,6 +37,9 @@ export async function createDom(pagePath: string) {
     // Replace the current <body> content
     document.body.innerHTML = newBodyContent;
 
+    // load css first
+    await loadCSS(doc.head);
+
     const headScripts = document.head.querySelectorAll("script");
     const mappedHeadScripts = Array.from(headScripts).map(script => ({type: "head", script}))
 
@@ -37,23 +51,60 @@ export async function createDom(pagePath: string) {
     // TODO: make sure async, defer, and module scripts are handled correctly
 }
 
-async function loadScripts(src: string) {
+type scriptTypes = "head" | "body";
+
+async function loadStylesheet(href: string) {
+    return new Promise<HTMLLinkElement>((resolve, reject) => {
+        const link = document.createElement('link');
+        link.href = href;
+        link.rel = 'stylesheet';
+        link.onload = () => resolve(link);
+        link.onerror = () => reject(new Error(`Stylesheet load error for ${href}`));
+        document.head.appendChild(link);
+    });
+}
+
+async function loadCSS(headContent: HTMLHeadElement) {
+    const resources: Promise<HTMLLinkElement>[] = [];
+    const stylesheets = headContent.querySelectorAll('link[rel="stylesheet"]');
+    stylesheets.forEach(stylesheet => {
+        resources.push(loadStylesheet(stylesheet.href));
+    });
+    await Promise.all(resources);
+}
+
+
+async function loadScripts(srcScript: HTMLScriptElement, type: scriptTypes) {
     return new Promise((resolve, reject) => {
-        console.log("resolving", src)
+        console.log("resolving", srcScript.src)
         const script = document.createElement("script");
-        script.src = src
+        // script.src = srcScript.src
+
+        Array.from(srcScript.attributes).forEach(attr => {
+            script.setAttribute(attr.name, attr.value);
+        });
 
         script.onload = () => resolve(script)
-        script.onerror = () => reject(new Error(`Script load error for ${src}`));
-        document.head.appendChild(script);
+        script.onerror = () => reject(new Error(`Script load error for ${srcScript.src}`));
 
+        console.log(srcScript, type)
+        if (type === "head") {
+            document.head.removeChild(srcScript)
+            document.head.appendChild(script);
+        } else {
+            document.body.removeChild(srcScript)
+            document.body.appendChild(script);
+        }   
     })
 }
 
-async function executeScripts(scripts: {type: string, script: HTMLScriptElement}[]) {
+async function executeScripts(scripts: {type: scriptTypes, script: HTMLScriptElement}[]) {
     let externalScripts = Array.from(scripts).filter(script => script.script.src);
 
-    await Promise.all(externalScripts.map(script => loadScripts(script.script.src)));
+    const loadedScripts = await Promise.all(
+        externalScripts.map(script => loadScripts(script.script, script.type))
+    );
+
     console.log("Loaded external scripts")
 
     // mount non-external scripts
@@ -68,6 +119,7 @@ async function executeScripts(scripts: {type: string, script: HTMLScriptElement}
         newScript.textContent = script.script.textContent;
 
         const container = script.type === "head" ? document.head : document.body;
+        container.removeChild(script.script);
 
         container.appendChild(newScript);
     })

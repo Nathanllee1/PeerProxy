@@ -1,9 +1,10 @@
+import { createFrame } from '../serviceWorker/createPacket';
 import { createDom } from './createDom';
 import { connect } from './peer'
 import { connectSW } from './peer2';
 import './style.css'
-import { log, sleep } from './utils'
-import { test_connection } from './wrtcBenchmarks';
+import { log, sleep, timer, timers } from './utils'
+import { createTimeline, test_connection } from './wrtcBenchmarks';
 
 export const waitForSW = async () => {
   const registration = await navigator.serviceWorker.ready;
@@ -11,16 +12,13 @@ export const waitForSW = async () => {
   return registration
 }
 
-const debug = false
+const debug = true
 
 document.getElementById("makeDom")?.addEventListener("click", async () => {
   await createDom(window.location.pathname)
 })
 
-document.getElementById("connectionTest")?.addEventListener("click", async () => {
-  
-  await test_connection(getId())
-})
+
 
 async function initializeSW() {
 
@@ -36,7 +34,7 @@ async function initializeSW() {
 
 }
 
-function getId() {
+export function getId() {
   const searchParams = new URLSearchParams(window.location.search)
 
   const id = searchParams.get("id")
@@ -65,25 +63,74 @@ function waitForSWReady(registration: ServiceWorkerRegistration) {
       if (message.data.type === "ready") {
         resolve()
       }
-    })  
-  
+    })
+
   });
 
 }
 
+function enableClientSideRouting() {
+  
+  document.addEventListener('DOMContentLoaded', function () {
+    document.body.addEventListener('click', async function (event) {
+      const target = event.target;
+
+      if (!target) {
+        return
+      }
+
+      if (target.tagName !== 'A' || !target.href) {
+        return
+      }
+      const origin = new URL(target.href).origin
+
+      if (origin !== window.location.origin) {
+        return
+      }
+
+      event.preventDefault(); // Prevent the link from triggering a page load
+
+      var url = target.href;
+      await createDom(url); // Load content dynamically
+
+      // Update the URL in the browser address bar
+      window.history.pushState({ path: url }, '', url);
+    });
+  });
+
+  window.addEventListener('popstate', async function (event) {
+    // Handle browser navigation (forward/back)
+    if (event.state && event.state.path) {
+      await createDom(event.state.path);
+    }
+  });
+
+}
+
+async function sendHeartbeat(dc: RTCDataChannel) {
+  setInterval(() => {
+    const testPacket = createFrame(0, 'HEADER', new Uint8Array(), true, 0, true)
+    dc.send(testPacket)
+  }, 1000)
+}
+
 async function main() {
-  console.time("connecting")
+  timers.start("connecting")
+  enableClientSideRouting()
 
   const id = getId()
   const registration = await initializeSW()
 
   // const [{ dc, pc }] = await Promise.all([connect(id)])
 
-  console.time("connecting sw")
-  const {dc, pc} = await connectSW(id, registration)
-  console.timeEnd("connecting sw")
+  timers.start("connecting sw")
+  const { dc, pc, stats } = await connectSW(id, registration, true)
+  sendHeartbeat(dc)
+  timers.end("connecting sw")
 
-  console.timeEnd("connecting")
+  timers.end("connecting")
+
+  createTimeline(stats.events)
 
   // navigator.registerProtocolHandler('web+webrtc', 'http://localhost:5173/?id=%s')
   navigator.serviceWorker.addEventListener("message", (message) => {
@@ -105,13 +152,7 @@ async function main() {
 
   log("Connected")
 
-  console.log("Fetching page for", window.location.pathname)
-
-  const stats = await pc.getStats()
-
-
   if (!debug) {
-    // await sleep(2000)
     await createDom(window.location.pathname)
   }
 }

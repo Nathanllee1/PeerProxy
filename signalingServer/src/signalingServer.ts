@@ -124,10 +124,14 @@ app.ws("/", function (ws, req) {
         default:
             console.error("Unknown route", req.query)
     }
-
-
-
 });
+
+
+app.ws("/signaling2", function (ws, req) {
+    
+})
+
+
 
 app.listen(3000, "", () => {
     console.log("Listening")

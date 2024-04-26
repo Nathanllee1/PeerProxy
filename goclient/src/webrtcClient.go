@@ -215,12 +215,13 @@ func retryWS(clients Clients, iceServers *[]webrtc.ICEServer) {
 	// Connect to the WebSocket server
 	for {
 		connection, _, err := websocket.Dial(ctx, url, nil)
-		if err != nil {
-			log.Fatal("error connecting to WebSocket server:", err)
+		if err == nil {
+			readWSMessages(clients, iceServers, connection, ctx)
+			connection.Close(websocket.StatusInternalError, "the client crashed")
+
 		}
 
-		readWSMessages(clients, iceServers, connection, ctx)
-		connection.Close(websocket.StatusInternalError, "the client crashed")
+		log.Print("error connecting to WebSocket server:", err)
 
 		time.Sleep(2 * time.Second)
 		fmt.Println("Retrying")
