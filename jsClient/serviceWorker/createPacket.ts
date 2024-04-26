@@ -14,7 +14,7 @@ type MessageType = "HEADER" | "BODY"
     | flags ( message type (1 bit)) (final message (1 bit))  | 
     | payload                                                |
 */
-function createFrame(identifier: number, messageType: MessageType, payload: Uint8Array, finalMessage: boolean, sequenceNum: number) {
+export function createFrame(identifier: number, messageType: MessageType, payload: Uint8Array, finalMessage: boolean, sequenceNum: number, heartbeat: boolean=false) {
 
     const headerSize = 11
 
@@ -26,7 +26,7 @@ function createFrame(identifier: number, messageType: MessageType, payload: Uint
     view.setUint16(8, payload.byteLength & 0xFFFF);
 
 
-    let flags = (messageType === "HEADER" ? 0 : 1) | ((finalMessage ? 1 : 0) << 1)
+    let flags = (messageType === "HEADER" ? 0 : 1) | ((finalMessage ? 1 : 0) << 1) | ((heartbeat ? 1 : 0) << 2)
 
     view.setUint8(10, flags)
 
@@ -71,7 +71,7 @@ export async function createPackets(request: Request, currentIdentifier: number,
     }
 
     const reader = request.body?.getReader()
-    console.log(reader)
+    // console.log(reader)
     if (!reader) {
         console.log(request)
         
@@ -83,9 +83,9 @@ export async function createPackets(request: Request, currentIdentifier: number,
     while (true) {
         // Stream the body
         const { done, value } = await reader?.read()
-        console.log(done)
+        // console.log(done)
         if (done) {
-            console.log("Last frame")
+            // console.log("Last frame")
             const frame = createFrame(currentIdentifier, "BODY", new Uint8Array(), true, frameNum);
             cb(frame); // Assuming cb is a callback function for handling each frame
             break

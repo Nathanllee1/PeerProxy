@@ -46,6 +46,13 @@ app.post('/reflect', memUpload.single('file'), (req, res) => {
   res.send(req.file.buffer);
 });
 
+app.post('/latency', (req, res) => {
+
+  // gets the timestamp in the body and returns it
+  res.send(req.body)
+
+})
+
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)

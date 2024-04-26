@@ -1,4 +1,4 @@
-import { log } from "./utils";
+import { log, logSelectedCandidatePair, timers, timers } from "./utils";
 
 export async function fetchICE() {
 
@@ -9,28 +9,9 @@ export async function fetchICE() {
 }
 
 
-export async function logSelectedCandidatePair(pc: RTCPeerConnection) {
-  const stats = await pc.getStats();
-  let selectedCandidatePair;
-
-  stats.forEach(report => {
-    if (report.type === 'transport') {
-      // Find ID of selected candidate pair
-      selectedCandidatePair = report.selectedCandidatePairId;
-    }
-  });
-
-  if (selectedCandidatePair) {
-    const candidatePair = stats.get(selectedCandidatePair);
-    if (candidatePair) {
-      log(`Local Candidate: ${stats.get(candidatePair.localCandidateId).candidateType}, Address: ${stats.get(candidatePair.localCandidateId).address}`);
-      log(`Remote Candidate: ${stats.get(candidatePair.remoteCandidateId).candidateType}, Address: ${stats.get(candidatePair.remoteCandidateId).address}`);
-    }
-  }
-}
 
 export async function connect(serverId: string) {
-  return new Promise<{ pc: RTCPeerConnection, dc: RTCDataChannel }>(async (resolve, reject) => {
+  return new Promise<{ pc: RTCPeerConnection, dc: RTCDataChannel, stats: {wsTime: number} }>(async (resolve, reject) => {
 
     // const signalingServer = "ws://localhost:8080"
     // const signalingServer = "wss://d1syxz7xf05rvd.cloudfront.net"
@@ -49,10 +30,12 @@ export async function connect(serverId: string) {
       }
     )
 
-    console.time("Websocket connection")
+    let wsTime: number;
+
+    timers.start("Websocket connection")
     const socket = new WebSocket(`${signalingServer}/?role=client&id=${serverId}`)
     socket.addEventListener("open", () => {
-      console.timeEnd("Websocket connection")
+      wsTime = timers.end("Websocket connection")
     })
 
     socket.onmessage = e => {
@@ -105,7 +88,7 @@ export async function connect(serverId: string) {
     dc.binaryType = "arraybuffer"
 
     dc.onopen = () => {
-      resolve({ pc, dc })
+      resolve({ pc, dc, stats: { wsTime }})
     }
 
     pc.onicecandidate = e => {

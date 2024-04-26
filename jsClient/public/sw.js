@@ -6,14 +6,14 @@
   var CONTENT_LENGTH = 16;
   var FLAGS = 8;
   var HEADER_LENGTH = IDENTIFIER_LENGTH + TYPE_LEGNTH + CONTENT_LENGTH + FLAGS;
-  function createFrame(identifier, messageType, payload, finalMessage, sequenceNum) {
+  function createFrame(identifier, messageType, payload, finalMessage, sequenceNum, heartbeat = false) {
     const headerSize = 11;
     let buffer = new ArrayBuffer(headerSize + payload.byteLength);
     let view = new DataView(buffer);
     view.setUint32(0, identifier);
     view.setUint32(4, sequenceNum);
     view.setUint16(8, payload.byteLength & 65535);
-    let flags = (messageType === "HEADER" ? 0 : 1) | (finalMessage ? 1 : 0) << 1;
+    let flags = (messageType === "HEADER" ? 0 : 1) | (finalMessage ? 1 : 0) << 1 | (heartbeat ? 1 : 0) << 2;
     view.setUint8(10, flags);
     let payloadView = new Uint8Array(buffer, headerSize);
     payloadView.set(new Uint8Array(payload));
@@ -40,7 +40,6 @@
       return;
     }
     const reader = request.body?.getReader();
-    console.log(reader);
     if (!reader) {
       console.log(request);
       throw Error("Readable stream does not exist on reader");
@@ -48,9 +47,7 @@
     let frameNum = 0;
     while (true) {
       const { done, value } = await reader?.read();
-      console.log(done);
       if (done) {
-        console.log("Last frame");
         const frame = createFrame(currentIdentifier, "BODY", new Uint8Array(), true, frameNum);
         cb(frame);
         break;
@@ -286,7 +283,8 @@
     const event = untypedEvent;
     event.respondWith(
       (async () => {
-        if (event.clientId !== lastClient) {
+        if (event.clientId !== lastClient || !peerConnected) {
+          console.log(event.clientId, lastClient, peerConnected);
           peerConnected = false;
           lastClient = event.clientId;
           console.log("Detected restart");
@@ -307,6 +305,8 @@
   });
   var peerConnected = false;
   self.addEventListener("message", async (event) => {
+    const clientObj = event.source;
+    const client = await self.clients.get(clientObj.id);
     switch (event.data.type) {
       case "disconnected":
         console.log("Disconnected, resetting");
@@ -315,13 +315,14 @@
         break;
       case "ready":
         peerConnected = true;
+        client.postMessage({
+          type: "ready"
+        });
         break;
       case "data":
         proxy.handleRequest(event.data.payload);
         break;
       case "createWs":
-        const clientObj = event.source;
-        const client = await self.clients.get(clientObj.id);
         console.log("CLIENT", client);
         if (!ws || ws.serverId !== event.data.payload.serverId || ws.needsRestart) {
           console.log("New WS");

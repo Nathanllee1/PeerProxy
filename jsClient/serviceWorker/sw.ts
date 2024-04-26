@@ -30,7 +30,8 @@ self.addEventListener("fetch", async (untypedEvent) => {
         (async (): Promise<Response> => {
             // console.log(new URL(event.request.url).hostname)
 
-            if (event.clientId !== lastClient) {
+            if (event.clientId !== lastClient || !peerConnected) {
+                console.log(event.clientId, lastClient, peerConnected)
                 peerConnected = false
                 lastClient = event.clientId
                 console.log("Detected restart")
@@ -60,9 +61,14 @@ self.addEventListener("fetch", async (untypedEvent) => {
     );
 });
 
+
+
 var peerConnected = false
 
 self.addEventListener("message", async (event) => {
+    const clientObj = event.source as unknown as Client
+    const client = await self.clients.get(clientObj.id)
+
     switch (event.data.type) {
         case "disconnected":
             console.log("Disconnected, resetting")
@@ -71,6 +77,11 @@ self.addEventListener("message", async (event) => {
             break;
         case "ready":
             peerConnected = true;
+
+            client.postMessage({
+                type: "ready"
+            })
+
             break;
 
         case "data":
@@ -78,9 +89,6 @@ self.addEventListener("message", async (event) => {
             break;
 
         case "createWs":
-
-            const clientObj = event.source as unknown as Client
-            const client = await self.clients.get(clientObj.id)
 
             console.log("CLIENT", client)
 

@@ -181,6 +181,8 @@ func makeResponseHeaders(resp *http.Response, streamIdentifier uint32) *Packet {
 
 	resp.Header["status"] = []string{resp.Status}
 	resp.Header["status_code"] = []string{strconv.Itoa(resp.StatusCode)}
+	// resp.Header[""] = []string{resp.Cookies()}
+	// TODO: Add all headers
 
 	respHeaders, err := json.Marshal(resp.Header)
 
@@ -207,6 +209,10 @@ func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *webr
 	reader := bytes.NewReader(rawData.Data)
 
 	packet, err := ParsePacket(reader)
+
+	if packet.IsHeartbeat {
+		return
+	}
 
 	// fmt.Println(packet)
 

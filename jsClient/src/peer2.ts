@@ -1,5 +1,6 @@
-import { fetchICE, logSelectedCandidatePair } from "./peer"
-import { log } from "./utils"
+import { fetchICE } from "./peer"
+import { log, logSelectedCandidatePair, timers } from "./utils"
+import { DataSet } from 'vis-timeline/standalone'
 
 // Waits for the service worker ws to be ready
 async function waitForWS(serverId: string, registration: ServiceWorkerRegistration) {
@@ -37,7 +38,7 @@ async function waitForId(registration: ServiceWorkerRegistration) {
                 type: "signalingMessage",
                 payload: JSON.stringify({
                     mtype: "idReq",
-                    
+
                 })
             }
         )
@@ -73,15 +74,134 @@ function generateRandomCode() {
     return randomCode;
 }
 
-export async function connectSW(serverId: string, registration: ServiceWorkerRegistration) {
-    return new Promise<{ dc: RTCDataChannel, pc: RTCPeerConnection }>(async (resolve, reject) => {
+type cachedConnection = {
+    time: number,
+    candidates: RTCIceCandidate[],
+    answer: RTCSessionDescription,
+    offer: RTCSessionDescriptionInit
 
-        const iceServers = await fetchICE()
-        let pc = new RTCPeerConnection(
-            {
-              iceServers: iceServers
-            }
-          )
+}
+
+type cachedCandidate = {
+    time: number,
+    peerCandidates: RTCIceCandidate[],
+    selfCandidates: RTCIceCandidate[]
+}
+
+
+
+const CACHE_LIFE = 5000
+function loadCachedCandidates(pc: RTCPeerConnection, forwardIceCandidate: (candidate: RTCIceCandidate) => void) {
+
+    const cachedCandidate = sessionStorage.getItem("candidates")
+    if (!cachedCandidate) {
+        return
+    }
+
+    const candidates: cachedCandidate = JSON.parse(cachedCandidate)
+    console.log(Date.now(), candidates.time)
+    /*
+    if (Date.now() - candidates.time > CACHE_LIFE) {
+        return
+    }
+    */
+
+    console.log("Using cached candidates")
+
+    candidates.selfCandidates.forEach(candidate => {
+        pc.addIceCandidate(candidate)
+    })
+
+    candidates.peerCandidates.forEach(forwardIceCandidate)
+
+}
+
+
+async function getCachedConnection() {
+    const { pc, dc } = await createPCDC()
+    // attempt to load and use cached candidates
+    const cached = sessionStorage.getItem("candidates")
+
+    if (!cached) {
+        return
+    }
+
+    const { time, candidates, answer, offer } = JSON.parse(cached) as cachedConnection
+
+    if (Date.now() - time > 5000) {
+        return
+    }
+
+    return new Promise<{ pc: RTCPeerConnection, dc: RTCDataChannel }>((resolve, reject) => {
+        console.log(candidates)
+        console.log("Using cached candidates")
+
+        pc.setLocalDescription(offer)
+        pc.setRemoteDescription(answer)
+
+        candidates.forEach((c) => {
+            pc.addIceCandidate(c)
+        })
+
+        dc.onopen = () => {
+            resolve({ pc, dc })
+        }
+    })
+
+
+}
+
+async function createPCDC() {
+    const iceServers = await fetchICE()
+    let pc = new RTCPeerConnection(
+        {
+            iceServers: iceServers
+        }
+    )
+
+    let dc = pc.createDataChannel('data', {
+        ordered: false,
+    })
+    dc.bufferedAmountLowThreshold = 10240
+    dc.binaryType = "arraybuffer"
+
+    return { pc, dc }
+}
+
+async function connectToWs(events: DataSet<any>, serverId: string, registration: ServiceWorkerRegistration) {
+    timers.start("Websocket connection")
+    await waitForWS(serverId, registration)
+    const wsTime = timers.end("Websocket connection")
+    events.add({ id: 5, content: "WS Connecting", start: new Date().getTime() - wsTime, end: new Date(), group: "Signaling" })
+
+    console.log("Waiting for ID")
+    timers.start("id assigned in")
+    const clientId = await waitForId(registration)
+    const idAssigned = timers.end("id assigned in")
+    events.add({ id: 6, content: "ID Assigned", start: new Date().getTime() - idAssigned, end: new Date(), group: "Signaling" })
+
+    return {clientId, wsTime}
+}
+
+export async function connectSW(serverId: string, registration: ServiceWorkerRegistration, useCachedCandidates = false) {
+    /*
+    const cachedConnection = await getCachedCandidates()
+
+    if (cachedConnection) {
+        return cachedConnection
+    }
+    */
+
+    const events = new DataSet()
+    events.add({ id: 0, content: "Connection Started", start: new Date(), group: "Connection" })
+
+    return new Promise<{ dc: RTCDataChannel, pc: RTCPeerConnection, stats: { wsTime: number, events: DataSet<any> } }>(async (resolve, reject) => {
+        timers.start("iceservers")
+        const [{ pc, dc }, {wsTime, clientId}] = await Promise.all([createPCDC(), connectToWs(events, serverId, registration)])
+
+        const iceTime = timers.end("iceservers")
+        events.add({ content: "Fetching ICE Servers", start: new Date().getTime() - iceTime, end: new Date(), group: "Connection" })
+
 
         pc.oniceconnectionstatechange = () => {
             log("State: " + pc.connectionState)
@@ -91,11 +211,21 @@ export async function connectSW(serverId: string, registration: ServiceWorkerReg
             }
         }
 
-        let dc = pc.createDataChannel('data', {})
-        dc.bufferedAmountLowThreshold = 10240
+
+        const cachedCandidates: cachedCandidate = {
+            time: Date.now(),
+            peerCandidates: [],
+            selfCandidates: []
+        }
 
         dc.onopen = () => {
-            resolve({ dc, pc })
+
+            events.add({ id: 1, content: "Data Channel Opened", start: new Date(), group: "Connection" })
+
+            resolve({ dc, pc, stats: { wsTime, events } })
+
+            sessionStorage.setItem("candidates", JSON.stringify(cachedCandidates))
+            console.timeEnd("answer to connection")
         }
 
 
@@ -104,6 +234,9 @@ export async function connectSW(serverId: string, registration: ServiceWorkerReg
                 return
             }
 
+            events.add({ content: "ICE Candidate", start: new Date(), group: "Client Ice Candidate" })
+
+            cachedCandidates.selfCandidates.push(e.candidate)
 
             registration.active?.postMessage(
                 {
@@ -123,8 +256,12 @@ export async function connectSW(serverId: string, registration: ServiceWorkerReg
                 return
             }
 
-
             const msg = JSON.parse(message.data.payload)
+
+            if (clientId && msg.clientId !== clientId) {
+                return
+            }
+
             switch (msg.mtype) {
                 case "idAssgn":
                     // clientId = msg.id
@@ -132,11 +269,35 @@ export async function connectSW(serverId: string, registration: ServiceWorkerReg
                     break
 
                 case "candidate":
+                    cachedCandidates.peerCandidates.push(msg.candidate)
                     pc.addIceCandidate(msg.candidate)
+
+                    events.add({ content: "ICE Candidate", start: new Date(), group: "Server Ice Candidate" })
+
                     break
 
                 case "answer":
+                    console.time("answer to connection")
                     pc.setRemoteDescription(msg.answer)
+
+                    events.add({ content: "Answer Received", start: new Date(), group: "SDP Exchange" })
+
+                    if (useCachedCandidates) {
+                        loadCachedCandidates(pc, (candidate) => {
+                            registration.active?.postMessage(
+                                {
+                                    type: "signalingMessage",
+                                    payload: JSON.stringify({
+                                        mtype: "candidate",
+                                        id: serverId,
+                                        candidate: candidate,
+                                        clientId
+                                    })
+                                }
+                            )
+                        });
+                    }
+
                     break
 
                 case "heartbeat":
@@ -151,16 +312,14 @@ export async function connectSW(serverId: string, registration: ServiceWorkerReg
                     console.log("Unknown path: ", msg.mtype)
             }
         })
-        console.time("ws connecting")
-        await waitForWS(serverId, registration)
-        console.timeEnd("ws connecting")
 
-        console.log("Waiting for ID")
-        console.time("id assigned in")
-        let clientId = await waitForId(registration)
-        console.timeEnd("id assigned in")
+
+
         const offer = await pc.createOffer()
+
+
         pc.setLocalDescription(offer)
+        events.add({ id: 7, content: "Offer Created", start: new Date(), group: "SDP Exchange" })
 
         registration.active?.postMessage(
             {
