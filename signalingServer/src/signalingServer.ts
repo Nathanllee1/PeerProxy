@@ -59,8 +59,8 @@ const handleServer = (ws: WebSocket, preferredId: string | undefined) => {
     }, 5000)
 }
 
-const handleClient = (ws: WebSocket) => {
-    const id = generateRandomCode()
+const handleClient = (ws: WebSocket, preferedId: string | undefined) => {
+    const id = preferedId ?? generateRandomCode()
     ws.send(JSON.stringify({ mtype: "idAssgn", id }))
 
     clients[id] = ws;
@@ -115,10 +115,12 @@ app.ws("/", function (ws, req) {
     switch (req.query["role"]) {
         case "server":
             handleServer(ws, req.query["id"] as string)
+            // handleClient(ws,  req.query["id"] as string)
+
             break
 
         case "client":
-            handleClient(ws)
+            handleClient(ws,  req.query["id"] as string)
             break
 
         default:

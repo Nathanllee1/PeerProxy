@@ -1,7 +1,15 @@
+import { enableIframe } from "./main";
 import { log } from "./utils";
 
-export async function createDom(pagePath: string) {
+
+
+export async function createDom(pagePath: string, rootDoc: Document = window.document) {
     log("Creating dom")
+
+    if (enableIframe) {
+
+        rootDoc = document.getElementById("webFrame")!.contentDocument as Document;
+    }
 
     const rootdoc = await fetch(pagePath)
 
@@ -9,14 +17,14 @@ export async function createDom(pagePath: string) {
         log("Server unavailable", rootdoc.statusText)
 
         // Make a new document to display the error
-        const errorDoc = document.implementation.createHTMLDocument("Error")
+        const errorDoc = rootDoc.implementation.createHTMLDocument("Error")
 
-        const errorContent = document.createElement("h3")
+        const errorContent = rootDoc.createElement("h3")
         errorContent.innerText = rootdoc.statusText
 
         errorDoc.body.appendChild(errorContent)
         
-        document.body.innerHTML = errorDoc.body.innerHTML
+        rootDoc.body.innerHTML = errorDoc.body.innerHTML
 
         return
     }
@@ -32,85 +40,93 @@ export async function createDom(pagePath: string) {
     const newBodyContent = doc.body.innerHTML;
 
     // Replace the current <head> content
-    document.head.innerHTML = newHeadContent;
+    rootDoc.head.innerHTML = newHeadContent;
 
     // Replace the current <body> content
-    document.body.innerHTML = newBodyContent;
+    rootDoc.body.innerHTML = newBodyContent;
 
     // load css first
-    await loadCSS(doc.head);
+    await loadCSS(doc.head, rootDoc);
 
-    const headScripts = document.head.querySelectorAll("script");
+    const headScripts = rootDoc.head.querySelectorAll("script");
     const mappedHeadScripts = Array.from(headScripts).map(script => ({type: "head", script}))
 
-    const bodyScripts = document.body.querySelectorAll("script");
+    const bodyScripts = rootDoc.body.querySelectorAll("script");
     const mappedBodyScripts = Array.from(bodyScripts).map(script => ({type: "body", script}))
 
-    await executeScripts([...mappedHeadScripts, ...mappedBodyScripts])
+    await executeScripts([...mappedHeadScripts, ...mappedBodyScripts], rootDoc)
 
     // TODO: make sure async, defer, and module scripts are handled correctly
 }
 
 type scriptTypes = "head" | "body";
 
-async function loadStylesheet(href: string) {
+async function loadStylesheet(href: string, rootDoc: Document) {
     return new Promise<HTMLLinkElement>((resolve, reject) => {
-        const link = document.createElement('link');
+        const link = rootDoc.createElement('link');
         link.href = href;
         link.rel = 'stylesheet';
         link.onload = () => resolve(link);
         link.onerror = () => reject(new Error(`Stylesheet load error for ${href}`));
-        document.head.appendChild(link);
+        rootDoc.head.appendChild(link);
     });
 }
 
-async function loadCSS(headContent: HTMLHeadElement) {
+async function loadCSS(headContent: HTMLHeadElement, rootDoc: Document) {
     const resources: Promise<HTMLLinkElement>[] = [];
     const stylesheets = headContent.querySelectorAll('link[rel="stylesheet"]');
+
     stylesheets.forEach(stylesheet => {
-        resources.push(loadStylesheet(stylesheet.href));
+        resources.push(loadStylesheet(stylesheet.href, rootDoc));
     });
     await Promise.all(resources);
 }
 
+type passedScript = {type: scriptTypes, script: HTMLScriptElement}
 
-async function loadScripts(srcScript: HTMLScriptElement, type: scriptTypes) {
+async function loadScripts(srcScript: passedScript, rootDoc: Document) {
     return new Promise((resolve, reject) => {
-        console.log("resolving", srcScript.src)
-        const script = document.createElement("script");
-        // script.src = srcScript.src
+        console.log("resolving", srcScript.script.src)
+        const script = rootDoc.createElement("script");
 
-        Array.from(srcScript.attributes).forEach(attr => {
+        Array.from(srcScript.script.attributes).forEach(attr => {
             script.setAttribute(attr.name, attr.value);
         });
 
         script.onload = () => resolve(script)
-        script.onerror = () => reject(new Error(`Script load error for ${srcScript.src}`));
+        script.onerror = () => console.error((`Script load error for ${srcScript.script.src}`));
 
-        console.log(srcScript, type)
-        if (type === "head") {
-            document.head.removeChild(srcScript)
-            document.head.appendChild(script);
+        console.log(srcScript,srcScript.type)
+        if (srcScript.type === "head") {
+            rootDoc.head.removeChild(srcScript.script)
+            rootDoc.head.appendChild(script);
         } else {
-            document.body.removeChild(srcScript)
-            document.body.appendChild(script);
-        }   
+            rootDoc.body.removeChild(srcScript.script)
+            rootDoc.body.appendChild(script);
+        }
     })
 }
 
-async function executeScripts(scripts: {type: scriptTypes, script: HTMLScriptElement}[]) {
-    let externalScripts = Array.from(scripts).filter(script => script.script.src);
 
-    const loadedScripts = await Promise.all(
-        externalScripts.map(script => loadScripts(script.script, script.type))
-    );
+async function executeScripts(scripts: passedScript[], rootDoc: Document) {
+    
+    const asyncScripts = scripts.filter(script => script.script.async);
+    const deferScripts = scripts.filter(script => script.script.defer);
+    const moduleScripts = scripts.filter(script => script.script.type === "module");
+    const normalScripts = scripts.filter(script => !script.script.async && !script.script.defer && script.script.type !== "module");
+
+    console.log(normalScripts)
+
+    // Execute scripts based on their type
+    await Promise.all(asyncScripts.map(script => loadScripts(script, rootDoc)));
+    await Promise.all(moduleScripts.map(script => loadScripts(script, rootDoc)));
 
     console.log("Loaded external scripts")
 
     // mount non-external scripts
     const inlineScripts = Array.from(scripts).filter(script => !script.script.src)
     inlineScripts.forEach(script => {
-        const newScript = document.createElement("script");
+        const newScript = rootDoc.createElement("script");
 
         Array.from(script.script.attributes).forEach(attr => {
             newScript.setAttribute(attr.name, attr.value);
@@ -118,9 +134,18 @@ async function executeScripts(scripts: {type: scriptTypes, script: HTMLScriptEle
         
         newScript.textContent = script.script.textContent;
 
-        const container = script.type === "head" ? document.head : document.body;
+        const container = script.type === "head" ? rootDoc.head : rootDoc.body;
         container.removeChild(script.script);
 
         container.appendChild(newScript);
     })
+
+    await Promise.all(deferScripts.map(script => loadScripts(script, rootDoc)));
+    
+    // await Promise.all(normalScripts.map(script => loadScripts(script, rootDoc))); // These are synchronous
+
+    for (const script of normalScripts) {
+        await loadScripts(script, rootDoc)
+    }
+
 }

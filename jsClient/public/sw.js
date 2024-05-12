@@ -141,13 +141,11 @@
         if (!(this.currentPacketNum in this.outOfOrderPackets)) {
           break;
         }
-        console.log("Adding packet from out of order", this.currentPacketNum);
         this.controller.enqueue(this.outOfOrderPackets[this.currentPacketNum]);
         delete this.outOfOrderPackets[this.currentPacketNum];
         this.currentPacketNum++;
       }
       if (this.packetsIngested === this.lastPacketNum + 1 && this.lastPacketFound && this.currentPacketNum === this.lastPacketNum + 1) {
-        console.log("Closing stream", item);
         this.closeStream();
       }
       return;

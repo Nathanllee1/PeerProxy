@@ -77,6 +77,30 @@ func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServ
 			delete(clients, clientId)
 		}
 	})
+	/*
+		var id uint16 = 0
+		var ordered bool = false
+		var negotiated bool = false
+		d, err := peerConnection.CreateDataChannel("data", &webrtc.DataChannelInit{
+			ID:         &id,
+			Ordered:    &ordered,
+			Negotiated: &negotiated,
+		})
+
+		d.OnOpen(func() {
+			fmt.Println("Data channel opened")
+
+		})
+
+		d.OnMessage(func(message webrtc.DataChannelMessage) {
+			// fmt.Printf("Message from DataChannel '%s': '%s'\n", d.Label(), string(message.Data))
+			fmt.Println(message.Data)
+			go ProxyDCMessage(message, clientId, d)
+
+		})
+
+		defer d.Close()
+	*/
 
 	// Send the current time via a DataChannel to the remote peer every 3 seconds
 	peerConnection.OnDataChannel(func(d *webrtc.DataChannel) {
