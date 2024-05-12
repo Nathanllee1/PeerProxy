@@ -79,7 +79,7 @@ export class CustomStream {
                 break
             }
 
-            console.log("Adding packet from out of order",this.currentPacketNum)
+            // console.log("Adding packet from out of order",this.currentPacketNum)
 
 
             this.controller.enqueue(this.outOfOrderPackets[this.currentPacketNum])
@@ -91,7 +91,7 @@ export class CustomStream {
 
         
         if (this.packetsIngested === this.lastPacketNum + 1 && this.lastPacketFound && this.currentPacketNum === this.lastPacketNum + 1) {
-            console.log("Closing stream", item)
+            // console.log("Closing stream", item)
 
             this.closeStream()
             

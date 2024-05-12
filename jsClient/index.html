@@ -1,25 +1,35 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Vite + TS</title>
-  </head>
-  <body>
-    <div id="log"></div>
-    <script type="module" src="/src/main.ts"></script>
-    <div id="displayedImage"></div>
-    <button id="makeDom">Create DOM</button>
-    <button id="connectionTest">Benchmark Connection Types</button>
-    <button id="connectionSpeed">Test Data Channel Speed</button>
-    <button id="latency">Test HTTP Latency</button>
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vite + TS</title>
 
-    <div id="latencyGraph"></div>
+  <script>
 
-    <div id="speedGraph"></div>
-    <div id="timeline"></div>
-    <div id="results"></div>
-  </body>
+  </script>
+</head>
+
+<body>
+  <div id="log"></div>
+  <script type="module" src="/src/main.ts"></script>
+  <div id="displayedImage"></div>
+  <button id="makeDom">Create DOM</button>
+  <button id="connectionTest">Benchmark Connection Types</button>
+  <button id="connectionSpeed">Test Data Channel Speed</button>
+  <button id="latency">Test HTTP Latency</button>
+
+  <div id="latencyGraph"></div>
+
+  <div id="speedGraph"></div>
+  <div id="timeline"></div>
+  <div id="results"></div>
+
+  <iframe id="webFrame" width="50%" height="50%" src="iframe.html"></iframe>
+
+
+</body>
+
 </html>

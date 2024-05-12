@@ -13,6 +13,7 @@ export const waitForSW = async () => {
 }
 
 const debug = true
+export const enableIframe = true
 
 document.getElementById("makeDom")?.addEventListener("click", async () => {
   await createDom(window.location.pathname)
@@ -95,14 +96,20 @@ function enableClientSideRouting() {
 
       // Update the URL in the browser address bar
       window.history.pushState({ path: url }, '', url);
+
+      console.log("going to ", url)
     });
   });
 
   window.addEventListener('popstate', async function (event) {
+    console.log("going back!", event.state, event.state?.path, window.location.pathname)
     // Handle browser navigation (forward/back)
     if (event.state && event.state.path) {
       await createDom(event.state.path);
+      return
     }
+
+    await createDom(window.location.pathname, );
   });
 
 }

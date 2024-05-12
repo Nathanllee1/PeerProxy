@@ -25,10 +25,10 @@ let lastClient: string = ""
 self.addEventListener("fetch", async (untypedEvent) => {
 
     const event = untypedEvent as FetchEvent
+    // console.log(new URL(event.request.url).hostname)
 
     event.respondWith(
         (async (): Promise<Response> => {
-            // console.log(new URL(event.request.url).hostname)
 
             if (event.clientId !== lastClient || !peerConnected) {
                 console.log(event.clientId, lastClient, peerConnected)

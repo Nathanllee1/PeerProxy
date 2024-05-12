@@ -161,6 +161,8 @@ async function createPCDC() {
 
     let dc = pc.createDataChannel('data', {
         ordered: false,
+        // negotiated: true,
+        id: 0
     })
     dc.bufferedAmountLowThreshold = 10240
     dc.binaryType = "arraybuffer"
