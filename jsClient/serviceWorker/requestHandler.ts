@@ -32,9 +32,8 @@ export class HTTPProxy {
     }
 
     async makeRequest(request: Request, client: Client): Promise<Response> {
-
+        // console.log("Requesting", request.url, client.id)
         await createPackets(request, this.currentIdentifier, (frame) => {
-            // console.log(frame)
             client.postMessage({payload: frame, type: "data"})
 
         })
@@ -51,6 +50,12 @@ export class HTTPProxy {
         const packet = parsePacket(reqObj)
 
         if (packet.messageType === "BODY") {
+
+            if (!this.responses[packet.identifier]) {
+                console.error("No response found for", packet.identifier)
+                return
+            }
+
             this.responses[packet.identifier].addItem(packet)
 
             return

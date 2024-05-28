@@ -197,6 +197,10 @@
     handleRequest(reqObj) {
       const packet = parsePacket(reqObj);
       if (packet.messageType === "BODY") {
+        if (!this.responses[packet.identifier]) {
+          console.error("No response found for", packet.identifier);
+          return;
+        }
         this.responses[packet.identifier].addItem(packet);
         return;
       }
@@ -270,6 +274,7 @@
   var ws;
   self.addEventListener("install", (event) => {
     console.log("Service Worker installing.", self);
+    console.log(event);
     self.skipWaiting();
   });
   self.addEventListener("activate", function(e) {
@@ -277,10 +282,38 @@
     self.clients.claim();
   });
   var lastClient = "";
+  var iframeMode = true;
+  var pageClient;
+  async function handleIframeRequest(event, client) {
+    if (!client) {
+      return fetch(event.request);
+    }
+    const clientHostname = new URL(client.url).hostname;
+    if (new URL(event.request.url).hostname !== clientHostname) {
+      return fetch(event.request);
+    }
+    const isRootPage = event.request.headers.get("x-root-page") ? true : false;
+    if (isRootPage) {
+      pageClient = client;
+      return proxy.makeRequest(event.request, client);
+    }
+    if (client.frameType === "top-level") {
+      return fetch(event.request);
+    }
+    const url = new URL(event.request.url);
+    if (url.pathname === "/iframe.html" || url.pathname === "/iframeScript.js") {
+      return fetch(event.request);
+    }
+    return proxy.makeRequest(event.request, pageClient);
+  }
   self.addEventListener("fetch", async (untypedEvent) => {
     const event = untypedEvent;
     event.respondWith(
       (async () => {
+        const client = await self.clients.get(event.clientId);
+        if (iframeMode) {
+          return handleIframeRequest(event, client);
+        }
         if (event.clientId !== lastClient || !peerConnected) {
           console.log(event.clientId, lastClient, peerConnected);
           peerConnected = false;
@@ -288,7 +321,6 @@
           console.log("Detected restart");
           return fetch(event.request);
         }
-        const client = await self.clients.get(event.clientId);
         if (!client || !peerConnected) {
           return fetch(event.request);
         }
@@ -321,7 +353,6 @@
         proxy.handleRequest(event.data.payload);
         break;
       case "createWs":
-        console.log("CLIENT", client);
         if (!ws || ws.serverId !== event.data.payload.serverId || ws.needsRestart) {
           console.log("New WS");
           ws = new WsHandler(event.data.payload.serverId, client);

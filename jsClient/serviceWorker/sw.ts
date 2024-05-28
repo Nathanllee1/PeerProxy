@@ -10,6 +10,8 @@ let ws: WsHandler
 self.addEventListener('install', (event) => {
     console.log('Service Worker installing.', self);
 
+    console.log(event)
+
     self.skipWaiting()
 });
 
@@ -18,17 +20,81 @@ self.addEventListener('activate', function (e) {
     console.log("Activating")
 
     self.clients.claim()
+
 });
 
 let lastClient: string = ""
+
+const iframeMode = true
+
+async function timeout(ms: number, event: FetchEvent, client: Client) {
+    const timeout = new Promise((resolve, reject) => {
+        setTimeout(() => {
+            resolve(fetch(event.request))
+        }, ms)
+    })
+
+    return Promise.race([ proxy.makeRequest(event.request, client)])
+}
+
+
+let pageClient: Client
+async function handleIframeRequest(event: FetchEvent, client: Client) {
+    // console.log({peerConnected})
+
+    if (!client) {
+        return fetch(event.request)
+    }
+
+    // console.log(client.frameType, event.request.url)
+
+    
+    const clientHostname = new URL(client.url).hostname
+    if (new URL(event.request.url).hostname !== clientHostname) {
+        return fetch(event.request)
+    }
+    
+    const isRootPage = event.request.headers.get("x-root-page") ? true : false
+    // console.log("Rootpage?!!", isRootPage)
+    if (isRootPage) {
+        pageClient = client
+
+        return proxy.makeRequest(event.request, client)
+    }
+
+    if (client.frameType === "top-level") {
+        return fetch(event.request)
+    }
+
+    const url = new URL(event.request.url)
+
+    if (url.pathname === "/iframe.html" || url.pathname === "/iframeScript.js") {
+        return fetch(event.request)
+    }
+
+    return proxy.makeRequest(event.request, pageClient)
+
+
+    /*
+    if (event.clientId !== lastClient) {
+        peerConnected = false
+        lastClient = event.clientId
+        return fetch(event.request)
+    }
+    */
+}
 
 self.addEventListener("fetch", async (untypedEvent) => {
 
     const event = untypedEvent as FetchEvent
     // console.log(new URL(event.request.url).hostname)
-
     event.respondWith(
         (async (): Promise<Response> => {
+            const client = await self.clients.get(event.clientId)
+
+            if (iframeMode) {
+                return handleIframeRequest(event, client)
+            }
 
             if (event.clientId !== lastClient || !peerConnected) {
                 console.log(event.clientId, lastClient, peerConnected)
@@ -38,7 +104,6 @@ self.addEventListener("fetch", async (untypedEvent) => {
                 return fetch(event.request)
             }
 
-            const client = await self.clients.get(event.clientId)
 
             if (!client || !peerConnected) {
                 return fetch(event.request)
@@ -68,7 +133,7 @@ var peerConnected = false
 self.addEventListener("message", async (event) => {
     const clientObj = event.source as unknown as Client
     const client = await self.clients.get(clientObj.id)
-
+    // console.log(event, self.clients)
     switch (event.data.type) {
         case "disconnected":
             console.log("Disconnected, resetting")
@@ -89,8 +154,6 @@ self.addEventListener("message", async (event) => {
             break;
 
         case "createWs":
-
-            console.log("CLIENT", client)
 
             if (!ws || ws.serverId !== event.data.payload.serverId || ws.needsRestart) {
                 console.log("New WS")

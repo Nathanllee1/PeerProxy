@@ -6,15 +6,13 @@
   <link rel="icon" type="image/svg+xml" href="/vite.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Vite + TS</title>
+  <script type="module" src="/src/main.ts"></script>
 
-  <script>
-
-  </script>
 </head>
 
 <body>
+  <!--
   <div id="log"></div>
-  <script type="module" src="/src/main.ts"></script>
   <div id="displayedImage"></div>
   <button id="makeDom">Create DOM</button>
   <button id="connectionTest">Benchmark Connection Types</button>
@@ -26,9 +24,20 @@
   <div id="speedGraph"></div>
   <div id="timeline"></div>
   <div id="results"></div>
-
-  <iframe id="webFrame" width="50%" height="50%" src="iframe.html"></iframe>
-
+  -->
+  <iframe src="iframe.html"  style="
+  position: fixed;
+  top: 0px;
+  bottom: 0px;
+  right: 0px;
+  width: 100%;
+  border: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  z-index: 999999;
+  height: 100%;
+" title="iframe" id="webFrame"></iframe>
 
 </body>
 
