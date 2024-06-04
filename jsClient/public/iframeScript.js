@@ -1,11 +1,9 @@
 
-async function getRegistration() {
+async function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) {
         console.error("Browser not supported")
         return
     }
-
-    console.log("HELLO")
 
     let registration = await navigator.serviceWorker.getRegistration()
 
@@ -18,20 +16,12 @@ async function getRegistration() {
     registration = await navigator.serviceWorker.register('/sw.js')
         .catch(error => {
             console.error('Service Worker registration failed in iframe:', error);
+            throw error
         })
 
-    console.log(registration)
     return registration
 }
 
-async function main() {
-    const registration = await getRegistration()
-    console.log(registration)
-    registration?.addEventListener('message', event => {
-        console.log('Message received in iframe:', event.data)
-    })
-}
-
-main()
+registerServiceWorker();
 
 // hiiiiiiiiiiiii nathan :)

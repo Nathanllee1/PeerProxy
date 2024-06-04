@@ -5,8 +5,11 @@ import compression from "compression"
 const app = express()
 const port = 3000
 
+import cookieParser from "cookie-parser"
+
 app.use(express.static("public"))
 app.use(express.text());
+app.use(cookieParser())
 
 app.use(compression())
 
@@ -50,6 +53,20 @@ app.post('/latency', (req, res) => {
 
   // gets the timestamp in the body and returns it
   res.send(req.body)
+
+})
+
+app.get('/cookies', (req, res) => {
+  // get cookies and assign test cookies
+  const cookies = req.cookies
+
+  console.log(cookies)
+
+  res.cookie('test', 'test', {
+    path: "/"
+  })
+
+  res.end()
 
 })
 

@@ -1,7 +1,5 @@
 import { createFrame } from '../serviceWorker/createPacket';
-import { createDom } from './createDom';
-import { createDom2 } from './createDom2';
-import { iframeRunner } from './createIframe';
+import { createDom, setupIframe } from './createDom';
 import { connect } from './peer'
 import { connectSW } from './peer2';
 import './style.css'
@@ -75,10 +73,8 @@ function waitForSWReady(registration: ServiceWorkerRegistration) {
 }
 
 export function enableClientSideRouting(document: Document = window.document) {
-
-
   document.body.addEventListener('click', async function (event) {
-    const target = event.target;
+    const target = event.target as HTMLLinkElement;
 
     if (!target) {
       return
@@ -96,7 +92,7 @@ export function enableClientSideRouting(document: Document = window.document) {
     event.preventDefault(); // Prevent the link from triggering a page load
 
     var url = target.href;
-    await createDom2(url); // Load content dynamically
+    await createDom(url); // Load content dynamically
     console.log("going to ", url)
 
     // Update the URL in the browser address bar
@@ -114,11 +110,11 @@ export function enableClientSideRouting(document: Document = window.document) {
     console.log("going back!", event.state, event.state?.path, window.location.pathname)
     // Handle browser navigation (forward/back)
     if (event.state && event.state.path) {
-      await createDom2(event.state.path);
+      await createDom(event.state.path);
       return
     }
 
-    await createDom2(window.location.pathname,);
+    await createDom(window.location.pathname,);
   });
 
 }
@@ -130,14 +126,15 @@ async function sendHeartbeat(dc: RTCDataChannel) {
   }, 1000)
 }
 
-async function original() {
+async function main() {
   timers.start("connecting")
-  // enableClientSideRouting()
-  console.log("Hello")
+
   const id = getId()
   const registration = await initializeSW()
 
   const { dc, pc } = await connect(id)
+
+  const iframe = await setupIframe()
 
   console.log("Connected")
 
@@ -156,6 +153,17 @@ async function original() {
       case "data":
         dc.send(message.data.payload)
         break
+      
+      case "set-cookie":
+        console.log("Setting cookie", message.data.payload)
+        iframe.contentDocument!.cookie = message.data.payload
+        console.log(iframe.contentDocument!.cookie)
+
+        break
+
+      default:
+        console.log("Unknown message", message.data)
+        break
     }
   })
 
@@ -170,8 +178,8 @@ async function original() {
   log("Connected")
 
   if (!debug) {
-    await createDom2(window.location.pathname)
+    await createDom(window.location.pathname, iframe)
   }
 }
 
-original()
+main()

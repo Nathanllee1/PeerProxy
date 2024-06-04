@@ -34,7 +34,7 @@ async function timeout(ms: number, event: FetchEvent, client: Client) {
         }, ms)
     })
 
-    return Promise.race([ proxy.makeRequest(event.request, client)])
+    return Promise.race([proxy.makeRequest(event.request, client)])
 }
 
 
@@ -48,12 +48,12 @@ async function handleIframeRequest(event: FetchEvent, client: Client) {
 
     // console.log(client.frameType, event.request.url)
 
-    
+
     const clientHostname = new URL(client.url).hostname
     if (new URL(event.request.url).hostname !== clientHostname) {
         return fetch(event.request)
     }
-    
+
     const isRootPage = event.request.headers.get("x-root-page") ? true : false
     // console.log("Rootpage?!!", isRootPage)
     if (isRootPage) {
@@ -72,16 +72,12 @@ async function handleIframeRequest(event: FetchEvent, client: Client) {
         return fetch(event.request)
     }
 
+    // get cookies from request
+    const cookies = event.request.headers.get("cookie")
+    console.log(cookies)
+
     return proxy.makeRequest(event.request, pageClient)
 
-
-    /*
-    if (event.clientId !== lastClient) {
-        peerConnected = false
-        lastClient = event.clientId
-        return fetch(event.request)
-    }
-    */
 }
 
 self.addEventListener("fetch", async (untypedEvent) => {
@@ -92,35 +88,8 @@ self.addEventListener("fetch", async (untypedEvent) => {
         (async (): Promise<Response> => {
             const client = await self.clients.get(event.clientId)
 
-            if (iframeMode) {
-                return handleIframeRequest(event, client)
-            }
+            return handleIframeRequest(event, client)
 
-            if (event.clientId !== lastClient || !peerConnected) {
-                console.log(event.clientId, lastClient, peerConnected)
-                peerConnected = false
-                lastClient = event.clientId
-                console.log("Detected restart")
-                return fetch(event.request)
-            }
-
-
-            if (!client || !peerConnected) {
-                return fetch(event.request)
-            }
-
-            const clientHostname = new URL(client.url).hostname
-
-            // iF the request is not for the proxy, fetch it normally
-            if (new URL(event.request.url).hostname !== clientHostname) {
-                return fetch(event.request)
-            }
-
-            // console.log(event.request)
-
-            const body = await proxy.makeRequest(event.request, client)
-
-            return body
 
         })(),
     );

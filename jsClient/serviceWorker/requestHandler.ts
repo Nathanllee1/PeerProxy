@@ -24,6 +24,8 @@ export class HTTPProxy {
 
     currentIdentifier = 1
 
+    client: Client
+
     reset() {
         console.log("Resetting requests")
         this.requests = {}
@@ -33,9 +35,10 @@ export class HTTPProxy {
 
     async makeRequest(request: Request, client: Client): Promise<Response> {
         // console.log("Requesting", request.url, client.id)
+        this.client = client
+        
         await createPackets(request, this.currentIdentifier, (frame) => {
             client.postMessage({payload: frame, type: "data"})
-
         })
 
         const prom = new Deferred<Response>()
@@ -79,6 +82,24 @@ export class HTTPProxy {
                 continue
             }
 
+            if (headerKey === "Set-Cookie") {
+                console.log("Setting cookies", parsedHeaders[headerKey])
+                for (const cookie of parsedHeaders[headerKey]) {
+
+                    console.log("Setting cookie", cookie)
+                    headers.append("Set-Cookie", cookie);
+
+                    this.client.postMessage({
+                        type: "set-cookie",
+                        payload: cookie
+                    })
+
+                    // document.cookie = cookie
+
+                }
+                continue
+            }
+
             headers.append(headerKey, parsedHeaders[headerKey].join(","))
         }
 
@@ -88,7 +109,7 @@ export class HTTPProxy {
         const response = new Response(body.stream, {
             headers,
             status,
-            statusText
+            statusText,
             
         })
 

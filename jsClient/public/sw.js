@@ -179,6 +179,7 @@
     requests = {};
     responses = {};
     currentIdentifier = 1;
+    client;
     reset() {
       console.log("Resetting requests");
       this.requests = {};
@@ -186,6 +187,7 @@
       this.currentIdentifier = 1;
     }
     async makeRequest(request, client) {
+      this.client = client;
       await createPackets(request, this.currentIdentifier, (frame) => {
         client.postMessage({ payload: frame, type: "data" });
       });
@@ -215,6 +217,18 @@
         }
         if (headerKey === "status") {
           statusText = parsedHeaders[headerKey][0];
+          continue;
+        }
+        if (headerKey === "Set-Cookie") {
+          console.log("Setting cookies", parsedHeaders[headerKey]);
+          for (const cookie of parsedHeaders[headerKey]) {
+            console.log("Setting cookie", cookie);
+            headers.append("Set-Cookie", cookie);
+            this.client.postMessage({
+              type: "set-cookie",
+              payload: cookie
+            });
+          }
           continue;
         }
         headers.append(headerKey, parsedHeaders[headerKey].join(","));
@@ -281,8 +295,6 @@
     console.log("Activating");
     self.clients.claim();
   });
-  var lastClient = "";
-  var iframeMode = true;
   var pageClient;
   async function handleIframeRequest(event, client) {
     if (!client) {
@@ -304,6 +316,8 @@
     if (url.pathname === "/iframe.html" || url.pathname === "/iframeScript.js") {
       return fetch(event.request);
     }
+    const cookies = event.request.headers.get("cookie");
+    console.log(cookies);
     return proxy.makeRequest(event.request, pageClient);
   }
   self.addEventListener("fetch", async (untypedEvent) => {
@@ -311,25 +325,7 @@
     event.respondWith(
       (async () => {
         const client = await self.clients.get(event.clientId);
-        if (iframeMode) {
-          return handleIframeRequest(event, client);
-        }
-        if (event.clientId !== lastClient || !peerConnected) {
-          console.log(event.clientId, lastClient, peerConnected);
-          peerConnected = false;
-          lastClient = event.clientId;
-          console.log("Detected restart");
-          return fetch(event.request);
-        }
-        if (!client || !peerConnected) {
-          return fetch(event.request);
-        }
-        const clientHostname = new URL(client.url).hostname;
-        if (new URL(event.request.url).hostname !== clientHostname) {
-          return fetch(event.request);
-        }
-        const body = await proxy.makeRequest(event.request, client);
-        return body;
+        return handleIframeRequest(event, client);
       })()
     );
   });
