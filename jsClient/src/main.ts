@@ -1,5 +1,5 @@
 import { createFrame } from '../serviceWorker/createPacket';
-import { createDom } from './createDom';
+import { createDom, setupIframe } from './createDom';
 import { connect } from './peer'
 import { connectSW } from './peer2';
 import './style.css'
@@ -12,7 +12,7 @@ export const waitForSW = async () => {
   return registration
 }
 
-const debug = true
+const debug = false
 export const enableIframe = true
 
 document.getElementById("makeDom")?.addEventListener("click", async () => {
@@ -25,6 +25,8 @@ async function initializeSW() {
 
   console.time("waiting for SW")
   const registration = await waitForSW()
+
+  console.log(registration)
 
   registration.active?.postMessage({
     type: "disconnected"
@@ -70,38 +72,41 @@ function waitForSWReady(registration: ServiceWorkerRegistration) {
 
 }
 
-function enableClientSideRouting() {
-  
-  document.addEventListener('DOMContentLoaded', function () {
-    document.body.addEventListener('click', async function (event) {
-      const target = event.target;
+export function enableClientSideRouting(document: Document = window.document) {
+  document.body.addEventListener('click', async function (event) {
+    const target = event.target as HTMLLinkElement;
 
-      if (!target) {
-        return
-      }
+    if (!target) {
+      return
+    }
 
-      if (target.tagName !== 'A' || !target.href) {
-        return
-      }
-      const origin = new URL(target.href).origin
+    if (target.tagName !== 'A' || !target.href) {
+      return
+    }
+    const origin = new URL(target.href).origin
 
-      if (origin !== window.location.origin) {
-        return
-      }
+    if (origin !== window.location.origin) {
+      return
+    }
 
-      event.preventDefault(); // Prevent the link from triggering a page load
+    event.preventDefault(); // Prevent the link from triggering a page load
 
-      var url = target.href;
-      await createDom(url); // Load content dynamically
+    var url = target.href;
+    await createDom(url); // Load content dynamically
+    console.log("going to ", url)
 
-      // Update the URL in the browser address bar
-      window.history.pushState({ path: url }, '', url);
-
-      console.log("going to ", url)
-    });
+    // Update the URL in the browser address bar
+    try {
+      window.parent.history.pushState({ path: url }, '', url);
+      console.log("Updated parent history to ", url);
+    } catch (error) {
+      console.error("Failed to update parent history:", error);
+    }
+    console.log("going to ", url)
   });
 
-  window.addEventListener('popstate', async function (event) {
+
+  window.parent.addEventListener('popstate', async function (event) {
     console.log("going back!", event.state, event.state?.path, window.location.pathname)
     // Handle browser navigation (forward/back)
     if (event.state && event.state.path) {
@@ -109,7 +114,7 @@ function enableClientSideRouting() {
       return
     }
 
-    await createDom(window.location.pathname, );
+    await createDom(window.location.pathname,);
   });
 
 }
@@ -123,21 +128,24 @@ async function sendHeartbeat(dc: RTCDataChannel) {
 
 async function main() {
   timers.start("connecting")
-  enableClientSideRouting()
 
   const id = getId()
   const registration = await initializeSW()
 
-  // const [{ dc, pc }] = await Promise.all([connect(id)])
+  const { dc, pc } = await connect(id)
+
+  const iframe = await setupIframe()
+
+  console.log("Connected")
 
   timers.start("connecting sw")
-  const { dc, pc, stats } = await connectSW(id, registration, true)
+  // const { dc, pc, stats } = await connectSW(id, registration, true)
   sendHeartbeat(dc)
   timers.end("connecting sw")
 
   timers.end("connecting")
 
-  createTimeline(stats.events)
+  // createTimeline(stats.events)
 
   // navigator.registerProtocolHandler('web+webrtc', 'http://localhost:5173/?id=%s')
   navigator.serviceWorker.addEventListener("message", (message) => {
@@ -145,11 +153,21 @@ async function main() {
       case "data":
         dc.send(message.data.payload)
         break
+      
+      case "set-cookie":
+        console.log("Setting cookie", message.data.payload)
+        iframe.contentDocument!.cookie = message.data.payload
+        console.log(iframe.contentDocument!.cookie)
+
+        break
+
+      default:
+        console.log("Unknown message", message.data)
+        break
     }
   })
 
   dc.onmessage = event => {
-    // console.log( event.data)
     registration.active?.postMessage({ type: "data", payload: event.data }, [event.data])
   }
 
@@ -160,20 +178,8 @@ async function main() {
   log("Connected")
 
   if (!debug) {
-    await createDom(window.location.pathname)
+    await createDom(window.location.pathname, iframe)
   }
 }
 
 main()
-
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js', { type: 'module' })
-      .then((registration) => {
-        console.log('SW registered: ', registration);
-      })
-      .catch((registrationError) => {
-        console.log('SW registration failed: ', registrationError);
-      });
-  });
-}

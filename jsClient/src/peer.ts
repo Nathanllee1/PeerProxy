@@ -62,7 +62,9 @@ export async function connect(serverId: string) {
           break
 
         case "Error":
-          console.error(msg)
+          // console.error(msg)
+          log(msg.msg)
+
           break
 
         default:

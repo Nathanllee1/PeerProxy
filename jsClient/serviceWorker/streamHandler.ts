@@ -53,33 +53,24 @@ export class CustomStream {
         this.packetsIngested++;
 
         if (item.finalMessage) {
-            // console.log("Final message", item)
             this.lastPacketFound = true
             this.lastPacketNum = item.sequenceNum
 
         }
 
-
-        // console.log(item, item.identifier, this.currentPacketNum)
-
         if (item.sequenceNum == this.currentPacketNum) {
-            // console.log("enqueing", item)
             this.controller.enqueue(item.payload);
             this.currentPacketNum ++
+
         } else if (item.sequenceNum > this.currentPacketNum) {
-            // console.log("Out of order")
             this.outOfOrderPackets[item.sequenceNum] = item.payload
         }
 
         while (true) {
 
-            // console.log(this.outOfOrderPackets)
-
             if (! (this.currentPacketNum in this.outOfOrderPackets)) {
                 break
             }
-
-            // console.log("Adding packet from out of order",this.currentPacketNum)
 
 
             this.controller.enqueue(this.outOfOrderPackets[this.currentPacketNum])
