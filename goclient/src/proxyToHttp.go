@@ -251,7 +251,7 @@ func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *webr
 
 	// Add headers
 	for headerName, headerVal := range headers {
-		fmt.Println("Adding header", headerName, headerVal)
+		// fmt.Println("Adding header", headerName, headerVal)
 		req.Header.Add(headerName, headerVal)
 	}
 

@@ -1,3 +1,4 @@
+import { cookieManager } from "./cookieManager";
 import { createPackets, parsePacket } from "./createPacket";
 import { CustomStream } from "./streamHandler";
 
@@ -87,7 +88,8 @@ export class HTTPProxy {
                 for (const cookie of parsedHeaders[headerKey]) {
 
                     console.log("Setting cookie", cookie)
-                    headers.append("Set-Cookie", cookie);
+                    
+                    cookieManager.setCookie(cookie) // This is the line that is causing the error;
 
                     this.client.postMessage({
                         type: "set-cookie",

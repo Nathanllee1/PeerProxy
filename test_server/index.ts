@@ -66,6 +66,10 @@ app.get('/cookies', (req, res) => {
     path: "/"
   })
 
+  res.cookie('test2', 'test2', {
+    path: "/"
+  })
+
   res.end()
 
 })
