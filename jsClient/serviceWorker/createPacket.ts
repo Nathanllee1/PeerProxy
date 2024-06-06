@@ -1,5 +1,6 @@
 /// <reference lib="WebWorker" />
 
+import { cookieManager } from "./cookieManager"
 
 const IDENTIFIER_LENGTH = 32
 const TYPE_LEGNTH = 1
@@ -14,7 +15,7 @@ type MessageType = "HEADER" | "BODY"
     | flags ( message type (1 bit)) (final message (1 bit))  | 
     | payload                                                |
 */
-export function createFrame(identifier: number, messageType: MessageType, payload: Uint8Array, finalMessage: boolean, sequenceNum: number, heartbeat: boolean=false) {
+export function createFrame(identifier: number, messageType: MessageType, payload: Uint8Array, finalMessage: boolean, sequenceNum: number, heartbeat: boolean = false) {
 
     const headerSize = 11
 
@@ -45,6 +46,13 @@ function createHeaderPacket(request: Request, currentIdentifier: number): ArrayB
         formattedHeaders[header] = request.headers.get(header)!
     }
 
+    if (request.credentials === "include" || request.credentials === "same-origin") {
+        const cookies = cookieManager.getCookies(new URL(request.url).hostname)
+
+        formattedHeaders["Cookie"] = cookies
+    }
+
+
     formattedHeaders["method"] = request.method
     formattedHeaders["url"] = new URL(request.url).pathname
 
@@ -74,7 +82,7 @@ export async function createPackets(request: Request, currentIdentifier: number,
     // console.log(reader)
     if (!reader) {
         console.log(request)
-        
+
         throw Error("Readable stream does not exist on reader")
     }
 

@@ -9,6 +9,13 @@
             credentials: "include"
         })
 
+        setTimeout(async() => {
+            const res = await fetch("/cookies", {
+            credentials: "include"
+        })
+
+        }, 2000)
+
     }
 
     main()

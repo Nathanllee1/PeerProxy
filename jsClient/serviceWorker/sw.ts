@@ -72,10 +72,6 @@ async function handleIframeRequest(event: FetchEvent, client: Client) {
         return fetch(event.request)
     }
 
-    // get cookies from request
-    const cookies = event.request.headers.get("cookie")
-    console.log(cookies)
-
     return proxy.makeRequest(event.request, pageClient)
 
 }

@@ -1,4 +1,5 @@
 import { createFrame } from '../serviceWorker/createPacket';
+import { setupBenchamrking } from './benchmarking';
 import { createDom, setupIframe } from './createDom';
 import { connect } from './peer'
 import { connectSW } from './peer2';
@@ -38,20 +39,20 @@ async function initializeSW() {
 }
 
 export function getId() {
-  const searchParams = new URLSearchParams(window.location.search)
+  const searchParams = new URLSearchParams(window.location.search);
 
-  const id = searchParams.get("id")
-  let serverId = "foo"
-
-  if (id) {
-    serverId = id
-    if (id.includes("://")) {
-      serverId = id.split("://")[1]
-    }
+  // Extract subdomain as serverId
+  const hostname = window.location.hostname;
+  const parts = hostname.split('.');
+  let serverId = "foo";
+  if (parts.length > 2) {
+    serverId = parts.slice(0, parts.length - 2).join('.');
+    return serverId
   }
 
-  return serverId
+  return serverId;
 }
+
 
 function waitForSWReady(registration: ServiceWorkerRegistration) {
 
@@ -90,14 +91,16 @@ export function enableClientSideRouting(document: Document = window.document) {
     }
 
     event.preventDefault(); // Prevent the link from triggering a page load
+    
 
     var url = target.href;
+    window.parent.history.pushState({ path: url }, '', url);
+
     await createDom(url); // Load content dynamically
     console.log("going to ", url)
 
     // Update the URL in the browser address bar
     try {
-      window.parent.history.pushState({ path: url }, '', url);
       console.log("Updated parent history to ", url);
     } catch (error) {
       console.error("Failed to update parent history:", error);
@@ -110,11 +113,11 @@ export function enableClientSideRouting(document: Document = window.document) {
     console.log("going back!", event.state, event.state?.path, window.location.pathname)
     // Handle browser navigation (forward/back)
     if (event.state && event.state.path) {
-      await createDom(event.state.path);
+      await createDom(event.state.path, document);
       return
     }
 
-    await createDom(window.location.pathname,);
+    await createDom(window.location.pathname, document);
   });
 
 }
@@ -130,11 +133,23 @@ async function main() {
   timers.start("connecting")
 
   const id = getId()
+  console.log("ID", id)
+
+  await setupIframe()
+
   const registration = await initializeSW()
 
   const { dc, pc } = await connect(id)
 
-  const iframe = await setupIframe()
+  let iframe: HTMLIFrameElement
+  if (!debug) {
+    iframe = await setupIframe()
+
+  }
+
+  if (debug) {
+    setupBenchamrking()
+  }
 
   console.log("Connected")
 
@@ -153,11 +168,9 @@ async function main() {
       case "data":
         dc.send(message.data.payload)
         break
-      
+
       case "set-cookie":
-        console.log("Setting cookie", message.data.payload)
         iframe.contentDocument!.cookie = message.data.payload
-        console.log(iframe.contentDocument!.cookie)
 
         break
 
@@ -178,7 +191,7 @@ async function main() {
   log("Connected")
 
   if (!debug) {
-    await createDom(window.location.pathname, iframe)
+    await createDom(window.location.pathname)
   }
 }
 

@@ -235,6 +235,7 @@ func retryWS(clients Clients, iceServers *[]webrtc.ICEServer) {
 	defer cancel()
 
 	// Add logic to retry connection on disconnect with exponential backoff
+	fmt.Println("View page at https://" + ServerId + ".peerproxy.dev")
 
 	// Connect to the WebSocket server
 	for {
@@ -261,7 +262,7 @@ func Signal() {
 	if err != nil {
 		panic(err)
 	}
-	log.Println(iceServers)
+	// log.Println(iceServers)
 
 	clients := make(Clients)
 	retryWS(clients, &iceServers)
