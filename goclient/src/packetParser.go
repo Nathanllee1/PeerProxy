@@ -21,6 +21,7 @@ type Packet struct {
 	IsFinalMessage   bool
 	Payload          []byte
 	IsHeartbeat      bool
+	IsCancel         bool
 }
 
 func (p *Packet) Serialize() []byte {
@@ -50,6 +51,7 @@ type Flags struct {
 	IsFinalMessage bool
 	IsHeader       bool
 	IsHeartbeat    bool
+	IsCancel       bool
 }
 
 func (flags Flags) MakeFlags() uint8 {
@@ -87,6 +89,7 @@ func ParsePacket(rawData io.Reader) (*Packet, error) {
 		IsFinalMessage:   flags.IsFinalMessage,
 		IsHeartbeat:      flags.IsHeartbeat,
 		Payload:          payload,
+		IsCancel:         flags.IsCancel,
 	}, nil
 }
 
@@ -101,6 +104,9 @@ func parseFlags(rawFlags uint8) Flags {
 
 	heartbeatFlag := (rawFlags >> 2) * 0x01
 	flags.IsHeartbeat = heartbeatFlag == 1
+
+	cancelFlag := (rawFlags >> 3) * 0x01
+	flags.IsCancel = cancelFlag == 1
 
 	return flags
 }

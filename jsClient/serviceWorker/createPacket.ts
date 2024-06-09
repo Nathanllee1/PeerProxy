@@ -15,7 +15,8 @@ type MessageType = "HEADER" | "BODY"
     | flags ( message type (1 bit)) (final message (1 bit))  | 
     | payload                                                |
 */
-export function createFrame(identifier: number, messageType: MessageType, payload: Uint8Array, finalMessage: boolean, sequenceNum: number, heartbeat: boolean = false) {
+export function createFrame(identifier: number, messageType: MessageType, payload: Uint8Array, 
+    finalMessage: boolean, sequenceNum: number, heartbeat: boolean = false, cancel: boolean = false) {
 
     const headerSize = 11
 
@@ -27,7 +28,10 @@ export function createFrame(identifier: number, messageType: MessageType, payloa
     view.setUint16(8, payload.byteLength & 0xFFFF);
 
 
-    let flags = (messageType === "HEADER" ? 0 : 1) | ((finalMessage ? 1 : 0) << 1) | ((heartbeat ? 1 : 0) << 2)
+    let flags = (messageType === "HEADER" ? 0 : 1) | 
+        ((finalMessage ? 1 : 0) << 1) | 
+        ((heartbeat ? 1 : 0) << 2) |
+        ((cancel ? 1 : 0) << 3)
 
     view.setUint8(10, flags)
 

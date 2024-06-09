@@ -74,6 +74,27 @@ app.get('/cookies', (req, res) => {
 
 })
 
+app.get("/streaming", (req, res) => {
+  const total = 1024 * 1024
+  let i = 0
+
+  setInterval(() => {
+    res.write("hello")
+    i++
+    if (i === total) {
+      res.end()
+    }
+  }, 1000)
+})
+
+app.get("/redirect", (req, res) => {
+  res.send("redirecting")
+  res.redirect("/redirected") 
+})
+
+app.get("/redirected", (req, res) => {
+  res.send("redirected")
+})
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)

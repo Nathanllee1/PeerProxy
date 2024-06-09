@@ -1,5 +1,5 @@
 import { cookieManager } from "./cookieManager";
-import { createPackets, parsePacket } from "./createPacket";
+import { createFrame, createPackets, parsePacket } from "./createPacket";
 import { CustomStream } from "./streamHandler";
 
 class Deferred<T> {
@@ -31,7 +31,7 @@ export class HTTPProxy {
         console.log("Resetting requests")
         this.requests = {}
         this.responses = {}
-        this.currentIdentifier = 1
+        // this.currentIdentifier = 1
     }
 
     async makeRequest(request: Request, client: Client): Promise<Response> {
@@ -48,6 +48,22 @@ export class HTTPProxy {
         this.currentIdentifier += 1
 
         return prom.promise
+    }
+
+    cancelAllRequests() {
+        for (const id in this.requests) {
+            
+            this.requests[id].reject("Request cancelled")
+
+            const cancelFrame = createFrame(parseInt(id), "BODY", new Uint8Array(), true, 0, false, true)
+
+            this.client.postMessage({
+                type: "data",
+                payload: cancelFrame
+            })
+
+        }
+        this.reset()
     }
 
     handleRequest(reqObj: ArrayBuffer) {
