@@ -78,8 +78,12 @@ export async function connect(serverId: string) {
 
     let dc = pc.createDataChannel('data', {
       // ordered: true,
-
     })
+
+    dc.onclose = () => {
+      console.log("Datachannel Closed")
+      connect(serverId)
+    }
 
     dc.bufferedAmountLowThreshold = 10240
     dc.onbufferedamountlow = () => {

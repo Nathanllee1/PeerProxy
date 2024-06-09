@@ -2,12 +2,14 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/pion/webrtc/v4"
 )
@@ -21,6 +23,7 @@ type PacketStream struct {
 	lastPacketNum     uint32
 	lastPacketFound   bool
 	packetsIngested   int
+	cancel            context.CancelFunc
 }
 
 func sendPacket(dc *webrtc.DataChannel, packet *Packet) {
@@ -33,7 +36,7 @@ func sendPacket(dc *webrtc.DataChannel, packet *Packet) {
 
 }
 
-func makePackets(stream io.ReadCloser, dc *webrtc.DataChannel, streamIdentifier uint32) {
+func makePackets(stream io.ReadCloser, dc *webrtc.DataChannel, streamIdentifier uint32, ctx context.Context) {
 	const payloadSize = 16*1024 - 11
 
 	buffer := make([]byte, payloadSize)
@@ -43,44 +46,51 @@ func makePackets(stream io.ReadCloser, dc *webrtc.DataChannel, streamIdentifier 
 	var payload []byte
 
 	for {
-		n, err := io.ReadFull(stream, buffer)
-		payload = buffer
-		if err != nil {
-			if err == io.EOF {
-				// End of file reached
-				break
+		select {
+		case <-ctx.Done():
+			fmt.Println("Context done")
+			return
+		default:
+			n, err := io.ReadFull(stream, buffer)
+			// fmt.Println("Read", n, err, buffer[:n])
+			payload = buffer
+			if err != nil {
+				if err == io.EOF {
+					// End of file reached
+					finalPacket := Packet{
+						StreamIdentifier: streamIdentifier,
+						PacketNum:        uint32(packetNum),
+						PayloadLength:    uint16(0),
+						IsHeader:         false,
+						IsFinalMessage:   true,
+						Payload:          make([]byte, 0),
+					}
+
+					dc.Send(finalPacket.Serialize())
+					return
+				}
+				if err == io.ErrUnexpectedEOF {
+					// Last chunk might be less than chunk size, process what was read
+					payload = buffer[:n]
+				}
 			}
-			if err == io.ErrUnexpectedEOF {
-				// Last chunk might be less than chunk size, process what was read
-				payload = buffer[:n]
+
+			serializedPacket := Packet{
+				StreamIdentifier: streamIdentifier,
+				PacketNum:        uint32(packetNum),
+				PayloadLength:    uint16(len(payload)),
+				IsHeader:         false,
+				IsFinalMessage:   false,
+				Payload:          payload,
 			}
+
+			sendPacket(dc, &serializedPacket)
+
+			packetNum++
+
+			time.Sleep(10 * time.Millisecond)
 		}
-
-		serializedPacket := Packet{
-			StreamIdentifier: streamIdentifier,
-			PacketNum:        uint32(packetNum),
-			PayloadLength:    uint16(len(payload)),
-			IsHeader:         false,
-			IsFinalMessage:   false,
-			Payload:          payload,
-		}
-
-		sendPacket(dc, &serializedPacket)
-
-		packetNum++
-
 	}
-
-	finalPacket := Packet{
-		StreamIdentifier: streamIdentifier,
-		PacketNum:        uint32(packetNum),
-		PayloadLength:    uint16(0),
-		IsHeader:         false,
-		IsFinalMessage:   true,
-		Payload:          make([]byte, 0),
-	}
-
-	dc.Send(finalPacket.Serialize())
 
 }
 
@@ -212,20 +222,35 @@ func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *webr
 		return
 	}
 
-	// fmt.Println(packet)
+	if packet.IsCancel {
+		requestMu.Lock()
+		fmt.Println(requests, requests[clientId], clientId)
+		fmt.Println("Canceling request", packet.StreamIdentifier)
+
+		if stream, exists := requests[clientId][packet.StreamIdentifier]; exists {
+
+			stream.cancel()
+		}
+		requestMu.Unlock()
+		return
+	}
 
 	if err != nil {
 		fmt.Println("Error parsing packet: ", err)
 	}
 
 	requestMu.Lock()
+
+	// If the client doesn't exist, create it
 	if _, exists := requests[clientId]; !exists {
 		requests[clientId] = make(map[uint32]*PacketStream)
 	}
 
+	// If the stream doesn't exist, create it
 	if _, exists := requests[clientId][packet.StreamIdentifier]; !exists {
 
 		requests[clientId][packet.StreamIdentifier] = makeNewPacketStream()
+		// fmt.Println("Creating new stream", packet.StreamIdentifier, requests[clientId])
 	}
 	requestMu.Unlock()
 
@@ -238,12 +263,17 @@ func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *webr
 		return
 	}
 
+	// Handle a header packet and start an http request
+	ctx, cancel := context.WithCancel(context.Background())
+	stream.cancel = cancel
+
 	headers := parseHeaders(packet.Payload)
 
 	// Construct and make http request
 	serverUrl := fmt.Sprintf("http://localhost:%s%s", ProxyPort, headers["url"])
 	// fmt.Println(headers["method"], serverUrl)
 	req, err := http.NewRequest(headers["method"], serverUrl, stream)
+	req = req.WithContext(ctx)
 
 	if err != nil {
 		fmt.Println("Error creating request", err)
@@ -268,15 +298,15 @@ func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *webr
 	}
 	defer resp.Body.Close()
 
-	//fmt.Println("Response status code:", resp.StatusCode)
-
 	fmt.Println(headers["method"], resp.StatusCode, serverUrl)
 
 	// clean up request
-	delete(requests[clientId], packet.StreamIdentifier)
 
 	headerPacket := makeResponseHeaders(resp, packet.StreamIdentifier)
 	dc.Send(headerPacket.Serialize())
 
-	makePackets(resp.Body, dc, packet.StreamIdentifier)
+	makePackets(resp.Body, dc, packet.StreamIdentifier, ctx)
+
+	delete(requests[clientId], packet.StreamIdentifier)
+
 }

@@ -114,44 +114,14 @@ self.addEventListener("message", async (event) => {
 
             break;
 
+        case "cancelRequests":
+            console.log("Cancelling requests")
+            proxy.cancelAllRequests()
+            break;
+
         case "data":
             proxy.handleRequest(event.data.payload);
             break;
-
-        case "createWs":
-
-            if (!ws || ws.serverId !== event.data.payload.serverId || ws.needsRestart) {
-                console.log("New WS")
-                ws = new WsHandler(event.data.payload.serverId, client)
-            }
-            ws.setNewClient(client)
-            await ws.ready()
-
-            // Tell client ws is ready
-            client.postMessage({
-                type: "createWs",
-                payload: {
-                    reqId: event.data.payload.reqId
-                }
-            })
-
-            break;
-
-        case "signalingMessage":
-
-            // console.log(event.data.payload)
-
-            if (!ws) {
-                console.error("No ws connection")
-            }
-
-            // console.log(ws)
-
-            ws.ws.send(event.data.payload)
-
-            break;
-
-
     }
 
 });

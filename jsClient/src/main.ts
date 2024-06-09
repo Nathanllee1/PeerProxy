@@ -73,61 +73,14 @@ function waitForSWReady(registration: ServiceWorkerRegistration) {
 
 }
 
-export function enableClientSideRouting(document: Document = window.document) {
-  document.body.addEventListener('click', async function (event) {
-    const target = event.target as HTMLLinkElement;
-
-    if (!target) {
-      return
-    }
-
-    if (target.tagName !== 'A' || !target.href) {
-      return
-    }
-    const origin = new URL(target.href).origin
-
-    if (origin !== window.location.origin) {
-      return
-    }
-
-    event.preventDefault(); // Prevent the link from triggering a page load
-    
-
-    var url = target.href;
-    window.parent.history.pushState({ path: url }, '', url);
-
-    await createDom(url); // Load content dynamically
-    console.log("going to ", url)
-
-    // Update the URL in the browser address bar
-    try {
-      console.log("Updated parent history to ", url);
-    } catch (error) {
-      console.error("Failed to update parent history:", error);
-    }
-    console.log("going to ", url)
-  });
-
-
-  window.parent.addEventListener('popstate', async function (event) {
-    console.log("going back!", event.state, event.state?.path, window.location.pathname)
-    // Handle browser navigation (forward/back)
-    if (event.state && event.state.path) {
-      await createDom(event.state.path, document);
-      return
-    }
-
-    await createDom(window.location.pathname, document);
-  });
-
-}
-
 async function sendHeartbeat(dc: RTCDataChannel) {
   setInterval(() => {
     const testPacket = createFrame(0, 'HEADER', new Uint8Array(), true, 0, true)
     dc.send(testPacket)
   }, 1000)
 }
+
+export let registration: ServiceWorkerRegistration
 
 async function main() {
   timers.start("connecting")
@@ -137,9 +90,9 @@ async function main() {
 
   await setupIframe()
 
-  const registration = await initializeSW()
+  registration = await initializeSW()
 
-  const { dc, pc } = await connect(id)
+  const { dc } = await connect(id)
 
   let iframe: HTMLIFrameElement
   if (!debug) {
@@ -153,12 +106,8 @@ async function main() {
 
   console.log("Connected")
 
-  timers.start("connecting sw")
-  // const { dc, pc, stats } = await connectSW(id, registration, true)
   sendHeartbeat(dc)
-  timers.end("connecting sw")
 
-  timers.end("connecting")
 
   // createTimeline(stats.events)
 

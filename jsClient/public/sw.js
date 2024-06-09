@@ -200,14 +200,14 @@
   var CONTENT_LENGTH = 16;
   var FLAGS = 8;
   var HEADER_LENGTH = IDENTIFIER_LENGTH + TYPE_LEGNTH + CONTENT_LENGTH + FLAGS;
-  function createFrame(identifier, messageType, payload, finalMessage, sequenceNum, heartbeat = false) {
+  function createFrame(identifier, messageType, payload, finalMessage, sequenceNum, heartbeat = false, cancel = false) {
     const headerSize = 11;
     let buffer = new ArrayBuffer(headerSize + payload.byteLength);
     let view = new DataView(buffer);
     view.setUint32(0, identifier);
     view.setUint32(4, sequenceNum);
     view.setUint16(8, payload.byteLength & 65535);
-    let flags = (messageType === "HEADER" ? 0 : 1) | (finalMessage ? 1 : 0) << 1 | (heartbeat ? 1 : 0) << 2;
+    let flags = (messageType === "HEADER" ? 0 : 1) | (finalMessage ? 1 : 0) << 1 | (heartbeat ? 1 : 0) << 2 | (cancel ? 1 : 0) << 3;
     view.setUint8(10, flags);
     let payloadView = new Uint8Array(buffer, headerSize);
     payloadView.set(new Uint8Array(payload));
@@ -382,7 +382,6 @@
       console.log("Resetting requests");
       this.requests = {};
       this.responses = {};
-      this.currentIdentifier = 1;
     }
     async makeRequest(request, client) {
       this.client = client;
@@ -393,6 +392,17 @@
       this.requests[this.currentIdentifier] = prom;
       this.currentIdentifier += 1;
       return prom.promise;
+    }
+    cancelAllRequests() {
+      for (const id in this.requests) {
+        this.requests[id].reject("Request cancelled");
+        const cancelFrame = createFrame(parseInt(id), "BODY", new Uint8Array(), true, 0, false, true);
+        this.client.postMessage({
+          type: "data",
+          payload: cancelFrame
+        });
+      }
+      this.reset();
     }
     handleRequest(reqObj) {
       const packet = parsePacket(reqObj);
@@ -442,48 +452,8 @@
     }
   };
 
-  // serviceWorker/wsProxy.ts
-  var WsHandler = class {
-    ws;
-    serverId;
-    client;
-    open = false;
-    wsClosed = true;
-    needsRestart = false;
-    constructor(serverId, client) {
-      const signalingServer = "wss://peepsignal.fly.dev";
-      this.serverId = serverId;
-      this.ws = new WebSocket(`${signalingServer}/?role=client&id=${serverId}`);
-      this.setNewClient(client);
-      this.ws.addEventListener("open", () => {
-        this.open = true;
-      });
-      this.ws.addEventListener("close", () => {
-        this.needsRestart = true;
-      });
-    }
-    // Returns when websocket is open
-    async ready() {
-      if (this.open) {
-        return;
-      }
-      return new Promise((resolve, reject) => {
-        this.ws.addEventListener("open", () => {
-          resolve();
-        });
-      });
-    }
-    setNewClient(client) {
-      this.client = client;
-      this.ws.addEventListener("message", (event) => {
-        client.postMessage({ type: "signalingMessage", payload: event.data });
-      });
-    }
-  };
-
   // serviceWorker/sw.ts
   var proxy = new HTTPProxy();
-  var ws;
   self.addEventListener("install", (event) => {
     console.log("Service Worker installing.", self);
     console.log(event);
@@ -541,28 +511,12 @@
           type: "ready"
         });
         break;
+      case "cancelRequests":
+        console.log("Cancelling requests");
+        proxy.cancelAllRequests();
+        break;
       case "data":
         proxy.handleRequest(event.data.payload);
-        break;
-      case "createWs":
-        if (!ws || ws.serverId !== event.data.payload.serverId || ws.needsRestart) {
-          console.log("New WS");
-          ws = new WsHandler(event.data.payload.serverId, client);
-        }
-        ws.setNewClient(client);
-        await ws.ready();
-        client.postMessage({
-          type: "createWs",
-          payload: {
-            reqId: event.data.payload.reqId
-          }
-        });
-        break;
-      case "signalingMessage":
-        if (!ws) {
-          console.error("No ws connection");
-        }
-        ws.ws.send(event.data.payload);
         break;
     }
   });

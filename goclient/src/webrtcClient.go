@@ -179,7 +179,7 @@ func readWSMessages(clients Clients, iceServers *[]webrtc.ICEServer, connection 
 			var idAsgn IdAssignment
 			json.Unmarshal(rawMsg, &idAsgn)
 
-			log.Printf("Id: %s", idAsgn.Id)
+			// log.Printf("Id: %s", idAsgn.Id)
 
 		case "offer":
 
