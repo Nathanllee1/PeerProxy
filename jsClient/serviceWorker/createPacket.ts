@@ -58,7 +58,9 @@ function createHeaderPacket(request: Request, currentIdentifier: number): ArrayB
 
 
     formattedHeaders["method"] = request.method
-    formattedHeaders["url"] = new URL(request.url).pathname
+    formattedHeaders["url"] = new URL(request.url).pathname + new URL(request.url).search + new URL(request.url).hash
+
+    console.log(formattedHeaders)
 
     // TODO: come up with a more efficient header representation
     const encodedHeader = new TextEncoder().encode(JSON.stringify(formattedHeaders))
@@ -145,7 +147,6 @@ export function parsePacket(buffer: ArrayBuffer): Packet {
     let identifier = view.getUint32(0);
     let sequenceNum = view.getUint32(4);
     let payloadLength = view.getUint16(8);
-    let flags = view.getUint8(10);
 
     const flagCodes = {
         0: [false, false],
@@ -153,6 +154,7 @@ export function parsePacket(buffer: ArrayBuffer): Packet {
         2: [true, false],
         3: [true, true]
     }
+    let flags = view.getUint8(10) as keyof typeof flagCodes;
 
     const [finalMessage, messageType] = flagCodes[flags]
 

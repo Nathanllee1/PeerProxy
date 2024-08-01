@@ -74,6 +74,27 @@ app.get('/cookies', (req, res) => {
 
 })
 
+app.get('/buffer', (req, res) => {
+
+  if (!req.query.size || typeof req.query.size !== 'string') {
+    return res.status(400).send('Missing size parameter');
+  }
+
+  const size = parseInt(req.query.size, 10);
+
+  console.log(size)
+
+  if (isNaN(size) || size < 0) {
+      return res.status(400).send('Invalid size parameter');
+  }
+
+  const buffer = Buffer.alloc(size, 'a'); // Creates a buffer filled with 'a'
+
+  res.set('Content-Type', 'application/octet-stream');
+  res.set('Content-Length', size.toString());
+  res.send(buffer);
+});
+
 app.get("/streaming", (req, res) => {
   const total = 1024 * 1024
   let i = 0

@@ -26,17 +26,21 @@ type PacketStream struct {
 	cancel            context.CancelFunc
 }
 
-func sendPacket(dc *webrtc.DataChannel, packet *Packet) {
+func sendPacket(dc *webrtc.DataChannel, packet *Packet) error {
 
 	err := dc.Send(packet.Serialize())
 
 	if err != nil {
 		fmt.Println("Error sending packet", err)
+
+		return err
 	}
+
+	return nil
 
 }
 
-func makePackets(stream io.ReadCloser, dc *webrtc.DataChannel, streamIdentifier uint32, ctx context.Context) {
+func makePackets(stream io.ReadCloser, dc *webrtc.DataChannel, streamIdentifier uint32, ctx context.Context, cancel context.CancelFunc) {
 	const payloadSize = 16*1024 - 11
 
 	buffer := make([]byte, payloadSize)
@@ -75,7 +79,7 @@ func makePackets(stream io.ReadCloser, dc *webrtc.DataChannel, streamIdentifier 
 				}
 			}
 
-			serializedPacket := Packet{
+			bodyPacket := Packet{
 				StreamIdentifier: streamIdentifier,
 				PacketNum:        uint32(packetNum),
 				PayloadLength:    uint16(len(payload)),
@@ -84,7 +88,13 @@ func makePackets(stream io.ReadCloser, dc *webrtc.DataChannel, streamIdentifier 
 				Payload:          payload,
 			}
 
-			sendPacket(dc, &serializedPacket)
+			err = sendPacket(dc, &bodyPacket)
+
+			if err != nil {
+				// close ctx
+				cancel()
+
+			}
 
 			packetNum++
 
@@ -259,6 +269,9 @@ func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *webr
 	// Handle a body packet
 	if !packet.IsHeader {
 		// fmt.Println("Body", packet)
+
+		// check if data channel is closed
+
 		stream.dataChannel <- *packet
 		return
 	}
@@ -305,7 +318,7 @@ func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *webr
 	headerPacket := makeResponseHeaders(resp, packet.StreamIdentifier)
 	dc.Send(headerPacket.Serialize())
 
-	makePackets(resp.Body, dc, packet.StreamIdentifier, ctx)
+	makePackets(resp.Body, dc, packet.StreamIdentifier, ctx, cancel)
 
 	delete(requests[clientId], packet.StreamIdentifier)
 

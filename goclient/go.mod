@@ -5,6 +5,7 @@ go 1.21.5
 require github.com/pion/webrtc/v4 v4.0.0-beta.7
 
 require (
+	github.com/alecthomas/kong v0.9.0
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/google/uuid v1.3.1 // indirect
 	github.com/pion/datachannel v1.5.5 // indirect

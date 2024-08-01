@@ -1,4 +1,5 @@
-import { registration } from "./main";
+import { debug, registration } from "./main";
+import { sleep } from "./utils";
 
 export function setupIframe() {
 
@@ -18,11 +19,28 @@ export function setupIframe() {
     iframe.height = "900";
     iframe.src = '/iframe.html';
 
+    // if debug, set display to none
+    if (debug) {
+      iframe.style.display = "none";
+    }
+
     document.body.appendChild(iframe);
   });
 }
 
+function getBaseURL(pagePath: string) {
+  // if a file i.e index.html
+  if (pagePath.includes(".")) {
+    return pagePath.split("/").slice(0, -1).join("/") + "/"; 
+  }
+
+  return pagePath;
+}
+
 export async function createDom(pagePath: string) {
+
+  // set cursor style to loading
+  document.body.style.cursor = "wait";
 
   // cancel requests
   registration.active?.postMessage({
@@ -33,6 +51,11 @@ export async function createDom(pagePath: string) {
 
   const contentDocument = iframe.contentDocument;
 
+  if (!contentDocument) {
+    throw new Error("No content document")
+  }
+
+
   const fetchedPage = await fetch(pagePath, {
     // headers that set x-root-page
     headers: {
@@ -40,10 +63,21 @@ export async function createDom(pagePath: string) {
     }
   })
 
+  // set cursor style to default
+  document.body.style.cursor = "default";
+
   const content = await fetchedPage.text();
 
   const parser = new DOMParser();
   const fullDom = parser.parseFromString(content, "text/html");
+
+  const baseEl = fullDom.createElement("base")
+  const baseURL = getBaseURL(pagePath);
+  baseEl.href = baseURL;
+
+  // put at top of head
+  fullDom.head.insertBefore(baseEl, fullDom.head.firstChild)
+
 
   // convert the head into a string
   const headContent = fullDom.querySelector('head')!.innerHTML;
@@ -72,15 +106,22 @@ export async function createDom(pagePath: string) {
 
 export function enableClientSideRouting(document: Document = window.document) {
   document.body.addEventListener('click', async function (event) {
-    const target = event.target as HTMLLinkElement;
+    let target = event.target as HTMLElement;
 
-    if (!target) {
+    while (target && target.tagName !== 'A') {
+      target = target.parentElement as HTMLElement;
+    }
+
+    if (!target ) {
       return;
     }
 
-    if (target.tagName !== 'A' || !target.href) {
+    if (!target.href) {
       return;
     }
+
+    console.log(target.href)
+
     const origin = new URL(target.href).origin;
 
     if (origin !== window.location.origin) {

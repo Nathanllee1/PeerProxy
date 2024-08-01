@@ -6,11 +6,19 @@ import (
 	"math/rand"
 	"net/http"
 	_ "net/http/pprof"
-	"os"
+
+	"github.com/alecthomas/kong"
 )
+
+type CLI struct {
+	Port      int    `arg:"" name:"port" help:"Port number to listen on."`
+	ID        string `optional:"" name:"id" help:"Identifier for the peer."`
+	FullProxy bool   `optional:"" name:"fullProxy" help:"Enable or disable full proxy mode."`
+}
 
 var ProxyPort string = "3000"
 var ServerId string = "foo"
+var FullProxy bool = false
 
 // Generate random 6 char string
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
@@ -24,25 +32,33 @@ func RandStringRunes(n int) string {
 }
 
 func main() {
-
+	// Define flags
 	go func() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
 
-	ServerId = RandStringRunes(6)
+	var cli CLI
+	ctx := kong.Parse(&cli,
+		kong.UsageOnError(),
+	)
 
-	if len(os.Args) >= 2 {
-		ProxyPort = os.Args[1]
-
-		if len(os.Args) == 3 {
-			ServerId = os.Args[2]
-		}
+	// Validate and use the parsed flags
+	if cli.Port == 0 {
+		fmt.Println("Usage: peerproxy <port> --id <id> --fullProxy <true|false>")
+		ctx.Exit(1)
 	}
 
-	fmt.Println("Using Port", ProxyPort)
-	fmt.Println("Requesting Id", ServerId)
+	ProxyPort = fmt.Sprintf("%d", cli.Port)
+	ServerId = cli.ID
+
+	if cli.ID == "" {
+		ServerId = RandStringRunes(6)
+	}
+
+	FullProxy = cli.FullProxy
 
 	Signal()
+
 	// Prevent the main function from exiting
 	select {}
 }

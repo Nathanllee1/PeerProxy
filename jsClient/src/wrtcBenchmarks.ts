@@ -156,6 +156,28 @@ export async function createTimeline(stats: DataSet<any>) {
         { content: "Signaling", id: "Signaling", style: "color: #006064; background-color: #e0f7fa;" }
     ])
 
+    stats.forEach((item) => {
+        switch (item.group) {
+            case 'Connection':
+                item.style = 'background-color: #c5cae9; color: #1a237e;';
+                break;
+            case 'Client Ice Candidate':
+                item.style = 'background-color: #c8e6c9; color: #2e7d32;';
+                break;
+            case 'Server Ice Candidate':
+                item.style = 'background-color: #ffccbc; color: #bf360c;';
+                break;
+            case 'SDP Exchange':
+                item.style = 'background-color: #d1c4e9; color: #6a1b9a;';
+                break;
+            case 'Signaling':
+                item.style = 'background-color: #b2ebf2; color: #006064;';
+                break;
+            default:
+                item.style = 'background-color: #ffffff; color: #000000;'; // Default style for any undefined groups
+        }
+    });
+
     const timelineContainer = document.getElementById("timeline")
     const timeline = new Timeline(timelineContainer!, stats)
 
@@ -171,13 +193,18 @@ document.getElementById("connectionTest")?.addEventListener("click", async () =>
 
 
 
-document.getElementById("connectionSpeed")?.addEventListener("click", async () => {
+export async function testConnectionSpeed() {
 
     const { pc, dc } = await connect(getId());
     const TEST_LENGTH = 5000
 
     const speeds = new DataSet();
-    new Graph2d(document.getElementById("speedGraph")!, speeds, {
+
+    // make new speedGraph element
+    const speedGraph = document.createElement("div")
+    document.body.appendChild(speedGraph)
+
+    new Graph2d(speedGraph, speeds, {
         start: new Date().getTime() - 2000,
         end: new Date().getTime() + TEST_LENGTH + 2000
     })
@@ -194,7 +221,7 @@ document.getElementById("connectionSpeed")?.addEventListener("click", async () =
                 return
             }
             const bytesSent = report.bytesSent;
-            const throughput = (bytesSent - previousBytesSent) * 8 / MONITORING_RATE / 1000; // bits per second
+            const throughput = (bytesSent - previousBytesSent) * 8 / MONITORING_RATE / 1000;
             previousBytesSent = bytesSent;
 
             speeds.add({
@@ -221,7 +248,8 @@ document.getElementById("connectionSpeed")?.addEventListener("click", async () =
         await sleep(1000)
         clearInterval(monitoringInvl)
     }, TEST_LENGTH)
-});
+}
+
 
 async function getLatency() {
     const res = await fetch("/latency", {
@@ -229,7 +257,7 @@ async function getLatency() {
         method: "POST"
     })
 
-    const time =parseInt( await res.text());
+    const time = parseInt(await res.text());
 
     const latency = new Date().getTime() - time
 

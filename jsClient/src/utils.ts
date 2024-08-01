@@ -13,6 +13,11 @@ export function log(text: string, ...args: any[]) {
 
 }
 
+export function displayError(text: string) {
+    const root = document.getElementById("error")
+    root!.textContent = text
+}
+
 export async function getCandidatePair(pc: RTCPeerConnection) {
     const stats = await pc.getStats();
     let selectedCandidatePair;

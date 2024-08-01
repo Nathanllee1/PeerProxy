@@ -5,7 +5,7 @@ import { connect } from './peer'
 import { connectSW } from './peer2';
 import './style.css'
 import { log, sleep, timer, timers } from './utils'
-import { createTimeline, test_connection } from './wrtcBenchmarks';
+import { createTimeline, testConnectionSpeed, test_connection } from './wrtcBenchmarks';
 
 export const waitForSW = async () => {
   const registration = await navigator.serviceWorker.ready;
@@ -13,7 +13,7 @@ export const waitForSW = async () => {
   return registration
 }
 
-const debug = false
+export const debug = false
 export const enableIframe = true
 
 document.getElementById("makeDom")?.addEventListener("click", async () => {
@@ -92,7 +92,7 @@ async function main() {
 
   registration = await initializeSW()
 
-  const { dc } = await connect(id)
+  const { dc, stats } = await connect(id)
 
   let iframe: HTMLIFrameElement
   if (!debug) {
@@ -102,14 +102,29 @@ async function main() {
 
   if (debug) {
     setupBenchamrking()
+
+    const speedButton = document.createElement("button")
+    speedButton.innerText = "Test Connection Speed"
+    speedButton.id = "connectionSpeed"
+
+    speedButton.addEventListener("click", async () => {
+      await testConnectionSpeed()
+    })
+
+    document.body.appendChild(speedButton)
+
   }
 
   console.log("Connected")
 
   sendHeartbeat(dc)
 
+  console.log(stats.events)
 
-  // createTimeline(stats.events)
+  if (debug) {
+    createTimeline(stats.events)
+
+  }
 
   // navigator.registerProtocolHandler('web+webrtc', 'http://localhost:5173/?id=%s')
   navigator.serviceWorker.addEventListener("message", (message) => {

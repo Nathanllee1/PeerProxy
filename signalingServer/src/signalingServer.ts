@@ -79,7 +79,7 @@ const handleClient = (ws: WebSocket, preferedId: string | undefined) => {
 
         if (!(receiver in servers)) {
             console.error(`Id ${receiver} not registered`)
-            ws.send(JSON.stringify({ mtype: "Error", msg: `Id ${receiver} not registered` }))
+            ws.send(JSON.stringify({ mtype: "Error", msg: ` Id ${receiver} not registered` }))
             return
         }
 

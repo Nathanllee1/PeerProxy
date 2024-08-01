@@ -223,7 +223,8 @@
       formattedHeaders["Cookie"] = cookies;
     }
     formattedHeaders["method"] = request.method;
-    formattedHeaders["url"] = new URL(request.url).pathname;
+    formattedHeaders["url"] = new URL(request.url).pathname + new URL(request.url).search + new URL(request.url).hash;
+    console.log(formattedHeaders);
     const encodedHeader = new TextEncoder().encode(JSON.stringify(formattedHeaders));
     const frame = createFrame(currentIdentifier, "HEADER", encodedHeader, true, 0);
     return frame;
@@ -271,13 +272,13 @@
     let identifier = view.getUint32(0);
     let sequenceNum = view.getUint32(4);
     let payloadLength = view.getUint16(8);
-    let flags = view.getUint8(10);
     const flagCodes = {
       0: [false, false],
       1: [false, true],
       2: [true, false],
       3: [true, true]
     };
+    let flags = view.getUint8(10);
     const [finalMessage, messageType] = flagCodes[flags];
     let payload = new Uint8Array(buffer, headerSize, payloadLength);
     return {
