@@ -224,7 +224,6 @@
     }
     formattedHeaders["method"] = request.method;
     formattedHeaders["url"] = new URL(request.url).pathname + new URL(request.url).search + new URL(request.url).hash;
-    console.log(formattedHeaders);
     const encodedHeader = new TextEncoder().encode(JSON.stringify(formattedHeaders));
     const frame = createFrame(currentIdentifier, "HEADER", encodedHeader, true, 0);
     return frame;

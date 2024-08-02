@@ -38,7 +38,7 @@ function getBaseURL(pagePath: string) {
 }
 
 export async function createDom(pagePath: string) {
-
+  console.log("Creating dom")
   // set cursor style to loading
   document.body.style.cursor = "wait";
 
