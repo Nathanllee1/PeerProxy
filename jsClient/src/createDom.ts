@@ -17,7 +17,7 @@ export function setupIframe() {
     iframe.id = "webFrame";
     iframe.width = "100%";
     iframe.height = "900";
-    iframe.src = '/iframe.html';
+    iframe.src = '/iframe-peerproxy.html';
 
     // if debug, set display to none
     if (debug) {

@@ -147,4 +147,26 @@ document.getElementById("latency")?.addEventListener("click", async () => {
 
 })
 
-fetchSizes()
+
+document.getElementById("fetchSizes")?.addEventListener("click", fetchSizes)
+
+document.getElementById("loadtest")?.addEventListener("click", async () => {
+
+    // calculates request per second
+    const trials = 400;
+    const table = new DynamicTable('container', ['Time', 'RPS'], 'Load Test Benchmark');
+
+    
+    const start = performance.now()
+    for (let i = 0; i < trials; i++) {
+        await fetchBuffer(1000)
+    }
+    const end = performance.now()
+
+    const time = end - start
+    const rps = trials / (time / 1000)
+
+    table.addRow([time, rps])
+
+
+})

@@ -481,7 +481,7 @@
       return fetch(event.request);
     }
     const url = new URL(event.request.url);
-    if (url.pathname === "/iframe.html" || url.pathname === "/iframeScript.js") {
+    if (url.pathname === "/iframe-peerproxy.html" || url.pathname === "/iframeScript-peerproxy.js") {
       return fetch(event.request);
     }
     return proxy.makeRequest(event.request, pageClient);

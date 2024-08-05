@@ -1,0 +1,652 @@
+fatal error: sync: unlock of unlocked mutex
+
+goroutine 164 [running]:
+sync.fatal({0xa72174?, 0xa395a0?})
+	/usr/local/go/src/runtime/panic.go:1061 +0x18
+sync.(*Mutex).unlockSlow(0xf0d5a0, 0xffffffff)
+	/usr/local/go/src/sync/mutex.go:229 +0x35
+sync.(*Mutex).Unlock(...)
+	/usr/local/go/src/sync/mutex.go:223
+main.ProxyDCMessage({0xff?, {0xc00012a550?, 0xc00039f1d0?, 0xc0000a8c60?}}, {0xc000280635, 0x3}, 0xc0004e4000?)
+	/home/nathanlee/Workspace/WebRTCSignaling/goclient/src/proxyToHttp.go:268 +0x453
+created by main.createNewPeer.func3.2 in goroutine 151
+	/home/nathanlee/Workspace/WebRTCSignaling/goclient/src/webrtcClient.go:115 +0xd7
+
+goroutine 1 [IO wait]:
+internal/poll.runtime_pollWait(0x7f31395edd98, 0x72)
+	/usr/local/go/src/runtime/netpoll.go:343 +0x85
+internal/poll.(*pollDesc).wait(0xc000288000?, 0xc00025cc00?, 0x0)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:84 +0x27
+internal/poll.(*pollDesc).waitRead(...)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).Read(0xc000288000, {0xc00025cc00, 0xc00, 0xc00})
+	/usr/local/go/src/internal/poll/fd_unix.go:164 +0x27a
+net.(*netFD).Read(0xc000288000, {0xc00025cc00?, 0xc00005c800?, 0xc00036a000?})
+	/usr/local/go/src/net/fd_posix.go:55 +0x25
+net.(*conn).Read(0xc0001203e0, {0xc00025cc00?, 0xc00018f250?, 0x50883b?})
+	/usr/local/go/src/net/net.go:179 +0x45
+crypto/tls.(*atLeastReader).Read(0xc0004fc090, {0xc00025cc00?, 0xc0004fc090?, 0x0?})
+	/usr/local/go/src/crypto/tls/conn.go:805 +0x3b
+bytes.(*Buffer).ReadFrom(0xc00023a9a8, {0xb3dc00, 0xc0004fc090})
+	/usr/local/go/src/bytes/buffer.go:211 +0x98
+crypto/tls.(*Conn).readFromUntil(0xc00023a700, {0xb3de60?, 0xc0001203e0}, 0x4?)
+	/usr/local/go/src/crypto/tls/conn.go:827 +0xde
+crypto/tls.(*Conn).readRecordOrCCS(0xc00023a700, 0x0)
+	/usr/local/go/src/crypto/tls/conn.go:625 +0x250
+crypto/tls.(*Conn).readRecord(...)
+	/usr/local/go/src/crypto/tls/conn.go:587
+crypto/tls.(*Conn).Read(0xc00023a700, {0xc000366000, 0x1000, 0xc00018f61c?})
+	/usr/local/go/src/crypto/tls/conn.go:1369 +0x158
+net/http.(*readWriteCloserBody).Read(0x1010000119ef0?, {0xc000366000?, 0x2?, 0x0?})
+	/usr/local/go/src/net/http/transport.go:2406 +0x88
+bufio.(*Reader).fill(0xc0002d5e00)
+	/usr/local/go/src/bufio/bufio.go:113 +0x103
+bufio.(*Reader).ReadByte(0xc0002d5e00)
+	/usr/local/go/src/bufio/bufio.go:272 +0x27
+nhooyr.io/websocket.readFrameHeader(0x0?, {0xc000203240, 0x8, 0x8})
+	/home/nathanlee/go/pkg/mod/nhooyr.io/websocket@v1.8.10/frame.go:56 +0x91
+nhooyr.io/websocket.(*Conn).readFrameHeader(0xc0002031e0, {0xb42110, 0xc0002e8320})
+	/home/nathanlee/go/pkg/mod/nhooyr.io/websocket@v1.8.10/read.go:217 +0xd9
+nhooyr.io/websocket.(*Conn).readLoop(0xc0002031e0, {0xb42110, 0xc0002e8320})
+	/home/nathanlee/go/pkg/mod/nhooyr.io/websocket@v1.8.10/read.go:175 +0x65
+nhooyr.io/websocket.(*Conn).reader(0xc0002031e0, {0xb42110, 0xc0002e8320})
+	/home/nathanlee/go/pkg/mod/nhooyr.io/websocket@v1.8.10/read.go:344 +0x125
+nhooyr.io/websocket.(*Conn).Reader(...)
+	/home/nathanlee/go/pkg/mod/nhooyr.io/websocket@v1.8.10/read.go:37
+nhooyr.io/websocket/wsjson.read({0xb42110?, 0xc0002e8320?}, 0x88?, {0x9bed80, 0xc00024c210})
+	/home/nathanlee/go/pkg/mod/nhooyr.io/websocket@v1.8.10/wsjson/wsjson.go:24 +0x95
+nhooyr.io/websocket/wsjson.Read(...)
+	/home/nathanlee/go/pkg/mod/nhooyr.io/websocket@v1.8.10/wsjson/wsjson.go:18
+main.readWSMessages(0xb42110?, 0xc0002e8320?, 0xc000323680?, {0xb42110, 0xc0002e8320})
+	/home/nathanlee/Workspace/WebRTCSignaling/goclient/src/webrtcClient.go:164 +0xde
+main.retryWS(0xa758e3?, 0xc000122c30?)
+	/home/nathanlee/Workspace/WebRTCSignaling/goclient/src/webrtcClient.go:244 +0x227
+main.Signal()
+	/home/nathanlee/Workspace/WebRTCSignaling/goclient/src/webrtcClient.go:268 +0x48
+main.main()
+	/home/nathanlee/Workspace/WebRTCSignaling/goclient/src/index.go:60 +0x11a
+
+goroutine 19 [IO wait]:
+internal/poll.runtime_pollWait(0x7f31395ede90, 0x72)
+	/usr/local/go/src/runtime/netpoll.go:343 +0x85
+internal/poll.(*pollDesc).wait(0xc000092080?, 0xc00006bd10?, 0x0)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:84 +0x27
+internal/poll.(*pollDesc).waitRead(...)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).Accept(0xc000092080)
+	/usr/local/go/src/internal/poll/fd_unix.go:611 +0x2ac
+net.(*netFD).accept(0xc000092080)
+	/usr/local/go/src/net/fd_unix.go:172 +0x29
+net.(*TCPListener).accept(0xc000076140)
+	/usr/local/go/src/net/tcpsock_posix.go:152 +0x1e
+net.(*TCPListener).Accept(0xc000076140)
+	/usr/local/go/src/net/tcpsock.go:315 +0x30
+net/http.(*Server).Serve(0xc00008c000, {0xb40e58, 0xc000076140})
+	/usr/local/go/src/net/http/server.go:3056 +0x364
+net/http.(*Server).ListenAndServe(0xc00008c000)
+	/usr/local/go/src/net/http/server.go:2985 +0x71
+net/http.ListenAndServe(...)
+	/usr/local/go/src/net/http/server.go:3239
+main.main.func1()
+	/home/nathanlee/Workspace/WebRTCSignaling/goclient/src/index.go:37 +0x3a
+created by main.main in goroutine 1
+	/home/nathanlee/Workspace/WebRTCSignaling/goclient/src/index.go:36 +0x1e
+
+goroutine 61 [select]:
+github.com/pion/interceptor/pkg/nack.(*GeneratorInterceptor).loop(0xc000492180, {0xb3d620, 0xc00039b060})
+	/home/nathanlee/go/pkg/mod/github.com/pion/interceptor@v0.1.25/pkg/nack/generator_interceptor.go:147 +0x125
+created by github.com/pion/interceptor/pkg/nack.(*GeneratorInterceptor).BindRTCPWriter in goroutine 1
+	/home/nathanlee/go/pkg/mod/github.com/pion/interceptor@v0.1.25/pkg/nack/generator_interceptor.go:81 +0x12b
+
+goroutine 7 [IO wait]:
+internal/poll.runtime_pollWait(0x7f31395edca0, 0x72)
+	/usr/local/go/src/runtime/netpoll.go:343 +0x85
+internal/poll.(*pollDesc).wait(0xc000288100?, 0xc00025c000?, 0x0)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:84 +0x27
+internal/poll.(*pollDesc).waitRead(...)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).Read(0xc000288100, {0xc00025c000, 0xc00, 0xc00})
+	/usr/local/go/src/internal/poll/fd_unix.go:164 +0x27a
+net.(*netFD).Read(0xc000288100, {0xc00025c000?, 0x3fffd4003fffd3?, 0x7fffd9003fffd5?})
+	/usr/local/go/src/net/fd_posix.go:55 +0x25
+net.(*conn).Read(0xc000226010, {0xc00025c000?, 0x7fffe3007fffe2?, 0x1fffdc007fffe4?})
+	/usr/local/go/src/net/net.go:179 +0x45
+crypto/tls.(*atLeastReader).Read(0xc00031b800, {0xc00025c000?, 0xc00031b800?, 0x0?})
+	/usr/local/go/src/crypto/tls/conn.go:805 +0x3b
+bytes.(*Buffer).ReadFrom(0xc00023a2a8, {0xb3dc00, 0xc00031b800})
+	/usr/local/go/src/bytes/buffer.go:211 +0x98
+crypto/tls.(*Conn).readFromUntil(0xc00023a000, {0xb3de60?, 0xc000226010}, 0x280?)
+	/usr/local/go/src/crypto/tls/conn.go:827 +0xde
+crypto/tls.(*Conn).readRecordOrCCS(0xc00023a000, 0x0)
+	/usr/local/go/src/crypto/tls/conn.go:625 +0x250
+crypto/tls.(*Conn).readRecord(...)
+	/usr/local/go/src/crypto/tls/conn.go:587
+crypto/tls.(*Conn).Read(0xc00023a000, {0xc00034a000, 0x1000, 0x6d3a05?})
+	/usr/local/go/src/crypto/tls/conn.go:1369 +0x158
+bufio.(*Reader).Read(0xc0002d5980, {0xc0002d6ba0, 0x9, 0xec9680?})
+	/usr/local/go/src/bufio/bufio.go:244 +0x197
+io.ReadAtLeast({0xb3ccc0, 0xc0002d5980}, {0xc0002d6ba0, 0x9, 0x9}, 0x9)
+	/usr/local/go/src/io/io.go:335 +0x90
+io.ReadFull(...)
+	/usr/local/go/src/io/io.go:354
+net/http.http2readFrameHeader({0xc0002d6ba0, 0x9, 0x2e5320?}, {0xb3ccc0?, 0xc0002d5980?})
+	/usr/local/go/src/net/http/h2_bundle.go:1635 +0x65
+net/http.(*http2Framer).ReadFrame(0xc0002d6b60)
+	/usr/local/go/src/net/http/h2_bundle.go:1899 +0x85
+net/http.(*http2clientConnReadLoop).run(0xc0001c5f98)
+	/usr/local/go/src/net/http/h2_bundle.go:9339 +0x11f
+net/http.(*http2ClientConn).readLoop(0xc000346000)
+	/usr/local/go/src/net/http/h2_bundle.go:9234 +0x65
+created by net/http.(*http2Transport).newClientConn in goroutine 6
+	/usr/local/go/src/net/http/h2_bundle.go:7906 +0xcbe
+
+goroutine 15 [IO wait]:
+internal/poll.runtime_pollWait(0x7f31395edba8, 0x72)
+	/usr/local/go/src/runtime/netpoll.go:343 +0x85
+internal/poll.(*pollDesc).wait(0xc000592800?, 0xc000224370?, 0x0)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:84 +0x27
+internal/poll.(*pollDesc).waitRead(...)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).RawRead(0xc000592800, 0xc000224370)
+	/usr/local/go/src/internal/poll/fd_unix.go:708 +0x12a
+net.(*rawConn).Read(0xc00005a018, 0xc00005c800?)
+	/usr/local/go/src/net/rawconn.go:44 +0x36
+golang.org/x/net/internal/socket.(*Conn).recvMsg(0xc00058e300, 0xc000292420, 0x0)
+	/home/nathanlee/go/pkg/mod/golang.org/x/net@v0.20.0/internal/socket/rawconn_msg.go:27 +0x152
+golang.org/x/net/internal/socket.(*Conn).RecvMsg(...)
+	/home/nathanlee/go/pkg/mod/golang.org/x/net@v0.20.0/internal/socket/socket.go:247
+golang.org/x/net/ipv4.(*payloadHandler).ReadFrom(0xc000584970, {0xc0000c0000, 0xffe4, 0xffe4})
+	/home/nathanlee/go/pkg/mod/golang.org/x/net@v0.20.0/ipv4/payload_cmsg.go:31 +0x229
+github.com/pion/mdns.(*Conn).start(0xc000148120, 0x0?, 0x0?)
+	/home/nathanlee/go/pkg/mod/github.com/pion/mdns@v0.0.9/conn.go:319 +0xe5
+created by github.com/pion/mdns.Server in goroutine 1
+	/home/nathanlee/go/pkg/mod/github.com/pion/mdns@v0.0.9/conn.go:125 +0x831
+
+goroutine 14 [select]:
+nhooyr.io/websocket.(*Conn).timeoutLoop(0xc0002031e0)
+	/home/nathanlee/go/pkg/mod/nhooyr.io/websocket@v1.8.10/conn.go:182 +0x153
+nhooyr.io/websocket.newConn.func2()
+	/home/nathanlee/go/pkg/mod/nhooyr.io/websocket@v1.8.10/conn.go:137 +0x52
+created by nhooyr.io/websocket.newConn in goroutine 1
+	/home/nathanlee/go/pkg/mod/nhooyr.io/websocket@v1.8.10/conn.go:135 +0x528
+
+goroutine 16 [select]:
+github.com/pion/ice/v3.(*Agent).taskLoop(0xc000004600)
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/agent.go:237 +0x12e
+created by github.com/pion/ice/v3.NewAgent in goroutine 1
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/agent.go:366 +0xc99
+
+goroutine 62 [select]:
+github.com/pion/interceptor/pkg/report.(*ReceiverInterceptor).loop(0xc0004921e0, {0xb3d620?, 0xc00039b060})
+	/home/nathanlee/go/pkg/mod/github.com/pion/interceptor@v0.1.25/pkg/report/receiver_interceptor.go:100 +0x19d
+created by github.com/pion/interceptor/pkg/report.(*ReceiverInterceptor).BindRTCPWriter in goroutine 1
+	/home/nathanlee/go/pkg/mod/github.com/pion/interceptor@v0.1.25/pkg/report/receiver_interceptor.go:89 +0x12b
+
+goroutine 63 [select]:
+github.com/pion/interceptor/pkg/report.(*SenderInterceptor).loop(0xc000170780, {0xb3d620?, 0xc00039b060})
+	/home/nathanlee/go/pkg/mod/github.com/pion/interceptor@v0.1.25/pkg/report/sender_interceptor.go:116 +0x1fb
+created by github.com/pion/interceptor/pkg/report.(*SenderInterceptor).BindRTCPWriter in goroutine 1
+	/home/nathanlee/go/pkg/mod/github.com/pion/interceptor@v0.1.25/pkg/report/sender_interceptor.go:100 +0x12b
+
+goroutine 64 [select]:
+github.com/pion/interceptor/pkg/twcc.(*SenderInterceptor).loop(0xc000492240, {0xb3d620, 0xc00039b060})
+	/home/nathanlee/go/pkg/mod/github.com/pion/interceptor@v0.1.25/pkg/twcc/sender_interceptor.go:180 +0xe6
+created by github.com/pion/interceptor/pkg/twcc.(*SenderInterceptor).BindRTCPWriter in goroutine 1
+	/home/nathanlee/go/pkg/mod/github.com/pion/interceptor@v0.1.25/pkg/twcc/sender_interceptor.go:93 +0x16b
+
+goroutine 142 [IO wait]:
+internal/poll.runtime_pollWait(0x7f31395ed3e8, 0x72)
+	/usr/local/go/src/runtime/netpoll.go:343 +0x85
+internal/poll.(*pollDesc).wait(0xc0003c8700?, 0xc0004a8000?, 0x0)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:84 +0x27
+internal/poll.(*pollDesc).waitRead(...)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).ReadFromInet4(0xc0003c8700, {0xc0004a8000, 0x2000, 0x2000}, 0x41b768?)
+	/usr/local/go/src/internal/poll/fd_unix.go:247 +0x22b
+net.(*netFD).readFromInet4(0xc0003c8700, {0xc0004a8000?, 0x41b373?, 0x0?}, 0x0?)
+	/usr/local/go/src/net/fd_posix.go:66 +0x25
+net.(*UDPConn).readFrom(0x30?, {0xc0004a8000?, 0xc00039f950?, 0x0?}, 0xc00039f950)
+	/usr/local/go/src/net/udpsock_posix.go:52 +0x1b1
+net.(*UDPConn).readFromUDP(0xc0003a4040, {0xc0004a8000?, 0x454569?, 0x2000?}, 0x986180?)
+	/usr/local/go/src/net/udpsock.go:149 +0x30
+net.(*UDPConn).ReadFrom(0xc0004bcf88?, {0xc0004a8000, 0x2000, 0x2000})
+	/usr/local/go/src/net/udpsock.go:158 +0x4a
+github.com/pion/ice/v3.(*candidateBase).recvLoop(0xc0004a4540, 0xcfb7b41a49010001?)
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/candidate_base.go:227 +0x137
+created by github.com/pion/ice/v3.(*candidateBase).start in goroutine 16
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/candidate_base.go:211 +0x14d
+
+goroutine 66 [chan receive]:
+github.com/pion/ice/v3.(*Agent).candidatePairRoutine(0xc000004600)
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/agent_handlers.go:45 +0x57
+created by github.com/pion/ice/v3.NewAgent in goroutine 1
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/agent.go:371 +0xcdb
+
+goroutine 67 [chan receive]:
+github.com/pion/ice/v3.(*Agent).connectionStateRoutine(0xc000004600)
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/agent_handlers.go:51 +0x49
+created by github.com/pion/ice/v3.NewAgent in goroutine 1
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/agent.go:372 +0xd1d
+
+goroutine 68 [chan receive]:
+github.com/pion/ice/v3.(*Agent).candidateRoutine(0xc000004600)
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/agent_handlers.go:57 +0x57
+created by github.com/pion/ice/v3.NewAgent in goroutine 1
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/agent.go:373 +0xd5f
+
+goroutine 69 [select]:
+github.com/pion/ice/v3.(*Agent).connectivityChecks(0xc000004600)
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/agent.go:480 +0x19f
+created by github.com/pion/ice/v3.(*Agent).startConnectivityChecks.func1 in goroutine 16
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/agent.go:420 +0x2a6
+
+goroutine 26 [select]:
+context.(*cancelCtx).propagateCancel.func2()
+	/usr/local/go/src/context/context.go:505 +0x98
+created by context.(*cancelCtx).propagateCancel in goroutine 16
+	/usr/local/go/src/context/context.go:504 +0x395
+
+goroutine 91 [select]:
+github.com/pion/transport/v3/packetio.(*Buffer).Read(0xc000492600, {0xc0000b8000, 0x2000, 0x2000})
+	/home/nathanlee/go/pkg/mod/github.com/pion/transport/v3@v3.0.1/packetio/buffer.go:267 +0x1af
+github.com/pion/webrtc/v4/internal/mux.(*Endpoint).Read(0xc000157f01?, {0xc0000b8000?, 0x1000000000001?, 0xc0000a8660?})
+	/home/nathanlee/go/pkg/mod/github.com/pion/webrtc/v4@v4.0.0-beta.7/internal/mux/endpoint.go:44 +0x1c
+github.com/pion/srtp/v3.(*session).start.func1()
+	/home/nathanlee/go/pkg/mod/github.com/pion/srtp/v3@v3.0.1/session.go:144 +0xaf
+created by github.com/pion/srtp/v3.(*session).start in goroutine 65
+	/home/nathanlee/go/pkg/mod/github.com/pion/srtp/v3@v3.0.1/session.go:131 +0x2b1
+
+goroutine 163 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x167?, 0x67?, 0x167?)
+	/usr/local/go/src/runtime/sema.go:77 +0x25
+sync.(*Mutex).lockSlow(0xf0d5a0)
+	/usr/local/go/src/sync/mutex.go:171 +0x15d
+sync.(*Mutex).Lock(...)
+	/usr/local/go/src/sync/mutex.go:90
+main.ProxyDCMessage({0xd0?, {0xc000464000?, 0x0?, 0xc000281120?}}, {0xc000280635, 0x3}, 0xc000280000?)
+	/home/nathanlee/Workspace/WebRTCSignaling/goclient/src/proxyToHttp.go:235 +0x114
+created by main.createNewPeer.func3.2 in goroutine 151
+	/home/nathanlee/Workspace/WebRTCSignaling/goclient/src/webrtcClient.go:115 +0xd7
+
+goroutine 180 [select]:
+github.com/pion/turn/v3/internal/client.(*PeriodicTimer).Start.func1()
+	/home/nathanlee/go/pkg/mod/github.com/pion/turn/v3@v3.0.1/internal/client/periodic_timer.go:50 +0x88
+created by github.com/pion/turn/v3/internal/client.(*PeriodicTimer).Start in goroutine 87
+	/home/nathanlee/go/pkg/mod/github.com/pion/turn/v3@v3.0.1/internal/client/periodic_timer.go:44 +0xd8
+
+goroutine 178 [select]:
+github.com/pion/turn/v3/internal/client.(*PeriodicTimer).Start.func1()
+	/home/nathanlee/go/pkg/mod/github.com/pion/turn/v3@v3.0.1/internal/client/periodic_timer.go:50 +0x88
+created by github.com/pion/turn/v3/internal/client.(*PeriodicTimer).Start in goroutine 85
+	/home/nathanlee/go/pkg/mod/github.com/pion/turn/v3@v3.0.1/internal/client/periodic_timer.go:44 +0xd8
+
+goroutine 126 [IO wait]:
+internal/poll.runtime_pollWait(0x7f31395ed9b8, 0x72)
+	/usr/local/go/src/runtime/netpoll.go:343 +0x85
+internal/poll.(*pollDesc).wait(0xc000170000?, 0xc0004be000?, 0x0)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:84 +0x27
+internal/poll.(*pollDesc).waitRead(...)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).ReadFromInet4(0xc000170000, {0xc0004be000, 0xffff, 0xffff}, 0xc?)
+	/usr/local/go/src/internal/poll/fd_unix.go:247 +0x22b
+net.(*netFD).readFromInet4(0xc000170000, {0xc0004be000?, 0xc000432070?, 0xc00008b310?}, 0xc000258570?)
+	/usr/local/go/src/net/fd_posix.go:66 +0x25
+net.(*UDPConn).readFrom(0x30?, {0xc0004be000?, 0xc00022d620?, 0x0?}, 0xc00022d620)
+	/usr/local/go/src/net/udpsock_posix.go:52 +0x1b1
+net.(*UDPConn).readFromUDP(0xc00040c000, {0xc0004be000?, 0xb40128?, 0xc00039fb30?}, 0x986180?)
+	/usr/local/go/src/net/udpsock.go:149 +0x30
+net.(*UDPConn).ReadFrom(0xc0001b20c0?, {0xc0004be000, 0xffff, 0xffff})
+	/usr/local/go/src/net/udpsock.go:158 +0x4a
+github.com/pion/turn/v3.(*Client).Listen.func1()
+	/home/nathanlee/go/pkg/mod/github.com/pion/turn/v3@v3.0.1/client.go:175 +0x5b
+created by github.com/pion/turn/v3.(*Client).Listen in goroutine 85
+	/home/nathanlee/go/pkg/mod/github.com/pion/turn/v3@v3.0.1/client.go:172 +0xfb
+
+goroutine 158 [select]:
+github.com/pion/turn/v3/internal/client.(*UDPConn).ReadFrom(0xc00038e360, {0xc0000f8000, 0x2000, 0x0?})
+	/home/nathanlee/go/pkg/mod/github.com/pion/turn/v3@v3.0.1/internal/client/udp_conn.go:102 +0xb4
+github.com/pion/ice/v3.(*candidateBase).recvLoop(0xc0004d21c0, 0xc00011af00?)
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/candidate_base.go:227 +0x137
+created by github.com/pion/ice/v3.(*candidateBase).start in goroutine 16
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/candidate_base.go:211 +0x14d
+
+goroutine 179 [select]:
+github.com/pion/turn/v3/internal/client.(*UDPConn).ReadFrom(0xc00038e240, {0xc0004d8000, 0x2000, 0x0?})
+	/home/nathanlee/go/pkg/mod/github.com/pion/turn/v3@v3.0.1/internal/client/udp_conn.go:102 +0xb4
+github.com/pion/ice/v3.(*candidateBase).recvLoop(0xc0004d2000, 0x0?)
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/candidate_base.go:227 +0x137
+created by github.com/pion/ice/v3.(*candidateBase).start in goroutine 16
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/candidate_base.go:211 +0x14d
+
+goroutine 156 [select]:
+github.com/pion/turn/v3/internal/client.(*PeriodicTimer).Start.func1()
+	/home/nathanlee/go/pkg/mod/github.com/pion/turn/v3@v3.0.1/internal/client/periodic_timer.go:50 +0x88
+created by github.com/pion/turn/v3/internal/client.(*PeriodicTimer).Start in goroutine 86
+	/home/nathanlee/go/pkg/mod/github.com/pion/turn/v3@v3.0.1/internal/client/periodic_timer.go:44 +0xd8
+
+goroutine 154 [IO wait]:
+internal/poll.runtime_pollWait(0x7f31395ed100, 0x72)
+	/usr/local/go/src/runtime/netpoll.go:343 +0x85
+internal/poll.(*pollDesc).wait(0xc0003c8800?, 0xc0000ea000?, 0x0)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:84 +0x27
+internal/poll.(*pollDesc).waitRead(...)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).ReadFromInet4(0xc0003c8800, {0xc0000ea000, 0x2000, 0x2000}, 0x41b768?)
+	/usr/local/go/src/internal/poll/fd_unix.go:247 +0x22b
+net.(*netFD).readFromInet4(0xc0003c8800, {0xc0000ea000?, 0x41b373?, 0x0?}, 0x0?)
+	/usr/local/go/src/net/fd_posix.go:66 +0x25
+net.(*UDPConn).readFrom(0x30?, {0xc0000ea000?, 0xc0000d4360?, 0x0?}, 0xc0000d4360)
+	/usr/local/go/src/net/udpsock_posix.go:52 +0x1b1
+net.(*UDPConn).readFromUDP(0xc0003a4050, {0xc0000ea000?, 0x454569?, 0x2000?}, 0x986180?)
+	/usr/local/go/src/net/udpsock.go:149 +0x30
+net.(*UDPConn).ReadFrom(0xc000155788?, {0xc0000ea000, 0x2000, 0x2000})
+	/usr/local/go/src/net/udpsock.go:158 +0x4a
+github.com/pion/ice/v3.(*candidateBase).recvLoop(0xc00015e3c0, 0x0?)
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/candidate_base.go:227 +0x137
+created by github.com/pion/ice/v3.(*candidateBase).start in goroutine 16
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/candidate_base.go:211 +0x14d
+
+goroutine 145 [select]:
+github.com/pion/turn/v3/internal/client.(*PeriodicTimer).Start.func1()
+	/home/nathanlee/go/pkg/mod/github.com/pion/turn/v3@v3.0.1/internal/client/periodic_timer.go:50 +0x88
+created by github.com/pion/turn/v3/internal/client.(*PeriodicTimer).Start in goroutine 85
+	/home/nathanlee/go/pkg/mod/github.com/pion/turn/v3@v3.0.1/internal/client/periodic_timer.go:44 +0xd8
+
+goroutine 155 [select]:
+github.com/pion/turn/v3/internal/client.(*PeriodicTimer).Start.func1()
+	/home/nathanlee/go/pkg/mod/github.com/pion/turn/v3@v3.0.1/internal/client/periodic_timer.go:50 +0x88
+created by github.com/pion/turn/v3/internal/client.(*PeriodicTimer).Start in goroutine 86
+	/home/nathanlee/go/pkg/mod/github.com/pion/turn/v3@v3.0.1/internal/client/periodic_timer.go:44 +0xd8
+
+goroutine 157 [select]:
+github.com/pion/turn/v3/internal/client.(*UDPConn).ReadFrom(0xc0000d6120, {0xc00043a000, 0x2000, 0x0?})
+	/home/nathanlee/go/pkg/mod/github.com/pion/turn/v3@v3.0.1/internal/client/udp_conn.go:102 +0xb4
+github.com/pion/ice/v3.(*candidateBase).recvLoop(0xc0000f4000, 0x0?)
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/candidate_base.go:227 +0x137
+created by github.com/pion/ice/v3.(*candidateBase).start in goroutine 16
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/candidate_base.go:211 +0x14d
+
+goroutine 98 [IO wait]:
+internal/poll.runtime_pollWait(0x7f31395ed7c8, 0x72)
+	/usr/local/go/src/runtime/netpoll.go:343 +0x85
+internal/poll.(*pollDesc).wait(0xc000184000?, 0xc00021c000?, 0x0)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:84 +0x27
+internal/poll.(*pollDesc).waitRead(...)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).ReadFromInet4(0xc000184000, {0xc00021c000, 0x2000, 0x2000}, 0xc00024dab8?)
+	/usr/local/go/src/internal/poll/fd_unix.go:247 +0x22b
+net.(*netFD).readFromInet4(0xc000184000, {0xc00021c000?, 0xc0004a4068?, 0xa59960?}, 0xc00024dab8?)
+	/usr/local/go/src/net/fd_posix.go:66 +0x25
+net.(*UDPConn).readFrom(0x30?, {0xc00021c000?, 0xc00022d680?, 0x0?}, 0xc00022d680)
+	/usr/local/go/src/net/udpsock_posix.go:52 +0x1b1
+net.(*UDPConn).readFromUDP(0xc000186000, {0xc00021c000?, 0x454569?, 0x2000?}, 0xc0003ee440?)
+	/usr/local/go/src/net/udpsock.go:149 +0x30
+net.(*UDPConn).ReadFrom(0xc0000901a0?, {0xc00021c000, 0x2000, 0x2000})
+	/usr/local/go/src/net/udpsock.go:158 +0x4a
+github.com/pion/ice/v3.(*candidateBase).recvLoop(0xc0000901a0, 0xc000280000?)
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/candidate_base.go:227 +0x137
+created by github.com/pion/ice/v3.(*candidateBase).start in goroutine 16
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/candidate_base.go:211 +0x14d
+
+goroutine 162 [IO wait]:
+internal/poll.runtime_pollWait(0x7f31395ed6d0, 0x72)
+	/usr/local/go/src/runtime/netpoll.go:343 +0x85
+internal/poll.(*pollDesc).wait(0xc000220c80?, 0xc0004e4000?, 0x0)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:84 +0x27
+internal/poll.(*pollDesc).waitRead(...)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).Read(0xc000220c80, {0xc0004e4000, 0xffff, 0xffff})
+	/usr/local/go/src/internal/poll/fd_unix.go:164 +0x27a
+net.(*netFD).Read(0xc000220c80, {0xc0004e4000?, 0xece540?, 0x0?})
+	/usr/local/go/src/net/fd_posix.go:55 +0x25
+net.(*conn).Read(0xc0003a4058, {0xc0004e4000?, 0x9ad260?, 0xece530?})
+	/usr/local/go/src/net/net.go:179 +0x45
+github.com/pion/turn/v3.(*STUNConn).ReadFrom(0xc00039f320, {0xc0004e4000, 0xffff, 0xffff})
+	/home/nathanlee/go/pkg/mod/github.com/pion/turn/v3@v3.0.1/stun_conn.go:85 +0x170
+github.com/pion/turn/v3.(*Client).Listen.func1()
+	/home/nathanlee/go/pkg/mod/github.com/pion/turn/v3@v3.0.1/client.go:175 +0x5b
+created by github.com/pion/turn/v3.(*Client).Listen in goroutine 87
+	/home/nathanlee/go/pkg/mod/github.com/pion/turn/v3@v3.0.1/client.go:172 +0xfb
+
+goroutine 143 [IO wait]:
+internal/poll.runtime_pollWait(0x7f31395edab0, 0x72)
+	/usr/local/go/src/runtime/netpoll.go:343 +0x85
+internal/poll.(*pollDesc).wait(0xc000220c00?, 0xc00051c000?, 0x0)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:84 +0x27
+internal/poll.(*pollDesc).waitRead(...)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).Read(0xc000220c00, {0xc00051c000, 0xffff, 0xffff})
+	/usr/local/go/src/internal/poll/fd_unix.go:164 +0x27a
+net.(*netFD).Read(0xc000220c00, {0xc00051c000?, 0xece540?, 0x0?})
+	/usr/local/go/src/net/fd_posix.go:55 +0x25
+net.(*conn).Read(0xc0001204f8, {0xc00051c000?, 0x9ad260?, 0xece530?})
+	/usr/local/go/src/net/net.go:179 +0x45
+github.com/pion/turn/v3.(*STUNConn).ReadFrom(0xc0000d44b0, {0xc00051c000, 0xffff, 0xffff})
+	/home/nathanlee/go/pkg/mod/github.com/pion/turn/v3@v3.0.1/stun_conn.go:85 +0x170
+github.com/pion/turn/v3.(*Client).Listen.func1()
+	/home/nathanlee/go/pkg/mod/github.com/pion/turn/v3@v3.0.1/client.go:175 +0x5b
+created by github.com/pion/turn/v3.(*Client).Listen in goroutine 86
+	/home/nathanlee/go/pkg/mod/github.com/pion/turn/v3@v3.0.1/client.go:172 +0xfb
+
+goroutine 99 [IO wait]:
+internal/poll.runtime_pollWait(0x7f31395ed4e0, 0x72)
+	/usr/local/go/src/runtime/netpoll.go:343 +0x85
+internal/poll.(*pollDesc).wait(0xc000184080?, 0xc00017e000?, 0x0)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:84 +0x27
+internal/poll.(*pollDesc).waitRead(...)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).ReadFromInet4(0xc000184080, {0xc00017e000, 0x2000, 0x2000}, 0x1000000412525?)
+	/usr/local/go/src/internal/poll/fd_unix.go:247 +0x22b
+net.(*netFD).readFromInet4(0xc000184080, {0xc00017e000?, 0x450780?, 0xc000055e38?}, 0xc000055dd8?)
+	/usr/local/go/src/net/fd_posix.go:66 +0x25
+net.(*UDPConn).readFrom(0x30?, {0xc00017e000?, 0xc0001b0a20?, 0x0?}, 0xc0001b0a20)
+	/usr/local/go/src/net/udpsock_posix.go:52 +0x1b1
+net.(*UDPConn).readFromUDP(0xc000186008, {0xc00017e000?, 0x454569?, 0x2000?}, 0xc00044e100?)
+	/usr/local/go/src/net/udpsock.go:149 +0x30
+net.(*UDPConn).ReadFrom(0xc000090270?, {0xc00017e000, 0x2000, 0x2000})
+	/usr/local/go/src/net/udpsock.go:158 +0x4a
+github.com/pion/ice/v3.(*candidateBase).recvLoop(0xc000090270, 0x2?)
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/candidate_base.go:227 +0x137
+created by github.com/pion/ice/v3.(*candidateBase).start in goroutine 16
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/candidate_base.go:211 +0x14d
+
+goroutine 114 [IO wait]:
+internal/poll.runtime_pollWait(0x7f31395ed2f0, 0x72)
+	/usr/local/go/src/runtime/netpoll.go:343 +0x85
+internal/poll.(*pollDesc).wait(0xc000220100?, 0xc00009e000?, 0x0)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:84 +0x27
+internal/poll.(*pollDesc).waitRead(...)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).ReadFromInet4(0xc000220100, {0xc00009e000, 0x2000, 0x2000}, 0x1000000412525?)
+	/usr/local/go/src/internal/poll/fd_unix.go:247 +0x22b
+net.(*netFD).readFromInet4(0xc000220100, {0xc00009e000?, 0x450780?, 0xc000054638?}, 0xc0000545d8?)
+	/usr/local/go/src/net/fd_posix.go:66 +0x25
+net.(*UDPConn).readFrom(0x30?, {0xc00009e000?, 0xc00039e5a0?, 0x0?}, 0xc00039e5a0)
+	/usr/local/go/src/net/udpsock_posix.go:52 +0x1b1
+net.(*UDPConn).readFromUDP(0xc000248068, {0xc00009e000?, 0x454569?, 0x2000?}, 0xc0003ee380?)
+	/usr/local/go/src/net/udpsock.go:149 +0x30
+net.(*UDPConn).ReadFrom(0xc000122a90?, {0xc00009e000, 0x2000, 0x2000})
+	/usr/local/go/src/net/udpsock.go:158 +0x4a
+github.com/pion/ice/v3.(*candidateBase).recvLoop(0xc000122a90, 0xc000004600?)
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/candidate_base.go:227 +0x137
+created by github.com/pion/ice/v3.(*candidateBase).start in goroutine 16
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/candidate_base.go:211 +0x14d
+
+goroutine 115 [IO wait]:
+internal/poll.runtime_pollWait(0x7f31395ed1f8, 0x72)
+	/usr/local/go/src/runtime/netpoll.go:343 +0x85
+internal/poll.(*pollDesc).wait(0xc000220180?, 0xc00033e000?, 0x0)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:84 +0x27
+internal/poll.(*pollDesc).waitRead(...)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).ReadFromInet4(0xc000220180, {0xc00033e000, 0x2000, 0x2000}, 0x1000000412525?)
+	/usr/local/go/src/internal/poll/fd_unix.go:247 +0x22b
+net.(*netFD).readFromInet4(0xc000220180, {0xc00033e000?, 0x450780?, 0xc000385e38?}, 0xc000385dd8?)
+	/usr/local/go/src/net/fd_posix.go:66 +0x25
+net.(*UDPConn).readFrom(0x30?, {0xc00033e000?, 0xc00039e510?, 0x0?}, 0xc00039e510)
+	/usr/local/go/src/net/udpsock_posix.go:52 +0x1b1
+net.(*UDPConn).readFromUDP(0xc000248070, {0xc00033e000?, 0x454569?, 0x2000?}, 0xc0003ee340?)
+	/usr/local/go/src/net/udpsock.go:149 +0x30
+net.(*UDPConn).ReadFrom(0xc000122c30?, {0xc00033e000, 0x2000, 0x2000})
+	/usr/local/go/src/net/udpsock.go:158 +0x4a
+github.com/pion/ice/v3.(*candidateBase).recvLoop(0xc000122c30, 0x2?)
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/candidate_base.go:227 +0x137
+created by github.com/pion/ice/v3.(*candidateBase).start in goroutine 16
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/candidate_base.go:211 +0x14d
+
+goroutine 45 [select]:
+github.com/pion/transport/v3/packetio.(*Buffer).Read(0xc000492420, {0xc00002e600, 0x5b4, 0x5b4})
+	/home/nathanlee/go/pkg/mod/github.com/pion/transport/v3@v3.0.1/packetio/buffer.go:267 +0x1af
+github.com/pion/ice/v3.(*Conn).Read(0xc0001261e0, {0xc00002e600, 0x5b4, 0x5b4})
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/transport.go:76 +0x65
+github.com/pion/webrtc/v4/internal/mux.(*Mux).readLoop(0xc0003981e0)
+	/home/nathanlee/go/pkg/mod/github.com/pion/webrtc/v4@v4.0.0-beta.7/internal/mux/mux.go:110 +0xba
+created by github.com/pion/webrtc/v4/internal/mux.NewMux in goroutine 65
+	/home/nathanlee/go/pkg/mod/github.com/pion/webrtc/v4@v4.0.0-beta.7/internal/mux/mux.go:50 +0x156
+
+goroutine 46 [select]:
+github.com/pion/dtls/v2.(*handshakeFSM).finish(0xc000398640, {0xb42110, 0xc0003986e0}, {0xb43d08, 0xc00023ae00})
+	/home/nathanlee/go/pkg/mod/github.com/pion/dtls/v2@v2.2.7/handshaker.go:322 +0x217
+github.com/pion/dtls/v2.(*handshakeFSM).Run(0xc000398640, {0xb42110, 0xc0003986e0}, {0xb43d08, 0xc00023ae00}, 0xc9?)
+	/home/nathanlee/go/pkg/mod/github.com/pion/dtls/v2@v2.2.7/handshaker.go:189 +0x3fd
+github.com/pion/dtls/v2.(*Conn).handshake.func2()
+	/home/nathanlee/go/pkg/mod/github.com/pion/dtls/v2@v2.2.7/conn.go:851 +0x7a
+created by github.com/pion/dtls/v2.(*Conn).handshake in goroutine 65
+	/home/nathanlee/go/pkg/mod/github.com/pion/dtls/v2@v2.2.7/conn.go:849 +0x345
+
+goroutine 47 [select]:
+github.com/pion/transport/v3/packetio.(*Buffer).Read(0xc0004925a0, {0xc000430000, 0x2000, 0x2000})
+	/home/nathanlee/go/pkg/mod/github.com/pion/transport/v3@v3.0.1/packetio/buffer.go:267 +0x1af
+github.com/pion/webrtc/v4/internal/mux.(*Endpoint).Read(0x97f0a0?, {0xc000430000?, 0x7f313a7a1bb8?, 0x7f3182b28d28?})
+	/home/nathanlee/go/pkg/mod/github.com/pion/webrtc/v4@v4.0.0-beta.7/internal/mux/endpoint.go:44 +0x1c
+github.com/pion/transport/v2/connctx.(*connCtx).ReadContext(0xc000434380, {0xb42110?, 0xc000398690}, {0xc000430000, 0x2000, 0x2000})
+	/home/nathanlee/go/pkg/mod/github.com/pion/transport/v2@v2.2.4/connctx/connctx.go:98 +0x215
+github.com/pion/dtls/v2.(*Conn).readAndBuffer(0xc00023ae00, {0xb42110, 0xc000398690})
+	/home/nathanlee/go/pkg/mod/github.com/pion/dtls/v2@v2.2.7/conn.go:588 +0xfd
+github.com/pion/dtls/v2.(*Conn).handshake.func3()
+	/home/nathanlee/go/pkg/mod/github.com/pion/dtls/v2@v2.2.7/conn.go:870 +0xf4
+created by github.com/pion/dtls/v2.(*Conn).handshake in goroutine 65
+	/home/nathanlee/go/pkg/mod/github.com/pion/dtls/v2@v2.2.7/conn.go:859 +0x3e5
+
+goroutine 129 [select]:
+github.com/pion/transport/v2/connctx.(*connCtx).ReadContext.func1()
+	/home/nathanlee/go/pkg/mod/github.com/pion/transport/v2@v2.2.4/connctx/connctx.go:83 +0xb8
+created by github.com/pion/transport/v2/connctx.(*connCtx).ReadContext in goroutine 47
+	/home/nathanlee/go/pkg/mod/github.com/pion/transport/v2@v2.2.4/connctx/connctx.go:81 +0x1e5
+
+goroutine 92 [select]:
+github.com/pion/transport/v3/packetio.(*Buffer).Read(0xc000492660, {0xc0000ba000, 0x2000, 0x2000})
+	/home/nathanlee/go/pkg/mod/github.com/pion/transport/v3@v3.0.1/packetio/buffer.go:267 +0x1af
+github.com/pion/webrtc/v4/internal/mux.(*Endpoint).Read(0x0?, {0xc0000ba000?, 0x861fc6?, 0x85fdc9?})
+	/home/nathanlee/go/pkg/mod/github.com/pion/webrtc/v4@v4.0.0-beta.7/internal/mux/endpoint.go:44 +0x1c
+github.com/pion/srtp/v3.(*session).start.func1()
+	/home/nathanlee/go/pkg/mod/github.com/pion/srtp/v3@v3.0.1/session.go:144 +0xaf
+created by github.com/pion/srtp/v3.(*session).start in goroutine 65
+	/home/nathanlee/go/pkg/mod/github.com/pion/srtp/v3@v3.0.1/session.go:131 +0x2b1
+
+goroutine 93 [chan receive]:
+github.com/pion/srtp/v3.(*SessionSRTP).AcceptStream(0x416b3e780297d89f?)
+	/home/nathanlee/go/pkg/mod/github.com/pion/srtp/v3@v3.0.1/session_srtp.go:98 +0x26
+github.com/pion/webrtc/v4.(*PeerConnection).undeclaredRTPMediaProcessor(0xc0001478c0)
+	/home/nathanlee/go/pkg/mod/github.com/pion/webrtc/v4@v4.0.0-beta.7/peerconnection.go:1661 +0xd1
+created by github.com/pion/webrtc/v4.(*PeerConnection).undeclaredMediaProcessor in goroutine 65
+	/home/nathanlee/go/pkg/mod/github.com/pion/webrtc/v4@v4.0.0-beta.7/peerconnection.go:1648 +0x56
+
+goroutine 94 [chan receive]:
+github.com/pion/srtp/v3.(*SessionSRTCP).AcceptStream(0x41c1b91052106071?)
+	/home/nathanlee/go/pkg/mod/github.com/pion/srtp/v3@v3.0.1/session_srtcp.go:96 +0x26
+github.com/pion/webrtc/v4.(*PeerConnection).undeclaredRTCPMediaProcessor(0xc0001478c0)
+	/home/nathanlee/go/pkg/mod/github.com/pion/webrtc/v4@v4.0.0-beta.7/peerconnection.go:1705 +0x119
+created by github.com/pion/webrtc/v4.(*PeerConnection).undeclaredMediaProcessor in goroutine 65
+	/home/nathanlee/go/pkg/mod/github.com/pion/webrtc/v4@v4.0.0-beta.7/peerconnection.go:1649 +0x96
+
+goroutine 95 [select]:
+github.com/pion/dtls/v2.(*Conn).Read(0xc00023ae00, {0xc0000d0000, 0x2000, 0xc00039a890?})
+	/home/nathanlee/go/pkg/mod/github.com/pion/dtls/v2@v2.2.7/conn.go:307 +0x13c
+github.com/pion/sctp.(*Association).readLoop(0xc0004a61e0)
+	/home/nathanlee/go/pkg/mod/github.com/pion/sctp@v1.8.9/association.go:535 +0x14b
+created by github.com/pion/sctp.(*Association).init in goroutine 65
+	/home/nathanlee/go/pkg/mod/github.com/pion/sctp@v1.8.9/association.go:345 +0xbe
+
+goroutine 96 [select]:
+github.com/pion/sctp.(*Association).writeLoop(0xc0004a61e0)
+	/home/nathanlee/go/pkg/mod/github.com/pion/sctp@v1.8.9/association.go:584 +0x1f8
+created by github.com/pion/sctp.(*Association).init in goroutine 65
+	/home/nathanlee/go/pkg/mod/github.com/pion/sctp@v1.8.9/association.go:346 +0x105
+
+goroutine 135 [chan receive]:
+github.com/pion/sctp.(*Association).AcceptStream(...)
+	/home/nathanlee/go/pkg/mod/github.com/pion/sctp@v1.8.9/association.go:1388
+github.com/pion/datachannel.Accept(0xc0003a06e0?, 0xc000080090?, {0xf0d4a0, 0x0, 0xc000024880?})
+	/home/nathanlee/go/pkg/mod/github.com/pion/datachannel@v1.5.5/datachannel.go:123 +0x3b
+github.com/pion/webrtc/v4.(*SCTPTransport).acceptDataChannels(0xc0003a06e0, 0xc000154798?)
+	/home/nathanlee/go/pkg/mod/github.com/pion/webrtc/v4@v4.0.0-beta.7/sctptransport.go:178 +0x266
+created by github.com/pion/webrtc/v4.(*SCTPTransport).Start in goroutine 65
+	/home/nathanlee/go/pkg/mod/github.com/pion/webrtc/v4@v4.0.0-beta.7/sctptransport.go:140 +0x3e6
+
+goroutine 151 [sync.Cond.Wait]:
+sync.runtime_notifyListWait(0xc000024650, 0x1)
+	/usr/local/go/src/runtime/sema.go:527 +0x159
+sync.(*Cond).Wait(0xb3ca00?)
+	/usr/local/go/src/sync/cond.go:70 +0x85
+github.com/pion/sctp.(*Stream).ReadSCTP(0xc0002e6140, {0xc0000da000, 0xffff, 0xffff})
+	/home/nathanlee/go/pkg/mod/github.com/pion/sctp@v1.8.9/stream.go:147 +0xd6
+github.com/pion/datachannel.(*DataChannel).ReadDataChannel(0xc000080090, {0xc0000da000, 0xffff, 0xffff})
+	/home/nathanlee/go/pkg/mod/github.com/pion/datachannel@v1.5.5/datachannel.go:193 +0x54
+github.com/pion/webrtc/v4.(*DataChannel).readLoop(0xc0000d6000)
+	/home/nathanlee/go/pkg/mod/github.com/pion/webrtc/v4@v4.0.0-beta.7/datachannel.go:361 +0xba
+created by github.com/pion/webrtc/v4.(*DataChannel).handleOpen in goroutine 135
+	/home/nathanlee/go/pkg/mod/github.com/pion/webrtc/v4@v4.0.0-beta.7/datachannel.go:330 +0x1e6
+
+goroutine 141 [IO wait]:
+internal/poll.runtime_pollWait(0x7f31395ed5d8, 0x72)
+	/usr/local/go/src/runtime/netpoll.go:343 +0x85
+internal/poll.(*pollDesc).wait(0xc000220d00?, 0xc0004ac000?, 0x0)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:84 +0x27
+internal/poll.(*pollDesc).waitRead(...)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).ReadFromInet4(0xc000220d00, {0xc0004ac000, 0x2000, 0x2000}, 0x41b768?)
+	/usr/local/go/src/internal/poll/fd_unix.go:247 +0x22b
+net.(*netFD).readFromInet4(0xc000220d00, {0xc0004ac000?, 0x41b373?, 0xc0004000c0?}, 0xc000154668?)
+	/usr/local/go/src/net/fd_posix.go:66 +0x25
+net.(*UDPConn).readFrom(0x30?, {0xc0004ac000?, 0xc00039f980?, 0x0?}, 0xc00039f980)
+	/usr/local/go/src/net/udpsock_posix.go:52 +0x1b1
+net.(*UDPConn).readFromUDP(0xc000248158, {0xc0004ac000?, 0x454569?, 0x2000?}, 0x986180?)
+	/usr/local/go/src/net/udpsock.go:149 +0x30
+net.(*UDPConn).ReadFrom(0xc000154788?, {0xc0004ac000, 0x2000, 0x2000})
+	/usr/local/go/src/net/udpsock.go:158 +0x4a
+github.com/pion/ice/v3.(*candidateBase).recvLoop(0xc0004a2000, 0x0?)
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/candidate_base.go:227 +0x137
+created by github.com/pion/ice/v3.(*candidateBase).start in goroutine 16
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/candidate_base.go:211 +0x14d
+
+goroutine 127 [IO wait]:
+internal/poll.runtime_pollWait(0x7f31395ed8c0, 0x72)
+	/usr/local/go/src/runtime/netpoll.go:343 +0x85
+internal/poll.(*pollDesc).wait(0xc0003c8780?, 0xc000438000?, 0x0)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:84 +0x27
+internal/poll.(*pollDesc).waitRead(...)
+	/usr/local/go/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).ReadFromInet4(0xc0003c8780, {0xc000438000, 0x2000, 0x2000}, 0x41b768?)
+	/usr/local/go/src/internal/poll/fd_unix.go:247 +0x22b
+net.(*netFD).readFromInet4(0xc0003c8780, {0xc000438000?, 0x41b373?, 0xb42110?}, 0xc000292000?)
+	/usr/local/go/src/net/fd_posix.go:66 +0x25
+net.(*UDPConn).readFrom(0x30?, {0xc000438000?, 0xc00022d2f0?, 0x0?}, 0xc00022d2f0)
+	/usr/local/go/src/net/udpsock_posix.go:52 +0x1b1
+net.(*UDPConn).readFromUDP(0xc0003a4048, {0xc000438000?, 0x454569?, 0x2000?}, 0x986180?)
+	/usr/local/go/src/net/udpsock.go:149 +0x30
+net.(*UDPConn).ReadFrom(0xc000158f88?, {0xc000438000, 0x2000, 0x2000})
+	/usr/local/go/src/net/udpsock.go:158 +0x4a
+github.com/pion/ice/v3.(*candidateBase).recvLoop(0xc0004a4480, 0xc0001231e0?)
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/candidate_base.go:227 +0x137
+created by github.com/pion/ice/v3.(*candidateBase).start in goroutine 16
+	/home/nathanlee/go/pkg/mod/github.com/pion/ice/v3@v3.0.2/candidate_base.go:211 +0x14d
+
+goroutine 181 [select]:
+github.com/pion/turn/v3/internal/client.(*PeriodicTimer).Start.func1()
+	/home/nathanlee/go/pkg/mod/github.com/pion/turn/v3@v3.0.1/internal/client/periodic_timer.go:50 +0x88
+created by github.com/pion/turn/v3/internal/client.(*PeriodicTimer).Start in goroutine 87
+	/home/nathanlee/go/pkg/mod/github.com/pion/turn/v3@v3.0.1/internal/client/periodic_timer.go:44 +0xd8
+exit status 2
+signal: interrupt
+[gow] received ^C^C, shutting down
