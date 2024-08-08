@@ -109,7 +109,7 @@ async function fetchSizes() {
         console.log(`fetched ${size} bytes in ${end - start}ms`);
 
         // make table
-        table.addRow([size, (end - start).toFixed(2), size /( (end - start) * 1000)])
+        table.addRow([size, (end - start).toFixed(2), size / ((end - start) * 1000)])
 
         // 
     }
@@ -133,9 +133,9 @@ document.getElementById("latency")?.addEventListener("click", async () => {
     const trials = 15;
     const table = new DynamicTable('container', ['Time', 'Latency (ms)'], 'Latency Benchmark');
 
-    const latencies =[];
+    const latencies = [];
 
-    
+
 
     for (let i = 0; i < trials; i++) {
         const latency = await getLatency();
@@ -150,25 +150,34 @@ document.getElementById("latency")?.addEventListener("click", async () => {
 
 document.getElementById("fetchSizes")?.addEventListener("click", fetchSizes)
 
-document.getElementById("loadtest")?.addEventListener("click", async () => {
-
+async function loadTest(trials, size, table) {
     // calculates request per second
-    const trials = 400;
-    const table = new DynamicTable('container', ['Time', 'RPS'], 'Load Test Benchmark');
 
-    
+
     const start = performance.now()
 
-    await Promise.all(Array(trials).fill(0).map(() => fetchBuffer(0)))
+    await Promise.all(Array(trials).fill(0).map(() => fetchBuffer(size)))
 
     const end = performance.now()
 
     const time = end - start
     const rps = trials / (time / 1000)
 
-    table.addRow([time, rps])
+    table.addRow([size, time, rps])
+}
 
+document.getElementById("loadtest")?.addEventListener("click", async () => {
+
+
+    const trials = 400;
+
+    const sizes = [1, 10, 100, 1000, 10000, 100000]
+    const table = new DynamicTable('container', ['Size Response (bytes)', 'Time', 'RPS'], `Load Test Benchmark`);
+
+    for (const size of sizes) {
+        await loadTest(trials, size, table)
+    }
 
 })
 
-fetchSizes();
+// fetchSizes();
