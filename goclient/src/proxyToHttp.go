@@ -303,6 +303,9 @@ func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *webr
 
 	Requests.RemoveStream(clientId, packet.StreamIdentifier)
 
-	go Writer.LogRequest()
+	if RecordRequest {
+		go Writer.LogRequest()
+
+	}
 
 }

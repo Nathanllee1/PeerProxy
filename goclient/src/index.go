@@ -20,6 +20,7 @@ type CLI struct {
 var ProxyPort string = "3000"
 var ServerId string = "foo"
 var FullProxy bool = false
+var RecordRequest bool = false
 
 // Generate random 6 char string
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
@@ -43,6 +44,8 @@ func main() {
 		fmt.Println("Usage: peerproxy <port> --id <id>")
 		ctx.Exit(1)
 	}
+
+	RecordRequest = cli.RecordRequest
 
 	if cli.RecordRequest {
 		InitializeLog()
