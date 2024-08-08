@@ -11,9 +11,10 @@ import (
 )
 
 type CLI struct {
-	Port      int    `arg:"" name:"port" help:"Port number to listen on."`
-	ID        string `optional:"" name:"id" help:"Identifier for the peer."`
-	FullProxy bool   `optional:"" name:"fullProxy" help:"Enable or disable full proxy mode."`
+	Port          int    `arg:"" name:"port" help:"Port number to listen on."`
+	ID            string `optional:"" name:"id" help:"Identifier for the peer."`
+	FullProxy     bool   `optional:"" name:"fullProxy" help:"Enable or disable full proxy mode."`
+	RecordRequest bool   `optional:"" name:"recordRequest" help:"Enable or disable debug mode."`
 }
 
 var ProxyPort string = "3000"
@@ -32,11 +33,6 @@ func RandStringRunes(n int) string {
 }
 
 func main() {
-	// Define flags
-	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", nil))
-	}()
-
 	var cli CLI
 	ctx := kong.Parse(&cli,
 		kong.UsageOnError(),
@@ -44,8 +40,16 @@ func main() {
 
 	// Validate and use the parsed flags
 	if cli.Port == 0 {
-		fmt.Println("Usage: peerproxy <port> --id <id> --fullProxy <true|false>")
+		fmt.Println("Usage: peerproxy <port> --id <id>")
 		ctx.Exit(1)
+	}
+
+	if cli.RecordRequest {
+		InitializeLog()
+
+		go func() {
+			log.Println(http.ListenAndServe("localhost:6060", nil))
+		}()
 	}
 
 	ProxyPort = fmt.Sprintf("%d", cli.Port)

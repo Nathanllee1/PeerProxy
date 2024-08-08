@@ -4,7 +4,7 @@ import { createDom, setupIframe } from './createDom';
 import { connect } from './peer'
 import { connectSW } from './peer2';
 import './style.css'
-import { log, sleep, timer, timers } from './utils'
+import { log, logSelectedCandidatePair, sleep, timer, timers } from './utils'
 import { createTimeline, testConnectionSpeed, test_connection } from './wrtcBenchmarks';
 
 export const waitForSW = async () => {
@@ -45,6 +45,7 @@ export function getId() {
   const hostname = window.location.hostname;
   const parts = hostname.split('.');
   let serverId = "foo";
+  
   if (parts.length > 2) {
     serverId = parts.slice(0, parts.length - 2).join('.');
     return serverId
@@ -92,7 +93,9 @@ async function main() {
 
   registration = await initializeSW()
 
-  const { dc, stats } = await connect(id)
+  const { dc, stats, pc } = await connect(id)
+
+  logSelectedCandidatePair(pc)
 
   let iframe: HTMLIFrameElement
   if (!debug) {

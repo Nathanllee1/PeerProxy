@@ -158,9 +158,9 @@ document.getElementById("loadtest")?.addEventListener("click", async () => {
 
     
     const start = performance.now()
-    for (let i = 0; i < trials; i++) {
-        await fetchBuffer(1000)
-    }
+
+    await Promise.all(Array(trials).fill(0).map(() => fetchBuffer(0)))
+
     const end = performance.now()
 
     const time = end - start
@@ -170,3 +170,5 @@ document.getElementById("loadtest")?.addEventListener("click", async () => {
 
 
 })
+
+fetchSizes();

@@ -85,7 +85,7 @@ export async function connect(serverId: string) {
     }
 
     let dc = pc.createDataChannel('data', {
-      // ordered: true,
+      ordered: false,
     })
 
     dc.onclose = () => {
