@@ -3,6 +3,7 @@ import { setupBenchamrking } from './benchmarking';
 import { createDom, setupIframe } from './createDom';
 import { connect } from './peer'
 import { connectSW } from './peer2';
+import { registerProtocolHandler } from './protocolHandler';
 import './style.css'
 import { log, logSelectedCandidatePair, sleep, timer, timers } from './utils'
 import { createTimeline, testConnectionSpeed, test_connection } from './wrtcBenchmarks';
@@ -49,6 +50,11 @@ export function getId() {
   if (parts.length > 2) {
     serverId = parts.slice(0, parts.length - 2).join('.');
     return serverId
+  }
+
+  if (searchParams.has("peerproxyid")) {
+    // redirect to subdomain with peerproxyid
+    window.location.href = `https://${searchParams.get("peerproxyid")}.${hostname}${window.location.pathname}`
   }
 
   return serverId;
@@ -129,7 +135,8 @@ async function main() {
 
   }
 
-  // navigator.registerProtocolHandler('web+webrtc', 'http://localhost:5173/?id=%s')
+  // registerProtocolHandler()
+
   navigator.serviceWorker.addEventListener("message", (message) => {
     switch (message.data.type) {
       case "data":

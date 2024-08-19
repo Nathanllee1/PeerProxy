@@ -6,15 +6,26 @@
   "scripts": {
     "dev": "vite & esbuild serviceWorker/sw.ts --bundle --sourcemap --outfile=public/sw.js --watch",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint src",
+    "lint:compat": "eslint src --rule 'compat/compat:error' --quiet"
   },
+  "browserslist": [
+    "cover 82%"
+  ],
   "devDependencies": {
+    "@eslint/js": "^9.9.0",
     "@types/cookie": "^0.6.0",
     "@types/serviceworker": "^0.0.84",
+    "browserslist": "^4.23.3",
     "esbuild": "0.20.1",
+    "eslint": "^9.9.0",
+    "eslint-plugin-compat": "^6.0.0",
+    "globals": "^15.9.0",
     "hpack": "^1.0.0",
     "node-stdlib-browser": "^1.2.0",
     "typescript": "^5.3.3",
+    "typescript-eslint": "^8.0.1",
     "vite": "^5.0.8",
     "vite-plugin-run": "^0.5.1"
   },
