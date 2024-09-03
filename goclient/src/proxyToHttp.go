@@ -40,7 +40,8 @@ func sendPacket(dc *webrtc.DataChannel, packet *Packet) error {
 }
 
 func makePackets(stream io.ReadCloser, dc *webrtc.DataChannel, streamIdentifier uint32, ctx context.Context, cancel context.CancelFunc) {
-	const payloadSize = 16*1024 - 11
+	// const payloadSize = 16*1024 - 11
+	const payloadSize = 64000 - 11
 
 	buffer := make([]byte, payloadSize)
 

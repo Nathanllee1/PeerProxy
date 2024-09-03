@@ -1,7 +1,7 @@
 import { DataSet, Graph2d, Timeline } from "vis-timeline/standalone";
 import { connect } from "./peer";
 import { connectSW } from "./peer2";
-import { getCandidatePair, log, sleep } from "./utils";
+import { getCandidatePair, getFormattedDateTime, log, sleep } from "./utils";
 import { getId } from "./main";
 
 import { createFrame } from "../serviceWorker/createPacket"
@@ -248,6 +248,79 @@ export async function testConnectionSpeed() {
         await sleep(1000)
         clearInterval(monitoringInvl)
     }, TEST_LENGTH)
+}
+
+function datasetToCSV(data: DataSet<any>) {
+
+    const items = data.get();
+
+    if (items.length === 0) {
+        return '';
+    }
+
+    // Extract the headers (keys) from the first item
+    const headers = Object.keys(items[0]);
+
+    // Map the headers to CSV format
+    const csvRows = [
+        headers.join(','), // header row
+        ...items.map(item =>
+            headers.map(header => JSON.stringify(item[header] || '')).join(',')
+        )
+    ];
+
+    // Join all rows into a single string with new line breaks
+    return csvRows.join('\n');
+}
+
+async function writeToFile(filename: string, filedata: string) {
+
+    const blob = new Blob([filedata], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+
+    return url
+
+}
+
+export function monitorConnectionSpeed(pc: RTCPeerConnection) {
+    return async () => {
+        const TEST_LENGTH = 5000
+
+        const speeds = new DataSet()
+    
+        let previousBytesSent = 0
+        const MONITORING_RATE = 150
+        const monitoringInvl = setInterval(async () => {
+            const stats = await pc.getStats()
+    
+            stats.forEach(report => {
+                if (report.type !== 'data-channel') {
+                    return
+                }
+                const bytesSent = report.bytesSent;
+                const throughput = (bytesSent - previousBytesSent) * 8 / MONITORING_RATE / 1000;
+                previousBytesSent = bytesSent;
+    
+                speeds.add({
+                    x: new Date(),
+                    y: throughput
+                })
+            })
+        }, MONITORING_RATE)
+    
+        setTimeout(() => {
+            clearInterval(monitoringInvl)
+        }, TEST_LENGTH)
+    
+    
+        const csv = datasetToCSV(speeds)
+        const url = await writeToFile(`speeds-${getFormattedDateTime()}.csv`, csv)
+    
+        // open a new tab to the csv
+        window.open(url)
+    }
+    
+
 }
 
 

@@ -33,6 +33,8 @@ const handleServer = (ws: WebSocket, preferredId: string | undefined) => {
 
     ws.on('close', () => {
         console.log("Closed")
+
+        delete servers[id]
     })
 
     ws.on('message', function message(data) {
@@ -64,6 +66,11 @@ const handleClient = (ws: WebSocket, preferedId: string | undefined) => {
     ws.send(JSON.stringify({ mtype: "idAssgn", id }))
 
     clients[id] = ws;
+
+    ws.on('close', () => {
+
+        delete clients[id]
+    })
 
     ws.on('message', function message(data) {
         const clientData = JSON.parse(data.toString())

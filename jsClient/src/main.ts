@@ -1,7 +1,8 @@
 import { createFrame } from '../serviceWorker/createPacket';
 import { setupBenchamrking } from './benchmarking';
 import { createDom, setupIframe } from './createDom';
-import { connect } from './peer'
+import { DataChannelSendQueue } from './dataChannelQueue';
+import { connect, ConnectionManager } from './peer'
 import { connectSW } from './peer2';
 import { registerProtocolHandler } from './protocolHandler';
 import './style.css'
@@ -16,12 +17,6 @@ export const waitForSW = async () => {
 
 export const debug = false
 export const enableIframe = true
-
-document.getElementById("makeDom")?.addEventListener("click", async () => {
-  await createDom(window.location.pathname)
-})
-
-
 
 async function initializeSW() {
 
@@ -46,7 +41,7 @@ export function getId() {
   const hostname = window.location.hostname;
   const parts = hostname.split('.');
   let serverId = "foo";
-  
+
   if (parts.length > 2) {
     serverId = parts.slice(0, parts.length - 2).join('.');
     return serverId
@@ -80,12 +75,7 @@ function waitForSWReady(registration: ServiceWorkerRegistration) {
 
 }
 
-async function sendHeartbeat(dc: RTCDataChannel) {
-  setInterval(() => {
-    const testPacket = createFrame(0, 'HEADER', new Uint8Array(), true, 0, true)
-    dc.send(testPacket)
-  }, 1000)
-}
+
 
 export let registration: ServiceWorkerRegistration
 
@@ -95,52 +85,33 @@ async function main() {
   const id = getId()
   console.log("ID", id)
 
-  await setupIframe()
+  
+  let iframe: HTMLIFrameElement
+  iframe = await setupIframe()
 
   registration = await initializeSW()
 
-  const { dc, stats, pc } = await connect(id)
+  const connectionManager = new ConnectionManager(id)
+  const { dc, stats, pc } = await connectionManager.connect()
 
   logSelectedCandidatePair(pc)
 
-  let iframe: HTMLIFrameElement
-  if (!debug) {
-    iframe = await setupIframe()
-
-  }
 
   if (debug) {
-    setupBenchamrking()
-
-    const speedButton = document.createElement("button")
-    speedButton.innerText = "Test Connection Speed"
-    speedButton.id = "connectionSpeed"
-
-    speedButton.addEventListener("click", async () => {
-      await testConnectionSpeed()
-    })
-
-    document.body.appendChild(speedButton)
-
+    setupBenchamrking(pc)
+    createTimeline(stats.events)
   }
 
   console.log("Connected")
-
-  sendHeartbeat(dc)
-
-  console.log(stats.events)
-
-  if (debug) {
-    createTimeline(stats.events)
-
-  }
 
   // registerProtocolHandler()
 
   navigator.serviceWorker.addEventListener("message", (message) => {
     switch (message.data.type) {
       case "data":
-        dc.send(message.data.payload)
+        // dc.send(message.data.payload)
+        // console.log("Sending data", message.data.payload)
+        connectionManager.send(message.data.payload)
         break
 
       case "set-cookie":
@@ -154,9 +125,10 @@ async function main() {
     }
   })
 
-  dc.onmessage = event => {
-    registration.active?.postMessage({ type: "data", payload: event.data }, [event.data])
-  }
+  connectionManager.addEventListener("message", event => {
+    console.log('received message', event)
+    registration.active?.postMessage({ type: "data", payload: event.detail }, [event.detail])
+  })
 
   console.time("waiting for connection")
   await waitForSWReady(registration)
@@ -164,9 +136,10 @@ async function main() {
 
   log("Connected")
 
-  if (!debug) {
-    await createDom(window.location.pathname)
-  }
+
+  await createDom(window.location.pathname, iframe)
+
+
 }
 
 main()

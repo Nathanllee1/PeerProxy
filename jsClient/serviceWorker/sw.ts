@@ -46,7 +46,7 @@ async function handleIframeRequest(event: FetchEvent, client: Client) {
         return fetch(event.request)
     }
 
-    // console.log(client.frameType, event.request.url)
+    // console.log(peerConnected, client.frameType, event.request.url, event)
 
 
     const clientHostname = new URL(client.url).hostname
