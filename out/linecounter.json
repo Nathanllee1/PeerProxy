@@ -1,0 +1,4060 @@
+{
+    "extension": "linecounter",
+    "version": "0.2.7",
+    "workspace": "/home/nathanlee/Workspace/WebRTCSignaling",
+    "linecount": [
+        {
+            "version": "0.2.7",
+            "counttime": "2024-09-03 14:28:00",
+            "filesum": 595,
+            "codesum": 663956,
+            "commentsum": 63002,
+            "blanksum": 4520,
+            "statistics": {
+                ".json": {
+                    "code": 259526,
+                    "comment": 1334,
+                    "blank": 592
+                },
+                ".html": {
+                    "code": 315,
+                    "comment": 34,
+                    "blank": 98
+                },
+                ".js": {
+                    "code": 3081,
+                    "comment": 222,
+                    "blank": 229
+                },
+                "": {
+                    "code": 36568,
+                    "comment": 49,
+                    "blank": 62
+                },
+                ".mjs": {
+                    "code": 90136,
+                    "comment": 3794,
+                    "blank": 1377
+                },
+                ".ipynb": {
+                    "code": 1541,
+                    "comment": 0,
+                    "blank": 42
+                },
+                ".ts": {
+                    "code": 108263,
+                    "comment": 57452,
+                    "blank": 1666
+                },
+                ".svg": {
+                    "code": 5,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".css": {
+                    "code": 170,
+                    "comment": 2,
+                    "blank": 23
+                },
+                ".sum": {
+                    "code": 207,
+                    "comment": 1,
+                    "blank": 0
+                },
+                ".go": {
+                    "code": 636,
+                    "comment": 85,
+                    "blank": 271
+                },
+                ".mod": {
+                    "code": 31,
+                    "comment": 25,
+                    "blank": 3
+                },
+                ".map": {
+                    "code": 14,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".out": {
+                    "code": 1066,
+                    "comment": 0,
+                    "blank": 131
+                },
+                ".yaml": {
+                    "code": 2,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".txt": {
+                    "code": 70075,
+                    "comment": 0,
+                    "blank": 1
+                },
+                ".sh": {
+                    "code": 5,
+                    "comment": 0,
+                    "blank": 2
+                },
+                ".toml": {
+                    "code": 62,
+                    "comment": 2,
+                    "blank": 19
+                },
+                ".tmp": {
+                    "code": 132,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".pem": {
+                    "code": 27,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".Identifier": {
+                    "code": 4,
+                    "comment": 2,
+                    "blank": 0
+                },
+                ".m3u8": {
+                    "code": 50,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".lock": {
+                    "code": 1,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".fd507cffd0a2128b340e59a60f1ffb1506d9d6921926d5835402a86b49b6bfde": {
+                    "code": 9,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".4cefa02ee126d32367f3074a684e5d7c32212991e70447a3a9cb9bfa8e0bc680": {
+                    "code": 4,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".1d0eaafd4cf18ad475213462c820479fc26fe3eeaa851830bd8e1d75ab5a4684": {
+                    "code": 9,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".9f3e769d775a47d1cc712faf510bb9fdd55a839a4bbd096102ef3aad9f82aad5": {
+                    "code": 9,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".51b8ba19c922b91ec075069a66fbdf5e942b7c81255cb6a9b9897bdca8d54e0d": {
+                    "code": 4,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".623efee9bbfbcd52d452a3cff761c53cbb0cb1263a366dfe1894b699e4aa1524": {
+                    "code": 9,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".00edcc443b5e8504af541c1ce9e37e16c85c6d69883e7e9caf5de0a84364c6db": {
+                    "code": 9,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".942d90e7013a1496d72855f30c1a4a75e3e2c539a31dfe60e2228c1879a34550": {
+                    "code": 9,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".171145ed4e98fe4b745d97261f796c128a54e61269eefa495ba2a03e4be16abd": {
+                    "code": 4,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".8e8f03e7a4e2aa0e58d56aece5d2dd74d652d1e963e3a93115d3a2a65d0d07e9": {
+                    "code": 4,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".d9f4d2e0cbaf53b2af50814a4e484588925848488788e40d04b3f7a4c4aace06": {
+                    "code": 9,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".2459c1816465eef9ed3bd952e0974aed82504f3c448d7076a608d9cf030c0a0b": {
+                    "code": 4,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".a87e40cd0451e3dd460a60f0b3265b306c3e5134b17fcf11193fe8a8516ae6e6": {
+                    "code": 9,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".4d4c5f55453c30aa91bed9f58d63b27af452bff13e90e7dc3c9c8588508c0a6e": {
+                    "code": 13,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".e0f56e3eb0eae985d249bcf0618eb8a82f74544bb6343606496e078e10b69b6d": {
+                    "code": 9,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".aecd2c3712310ed994496e2eb5952d119f118e7b1af0ff48500300b4f86169a3": {
+                    "code": 11,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".72b00afa9adc6fd76ad01d6b525ed37bc47a88f67d32413367cb8e727f61e8bc": {
+                    "code": 9,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".e484c901ad7f4612aa46219b35ff57bd6ddcdf7ad55e852f71e287fb1ea79f68": {
+                    "code": 4,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".d055d7b286e32bafa9b5235ea84e283a33b6d6a865171e2b8182c9cdeecdd365": {
+                    "code": 6,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".63473f7182548c56d86a8cf4588c6069810e2ea491376db456a8a2121c2b15bf": {
+                    "code": 9,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".119ff153b89ad7d0c97b4bec4961ed15a3556888d86d7ffb45f056c555b18596": {
+                    "code": 9,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".9380ee77edfdba07c9e85322697f4f70f150bbbd596f7e9fbf02cf568e5b1aa8": {
+                    "code": 9,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".ff1c5777e3d30c3b8d6a68993c20460ffbe7e752e65fe8dcc828c0bc3cc1fadc": {
+                    "code": 8,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".3a4fb6e707165f944b6bd8158bbab0a4d274d07b2f36b71f50603116ffca5b04": {
+                    "code": 9,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".ed6acc3c716ff0da68b7b7753ee297e9ecfd602a8642cd03fbd7d835aad7062b": {
+                    "code": 8,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".log": {
+                    "code": 57,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".md": {
+                    "code": 10,
+                    "comment": 0,
+                    "blank": 4
+                },
+                ".160Z": {
+                    "code": 7294,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".923Z": {
+                    "code": 13341,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".358Z": {
+                    "code": 22711,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".935Z": {
+                    "code": 48430,
+                    "comment": 0,
+                    "blank": 0
+                }
+            },
+            "filelist": [
+                {
+                    "blank": 1,
+                    "code": 16,
+                    "comment": 14,
+                    "filename": ".gitignore"
+                },
+                {
+                    "blank": 0,
+                    "code": 8,
+                    "comment": 0,
+                    "filename": "extension/hello.html"
+                },
+                {
+                    "filename": "extension/image.png",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 10,
+                    "comment": 0,
+                    "filename": "extension/manifest.json"
+                },
+                {
+                    "blank": 3,
+                    "code": 2,
+                    "comment": 1,
+                    "filename": "extension/test.js"
+                },
+                {
+                    "filename": "goclient/bin/peerproxy-darwin-amd64",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "goclient/bin/peerproxy-linux-amd64",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "goclient/bin/peerproxy-windows-amd64.exe",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 3,
+                    "code": 31,
+                    "comment": 25,
+                    "filename": "goclient/go.mod"
+                },
+                {
+                    "blank": 0,
+                    "code": 207,
+                    "comment": 1,
+                    "filename": "goclient/go.sum"
+                },
+                {
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0,
+                    "filename": "goclient/logs/2024-08-08T11-49-52.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 18,
+                    "comment": 0,
+                    "filename": "goclient/logs/2024-08-08T12-14-19.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 104,
+                    "comment": 0,
+                    "filename": "goclient/logs/2024-08-08T12-15-03.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 140,
+                    "comment": 0,
+                    "filename": "goclient/logs/2024-08-08T12-15-53.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0,
+                    "filename": "goclient/logs/2024-08-08T12-38-25.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0,
+                    "filename": "goclient/logs/2024-08-08T12-40-59.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0,
+                    "filename": "goclient/logs/2024-08-08T12-41-38.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0,
+                    "filename": "goclient/logs/2024-08-08T14-01-10.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 410,
+                    "comment": 0,
+                    "filename": "goclient/logs/2024-08-08T14-03-06.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 3233,
+                    "comment": 0,
+                    "filename": "goclient/logs/2024-08-08T14-03-22.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0,
+                    "filename": "goclient/logs/2024-08-08T14-15-32.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0,
+                    "filename": "goclient/logs/2024-08-08T14-20-57.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 8196,
+                    "comment": 0,
+                    "filename": "goclient/logs/2024-08-08T14-21-10.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 2010,
+                    "comment": 0,
+                    "filename": "goclient/logs/Vl-uZ.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 2,
+                    "comment": 34,
+                    "filename": "goclient/Makefile"
+                },
+                {
+                    "blank": 18,
+                    "code": 58,
+                    "comment": 4,
+                    "filename": "goclient/src/getconfig.go"
+                },
+                {
+                    "blank": 21,
+                    "code": 47,
+                    "comment": 3,
+                    "filename": "goclient/src/index.go"
+                },
+                {
+                    "blank": 13,
+                    "code": 22,
+                    "comment": 2,
+                    "filename": "goclient/src/logger.go"
+                },
+                {
+                    "blank": 28,
+                    "code": 84,
+                    "comment": 1,
+                    "filename": "goclient/src/packetParser.go"
+                },
+                {
+                    "blank": 90,
+                    "code": 192,
+                    "comment": 31,
+                    "filename": "goclient/src/proxyToHttp.go"
+                },
+                {
+                    "blank": 31,
+                    "code": 75,
+                    "comment": 1,
+                    "filename": "goclient/src/requestManager.go"
+                },
+                {
+                    "blank": 70,
+                    "code": 157,
+                    "comment": 43,
+                    "filename": "goclient/src/webrtcClient.go"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "goclient/test/test.go"
+                },
+                {
+                    "blank": 0,
+                    "code": 8,
+                    "comment": 0,
+                    "filename": "jsClient/.vite/deps/_metadata.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 3,
+                    "comment": 0,
+                    "filename": "jsClient/.vite/deps/package.json"
+                },
+                {
+                    "blank": 97,
+                    "code": 614,
+                    "comment": 64,
+                    "filename": "jsClient/dist/assets/index-12cGhR7v.js"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "jsClient/dist/assets/index-RBw7LVW4.css"
+                },
+                {
+                    "blank": 2,
+                    "code": 5,
+                    "comment": 0,
+                    "filename": "jsClient/dist/iframe-peerproxy.html"
+                },
+                {
+                    "blank": 8,
+                    "code": 12,
+                    "comment": 1,
+                    "filename": "jsClient/dist/iframe-sw.js"
+                },
+                {
+                    "blank": 0,
+                    "code": 7,
+                    "comment": 0,
+                    "filename": "jsClient/dist/iframe2.html"
+                },
+                {
+                    "blank": 8,
+                    "code": 18,
+                    "comment": 1,
+                    "filename": "jsClient/dist/iframeScript-peerproxy.js"
+                },
+                {
+                    "blank": 13,
+                    "code": 41,
+                    "comment": 16,
+                    "filename": "jsClient/dist/index.html"
+                },
+                {
+                    "filename": "jsClient/dist/smallerImg.jpg",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 6,
+                    "code": 503,
+                    "comment": 25,
+                    "filename": "jsClient/dist/sw.js"
+                },
+                {
+                    "blank": 0,
+                    "code": 7,
+                    "comment": 0,
+                    "filename": "jsClient/dist/sw.js.map"
+                },
+                {
+                    "filename": "jsClient/dist/test.jpg",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "jsClient/dist/vite.svg"
+                },
+                {
+                    "blank": 3,
+                    "code": 11,
+                    "comment": 0,
+                    "filename": "jsClient/eslint.config.js"
+                },
+                {
+                    "blank": 13,
+                    "code": 40,
+                    "comment": 16,
+                    "filename": "jsClient/index.html"
+                },
+                {
+                    "blank": 120,
+                    "code": 4466,
+                    "comment": 0,
+                    "filename": "jsClient/package-lock.json"
+                },
+                {
+                    "blank": 1,
+                    "code": 35,
+                    "comment": 0,
+                    "filename": "jsClient/package.json"
+                },
+                {
+                    "blank": 2,
+                    "code": 5,
+                    "comment": 0,
+                    "filename": "jsClient/public/iframe-peerproxy.html"
+                },
+                {
+                    "blank": 8,
+                    "code": 12,
+                    "comment": 1,
+                    "filename": "jsClient/public/iframe-sw.js"
+                },
+                {
+                    "blank": 0,
+                    "code": 7,
+                    "comment": 0,
+                    "filename": "jsClient/public/iframe2.html"
+                },
+                {
+                    "blank": 8,
+                    "code": 18,
+                    "comment": 1,
+                    "filename": "jsClient/public/iframeScript-peerproxy.js"
+                },
+                {
+                    "filename": "jsClient/public/smallerImg.jpg",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 6,
+                    "code": 503,
+                    "comment": 25,
+                    "filename": "jsClient/public/sw.js"
+                },
+                {
+                    "blank": 0,
+                    "code": 7,
+                    "comment": 0,
+                    "filename": "jsClient/public/sw.js.map"
+                },
+                {
+                    "filename": "jsClient/public/test.jpg",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "jsClient/public/vite.svg"
+                },
+                {
+                    "blank": 11,
+                    "code": 23,
+                    "comment": 0,
+                    "filename": "jsClient/serviceWorker/cookieManager.ts"
+                },
+                {
+                    "blank": 46,
+                    "code": 106,
+                    "comment": 21,
+                    "filename": "jsClient/serviceWorker/createPacket.ts"
+                },
+                {
+                    "blank": 40,
+                    "code": 92,
+                    "comment": 6,
+                    "filename": "jsClient/serviceWorker/requestHandler.ts"
+                },
+                {
+                    "blank": 31,
+                    "code": 65,
+                    "comment": 8,
+                    "filename": "jsClient/serviceWorker/streamHandler.ts"
+                },
+                {
+                    "blank": 40,
+                    "code": 80,
+                    "comment": 7,
+                    "filename": "jsClient/serviceWorker/sw.ts"
+                },
+                {
+                    "blank": 11,
+                    "code": 36,
+                    "comment": 1,
+                    "filename": "jsClient/serviceWorker/wsProxy.ts"
+                },
+                {
+                    "blank": 19,
+                    "code": 33,
+                    "comment": 2,
+                    "filename": "jsClient/src/benchmarking.ts"
+                },
+                {
+                    "blank": 49,
+                    "code": 111,
+                    "comment": 14,
+                    "filename": "jsClient/src/createDom.ts"
+                },
+                {
+                    "blank": 15,
+                    "code": 55,
+                    "comment": 1,
+                    "filename": "jsClient/src/dataChannelQueue.ts"
+                },
+                {
+                    "blank": 9,
+                    "code": 11,
+                    "comment": 0,
+                    "filename": "jsClient/src/debugPanel.ts"
+                },
+                {
+                    "blank": 47,
+                    "code": 85,
+                    "comment": 7,
+                    "filename": "jsClient/src/main.ts"
+                },
+                {
+                    "blank": 68,
+                    "code": 164,
+                    "comment": 5,
+                    "filename": "jsClient/src/peer.ts"
+                },
+                {
+                    "blank": 94,
+                    "code": 228,
+                    "comment": 17,
+                    "filename": "jsClient/src/peer2.ts"
+                },
+                {
+                    "blank": 4,
+                    "code": 7,
+                    "comment": 1,
+                    "filename": "jsClient/src/protocolHandler.ts"
+                },
+                {
+                    "blank": 1,
+                    "code": 5,
+                    "comment": 1,
+                    "filename": "jsClient/src/sst-env.d.ts"
+                },
+                {
+                    "blank": 12,
+                    "code": 78,
+                    "comment": 2,
+                    "filename": "jsClient/src/style.css"
+                },
+                {
+                    "blank": 25,
+                    "code": 67,
+                    "comment": 3,
+                    "filename": "jsClient/src/utils.ts"
+                },
+                {
+                    "blank": 91,
+                    "code": 257,
+                    "comment": 17,
+                    "filename": "jsClient/src/wrtcBenchmarks.ts"
+                },
+                {
+                    "blank": 2,
+                    "code": 19,
+                    "comment": 2,
+                    "filename": "jsClient/tsconfig.json"
+                },
+                {
+                    "blank": 3,
+                    "code": 6,
+                    "comment": 7,
+                    "filename": "jsClient/vite.config.ts"
+                },
+                {
+                    "blank": 0,
+                    "code": 27,
+                    "comment": 0,
+                    "filename": "PeerProxy.pem"
+                },
+                {
+                    "blank": 27,
+                    "code": 498,
+                    "comment": 0,
+                    "filename": "profiling/analysis.ipynb"
+                },
+                {
+                    "blank": 12,
+                    "code": 22,
+                    "comment": 6,
+                    "filename": "profiling/index.js"
+                },
+                {
+                    "blank": 9,
+                    "code": 22,
+                    "comment": 3,
+                    "filename": "profiling/loadtest.mjs"
+                },
+                {
+                    "blank": 0,
+                    "code": 70064,
+                    "comment": 0,
+                    "filename": "profiling/metrics.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 70064,
+                    "comment": 0,
+                    "filename": "profiling/metrics.txt"
+                },
+                {
+                    "blank": 0,
+                    "code": 70064,
+                    "comment": 0,
+                    "filename": "profiling/metrics.txt"
+                },
+                {
+                    "blank": 0,
+                    "code": 70064,
+                    "comment": 0,
+                    "filename": "profiling/output.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 70064,
+                    "comment": 0,
+                    "filename": "profiling/output.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 1214,
+                    "comment": 0,
+                    "filename": "profiling/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 16,
+                    "comment": 0,
+                    "filename": "profiling/package.json"
+                },
+                {
+                    "blank": 26,
+                    "code": 44,
+                    "comment": 5,
+                    "filename": "profiling/processTest.mjs"
+                },
+                {
+                    "blank": 15,
+                    "code": 1043,
+                    "comment": 0,
+                    "filename": "profiling/signalingServer.ipynb"
+                },
+                {
+                    "blank": 16,
+                    "code": 59,
+                    "comment": 13,
+                    "filename": "profiling/signalingServerTest.mjs"
+                },
+                {
+                    "blank": 0,
+                    "code": 13884,
+                    "comment": 0,
+                    "filename": "profiling/tests/ngrok-2024-07-29T19-58-12-423Z"
+                },
+                {
+                    "blank": 0,
+                    "code": 13341,
+                    "comment": 0,
+                    "filename": "profiling/tests/ngrok-2024-07-29T21:50:44.923Z"
+                },
+                {
+                    "blank": 0,
+                    "code": 22711,
+                    "comment": 0,
+                    "filename": "profiling/tests/ngrok-2024-07-29T21:52:24.358Z"
+                },
+                {
+                    "blank": 0,
+                    "code": 22518,
+                    "comment": 0,
+                    "filename": "profiling/tests/ngrok-2024-07-31T22-50-31-887Z"
+                },
+                {
+                    "blank": 0,
+                    "code": 7294,
+                    "comment": 0,
+                    "filename": "profiling/tests/proxy-2024-07-29T19:59:08.160Z"
+                },
+                {
+                    "blank": 0,
+                    "code": 58236,
+                    "comment": 0,
+                    "filename": "profiling/tests/proxy-2024-07-29T20:01:15.024Z"
+                },
+                {
+                    "blank": 0,
+                    "code": 48430,
+                    "comment": 0,
+                    "filename": "profiling/tests/proxy-2024-07-29T21:50:21.935Z"
+                },
+                {
+                    "blank": 0,
+                    "code": 108081,
+                    "comment": 0,
+                    "filename": "profiling/tests/proxy-2024-07-29T21:52:45.165Z"
+                },
+                {
+                    "blank": 0,
+                    "code": 97018,
+                    "comment": 0,
+                    "filename": "profiling/tests/proxy-2024-07-31T22-49-47-034Z"
+                },
+                {
+                    "blank": 0,
+                    "code": 55410,
+                    "comment": 0,
+                    "filename": "profiling/trace.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 55410,
+                    "comment": 0,
+                    "filename": "profiling/trace.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "profiling/usages/ngrok-2024-08-07_09-17-25.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "profiling/usages/ngrok-2024-08-07T16:07:54.776Z.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "profiling/usages/proxy-2024-08-07_09-16-04.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "profiling/usages/proxy-2024-08-07T16:08:52.375Z.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "profiling/usages/proxy-2024-08-07T16:13:35.942Z.json"
+                },
+                {
+                    "blank": 1,
+                    "code": 11,
+                    "comment": 0,
+                    "filename": "protocol.txt"
+                },
+                {
+                    "blank": 1,
+                    "code": 7,
+                    "comment": 0,
+                    "filename": "scalableSignaling/.gitignore"
+                },
+                {
+                    "blank": 1,
+                    "code": 5,
+                    "comment": 0,
+                    "filename": "scalableSignaling/.npmignore"
+                },
+                {
+                    "blank": 0,
+                    "code": 15,
+                    "comment": 0,
+                    "filename": "scalableSignaling/app/dist/server.js"
+                },
+                {
+                    "blank": 4,
+                    "code": 7,
+                    "comment": 0,
+                    "filename": "scalableSignaling/app/Dockerfile"
+                },
+                {
+                    "blank": 0,
+                    "code": 813,
+                    "comment": 0,
+                    "filename": "scalableSignaling/app/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 20,
+                    "comment": 0,
+                    "filename": "scalableSignaling/app/package.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "scalableSignaling/app/src/server.d.ts"
+                },
+                {
+                    "blank": 0,
+                    "code": 12,
+                    "comment": 1,
+                    "filename": "scalableSignaling/app/src/server.js"
+                },
+                {
+                    "blank": 3,
+                    "code": 10,
+                    "comment": 0,
+                    "filename": "scalableSignaling/app/src/server.ts"
+                },
+                {
+                    "blank": 8,
+                    "code": 13,
+                    "comment": 88,
+                    "filename": "scalableSignaling/app/tsconfig.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 2,
+                    "comment": 0,
+                    "filename": "scalableSignaling/bin/scalable_signaling.d.ts"
+                },
+                {
+                    "blank": 0,
+                    "code": 9,
+                    "comment": 11,
+                    "filename": "scalableSignaling/bin/scalable_signaling.js"
+                },
+                {
+                    "blank": 4,
+                    "code": 7,
+                    "comment": 10,
+                    "filename": "scalableSignaling/bin/scalable_signaling.ts"
+                },
+                {
+                    "blank": 3,
+                    "code": 66,
+                    "comment": 0,
+                    "filename": "scalableSignaling/cdk.json"
+                },
+                {
+                    "filename": "scalableSignaling/cdk.out/.cache/ee7de53d64cc9d6248fa6aa550f92358f6c907b5efd6f3298aeab1b5e7ea358a.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 15,
+                    "comment": 0,
+                    "filename": "scalableSignaling/cdk.out/asset.1f9d4128b27aa585a5610e55ca4fe662318c5aa45001abaa5295ee7f7eae2913/dist/server.js"
+                },
+                {
+                    "blank": 4,
+                    "code": 7,
+                    "comment": 0,
+                    "filename": "scalableSignaling/cdk.out/asset.1f9d4128b27aa585a5610e55ca4fe662318c5aa45001abaa5295ee7f7eae2913/Dockerfile"
+                },
+                {
+                    "blank": 0,
+                    "code": 813,
+                    "comment": 0,
+                    "filename": "scalableSignaling/cdk.out/asset.1f9d4128b27aa585a5610e55ca4fe662318c5aa45001abaa5295ee7f7eae2913/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 20,
+                    "comment": 0,
+                    "filename": "scalableSignaling/cdk.out/asset.1f9d4128b27aa585a5610e55ca4fe662318c5aa45001abaa5295ee7f7eae2913/package.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "scalableSignaling/cdk.out/asset.1f9d4128b27aa585a5610e55ca4fe662318c5aa45001abaa5295ee7f7eae2913/src/server.d.ts"
+                },
+                {
+                    "blank": 0,
+                    "code": 12,
+                    "comment": 1,
+                    "filename": "scalableSignaling/cdk.out/asset.1f9d4128b27aa585a5610e55ca4fe662318c5aa45001abaa5295ee7f7eae2913/src/server.js"
+                },
+                {
+                    "blank": 3,
+                    "code": 10,
+                    "comment": 0,
+                    "filename": "scalableSignaling/cdk.out/asset.1f9d4128b27aa585a5610e55ca4fe662318c5aa45001abaa5295ee7f7eae2913/src/server.ts"
+                },
+                {
+                    "blank": 8,
+                    "code": 13,
+                    "comment": 88,
+                    "filename": "scalableSignaling/cdk.out/asset.1f9d4128b27aa585a5610e55ca4fe662318c5aa45001abaa5295ee7f7eae2913/tsconfig.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 15,
+                    "comment": 0,
+                    "filename": "scalableSignaling/cdk.out/asset.ed8aa3a562ac1e26960497d752ba9f0f293097b8f03dbafaea6358c1ca7a67e3/dist/server.js"
+                },
+                {
+                    "blank": 4,
+                    "code": 7,
+                    "comment": 0,
+                    "filename": "scalableSignaling/cdk.out/asset.ed8aa3a562ac1e26960497d752ba9f0f293097b8f03dbafaea6358c1ca7a67e3/Dockerfile"
+                },
+                {
+                    "blank": 0,
+                    "code": 800,
+                    "comment": 0,
+                    "filename": "scalableSignaling/cdk.out/asset.ed8aa3a562ac1e26960497d752ba9f0f293097b8f03dbafaea6358c1ca7a67e3/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 19,
+                    "comment": 0,
+                    "filename": "scalableSignaling/cdk.out/asset.ed8aa3a562ac1e26960497d752ba9f0f293097b8f03dbafaea6358c1ca7a67e3/package.json"
+                },
+                {
+                    "blank": 3,
+                    "code": 10,
+                    "comment": 0,
+                    "filename": "scalableSignaling/cdk.out/asset.ed8aa3a562ac1e26960497d752ba9f0f293097b8f03dbafaea6358c1ca7a67e3/src/server.ts"
+                },
+                {
+                    "blank": 8,
+                    "code": 13,
+                    "comment": 88,
+                    "filename": "scalableSignaling/cdk.out/asset.ed8aa3a562ac1e26960497d752ba9f0f293097b8f03dbafaea6358c1ca7a67e3/tsconfig.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 1,
+                    "filename": "scalableSignaling/cdk.out/asset.ee7de53d64cc9d6248fa6aa550f92358f6c907b5efd6f3298aeab1b5e7ea358a/__entrypoint__.js"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "scalableSignaling/cdk.out/asset.ee7de53d64cc9d6248fa6aa550f92358f6c907b5efd6f3298aeab1b5e7ea358a/index.js"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "scalableSignaling/cdk.out/cdk.out"
+                },
+                {
+                    "blank": 2,
+                    "code": 279,
+                    "comment": 0,
+                    "filename": "scalableSignaling/cdk.out/manifest.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 45,
+                    "comment": 0,
+                    "filename": "scalableSignaling/cdk.out/ScalableSignalingStack.assets.json"
+                },
+                {
+                    "blank": 46,
+                    "code": 1081,
+                    "comment": 0,
+                    "filename": "scalableSignaling/cdk.out/ScalableSignalingStack.template.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "scalableSignaling/cdk.out/synth.lock"
+                },
+                {
+                    "blank": 7,
+                    "code": 1164,
+                    "comment": 0,
+                    "filename": "scalableSignaling/cdk.out/tree.json"
+                },
+                {
+                    "blank": 2,
+                    "code": 4,
+                    "comment": 0,
+                    "filename": "scalableSignaling/deploy.sh"
+                },
+                {
+                    "blank": 0,
+                    "code": 8,
+                    "comment": 0,
+                    "filename": "scalableSignaling/jest.config.js"
+                },
+                {
+                    "blank": 0,
+                    "code": 5,
+                    "comment": 0,
+                    "filename": "scalableSignaling/lib/scalable_signaling-stack.d.ts"
+                },
+                {
+                    "blank": 0,
+                    "code": 36,
+                    "comment": 11,
+                    "filename": "scalableSignaling/lib/scalable_signaling-stack.js"
+                },
+                {
+                    "blank": 10,
+                    "code": 40,
+                    "comment": 10,
+                    "filename": "scalableSignaling/lib/scalable_signaling-stack.ts"
+                },
+                {
+                    "blank": 2,
+                    "code": 4231,
+                    "comment": 0,
+                    "filename": "scalableSignaling/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 27,
+                    "comment": 0,
+                    "filename": "scalableSignaling/package.json"
+                },
+                {
+                    "blank": 4,
+                    "code": 10,
+                    "comment": 0,
+                    "filename": "scalableSignaling/README.md"
+                },
+                {
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0,
+                    "filename": "scalableSignaling/test/scalable_signaling.test.d.ts"
+                },
+                {
+                    "blank": 0,
+                    "code": 3,
+                    "comment": 14,
+                    "filename": "scalableSignaling/test/scalable_signaling.test.js"
+                },
+                {
+                    "blank": 2,
+                    "code": 2,
+                    "comment": 13,
+                    "filename": "scalableSignaling/test/scalable_signaling.test.ts"
+                },
+                {
+                    "blank": 3,
+                    "code": 28,
+                    "comment": 0,
+                    "filename": "scalableSignaling/tsconfig.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 1,
+                    "filename": "scalableSignaling2/.env"
+                },
+                {
+                    "blank": 0,
+                    "code": 15,
+                    "comment": 0,
+                    "filename": "scalableSignaling2/dist/server.js"
+                },
+                {
+                    "blank": 4,
+                    "code": 7,
+                    "comment": 0,
+                    "filename": "scalableSignaling2/Dockerfile"
+                },
+                {
+                    "blank": 9,
+                    "code": 33,
+                    "comment": 1,
+                    "filename": "scalableSignaling2/fly.toml"
+                },
+                {
+                    "blank": 0,
+                    "code": 1199,
+                    "comment": 0,
+                    "filename": "scalableSignaling2/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 24,
+                    "comment": 0,
+                    "filename": "scalableSignaling2/package.json"
+                },
+                {
+                    "blank": 25,
+                    "code": 60,
+                    "comment": 0,
+                    "filename": "scalableSignaling2/src/server.ts"
+                },
+                {
+                    "blank": 3,
+                    "code": 10,
+                    "comment": 0,
+                    "filename": "scalableSignaling2/src/util.ts"
+                },
+                {
+                    "blank": 8,
+                    "code": 13,
+                    "comment": 88,
+                    "filename": "scalableSignaling2/tsconfig.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 11,
+                    "comment": 0,
+                    "filename": "signalingServer/.env.tmp"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "signalingServer/deploy.sh"
+                },
+                {
+                    "blank": 0,
+                    "code": 66,
+                    "comment": 2,
+                    "filename": "signalingServer/dist/index.js"
+                },
+                {
+                    "blank": 0,
+                    "code": 85,
+                    "comment": 4,
+                    "filename": "signalingServer/dist/signalingServer.js"
+                },
+                {
+                    "blank": 3,
+                    "code": 6,
+                    "comment": 0,
+                    "filename": "signalingServer/Dockerfile"
+                },
+                {
+                    "blank": 10,
+                    "code": 29,
+                    "comment": 1,
+                    "filename": "signalingServer/fly.toml"
+                },
+                {
+                    "blank": 0,
+                    "code": 851,
+                    "comment": 0,
+                    "filename": "signalingServer/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 17,
+                    "comment": 0,
+                    "filename": "signalingServer/package.json"
+                },
+                {
+                    "blank": 50,
+                    "code": 93,
+                    "comment": 4,
+                    "filename": "signalingServer/src/signalingServer.ts"
+                },
+                {
+                    "blank": 8,
+                    "code": 13,
+                    "comment": 88,
+                    "filename": "signalingServer/tsconfig.json"
+                },
+                {
+                    "blank": 4,
+                    "code": 11,
+                    "comment": 0,
+                    "filename": "sst/.gitignore"
+                },
+                {
+                    "blank": 23593,
+                    "code": 798770,
+                    "comment": 4500,
+                    "filename": "sst/.sst/artifacts/c85adb400023b7ef83270eb5c51ea9ccdeb2b609f1/serverlessWS/disconnect.mjs"
+                },
+                {
+                    "blank": 23673,
+                    "code": 802413,
+                    "comment": 5266,
+                    "filename": "sst/.sst/artifacts/c8d53a36ce4f10c446f54c2a18782aa56d513bc52e/serverlessWS/connect.mjs"
+                },
+                {
+                    "blank": 23593,
+                    "code": 798788,
+                    "comment": 4500,
+                    "filename": "sst/.sst/artifacts/c8e39c92c491560eefaf9879f412e18fc29627b1d6/serverlessWS/sendMessage.mjs"
+                },
+                {
+                    "blank": 0,
+                    "code": 8,
+                    "comment": 0,
+                    "filename": "sst/.sst/artifacts/StaticSite-web-c8a80a0c70cf90c50c40daaf4a9c7be3feac44d907/filenames"
+                },
+                {
+                    "filename": "sst/.sst/artifacts/StaticSite-web-c8a80a0c70cf90c50c40daaf4a9c7be3feac44d907/part0.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 13,
+                    "comment": 0,
+                    "filename": "sst/.sst/artifacts/StaticSite-web-c8d50b7c0e15266627959f4f1fae7585bf2ec0a6ed/filenames"
+                },
+                {
+                    "filename": "sst/.sst/artifacts/StaticSite-web-c8d50b7c0e15266627959f4f1fae7585bf2ec0a6ed/part0.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "sst/.sst/cache/metadata.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 57,
+                    "comment": 0,
+                    "filename": "sst/.sst/debug.log"
+                },
+                {
+                    "filename": "sst/.sst/dist/.cache/0832b97c560fb921291e9339f784af91da09da2b9104d5afeb7228272d67e9c4.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "sst/.sst/dist/.cache/0efd1b0d67dc16e9c1e3cd67cac4fa28ba7d02f81fdffb3cfda46b32d419b6b0.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "sst/.sst/dist/.cache/1ea9054797b04ad65b10d37afb9a323bf9821944d73e872c96547f8f6696122d.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "sst/.sst/dist/.cache/4ac38b16ee58b7b6c36f111ecd69f957d1c0b5dc482a99b2c2cb68e5871888cc.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "sst/.sst/dist/.cache/597313e456562e18c88ea8442b28075900c8800d53c10828917e115a4bb53540.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "sst/.sst/dist/.cache/5e83e5a61702b518140e97eeb9041743eb7c604d4f77e4e3b49792791e828994.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "sst/.sst/dist/.cache/95154e7ea90702650929c609b45b436d9ee659f7b1559c81f94d6ae2c967bda2.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "sst/.sst/dist/.cache/d209f1643d08d5451663e3e7d026195e27ed0f6f8242cd2d5cc9d7ae0f1edb2a.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "sst/.sst/dist/.cache/f314842b7001a4d5149b7ec7b0abb6ad1b9f8dd106bb79ebd19877123a962a68.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 9,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.00edcc443b5e8504af541c1ce9e37e16c85c6d69883e7e9caf5de0a84364c6db"
+                },
+                {
+                    "blank": 0,
+                    "code": 6,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.0832b97c560fb921291e9339f784af91da09da2b9104d5afeb7228272d67e9c4/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.0832b97c560fb921291e9339f784af91da09da2b9104d5afeb7228272d67e9c4/package.json"
+                },
+                {
+                    "blank": 23673,
+                    "code": 802421,
+                    "comment": 5266,
+                    "filename": "sst/.sst/dist/asset.0832b97c560fb921291e9339f784af91da09da2b9104d5afeb7228272d67e9c4/serverlessWS/connect.mjs"
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.0930e307c5d6f5c071a601d91014541bf40fe14ef521e164f0f59644c38428ac.map",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 6,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.0d94982e17483c1184e7ebaaad87e687af41708b07388685ba3f2dc5ca3b16ac/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.0d94982e17483c1184e7ebaaad87e687af41708b07388685ba3f2dc5ca3b16ac/package.json"
+                },
+                {
+                    "blank": 23593,
+                    "code": 798770,
+                    "comment": 4500,
+                    "filename": "sst/.sst/dist/asset.0d94982e17483c1184e7ebaaad87e687af41708b07388685ba3f2dc5ca3b16ac/serverlessWS/connect.mjs"
+                },
+                {
+                    "blank": 662,
+                    "code": 44921,
+                    "comment": 1845,
+                    "filename": "sst/.sst/dist/asset.0efd1b0d67dc16e9c1e3cd67cac4fa28ba7d02f81fdffb3cfda46b32d419b6b0/index.mjs"
+                },
+                {
+                    "blank": 0,
+                    "code": 9,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.119ff153b89ad7d0c97b4bec4961ed15a3556888d86d7ffb45f056c555b18596"
+                },
+                {
+                    "blank": 0,
+                    "code": 11,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.14d49389af48e49d350408e7da709aa99f28663d5ab8d03d75391b9c3804f5fc/.env.tmp"
+                },
+                {
+                    "blank": 3,
+                    "code": 5,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.14d49389af48e49d350408e7da709aa99f28663d5ab8d03d75391b9c3804f5fc/Dockerfile"
+                },
+                {
+                    "blank": 0,
+                    "code": 66,
+                    "comment": 1,
+                    "filename": "sst/.sst/dist/asset.14d49389af48e49d350408e7da709aa99f28663d5ab8d03d75391b9c3804f5fc/index.js"
+                },
+                {
+                    "blank": 32,
+                    "code": 63,
+                    "comment": 1,
+                    "filename": "sst/.sst/dist/asset.14d49389af48e49d350408e7da709aa99f28663d5ab8d03d75391b9c3804f5fc/index.ts"
+                },
+                {
+                    "blank": 0,
+                    "code": 851,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.14d49389af48e49d350408e7da709aa99f28663d5ab8d03d75391b9c3804f5fc/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 13,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.14d49389af48e49d350408e7da709aa99f28663d5ab8d03d75391b9c3804f5fc/package.json"
+                },
+                {
+                    "blank": 8,
+                    "code": 11,
+                    "comment": 90,
+                    "filename": "sst/.sst/dist/asset.14d49389af48e49d350408e7da709aa99f28663d5ab8d03d75391b9c3804f5fc/tsconfig.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 4,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.171145ed4e98fe4b745d97261f796c128a54e61269eefa495ba2a03e4be16abd"
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.1a938f7e2c3afc15c4e3111ef89662093af1377f22a6a93496acf13f1cfe973c.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 9,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.1d0eaafd4cf18ad475213462c820479fc26fe3eeaa851830bd8e1d75ab5a4684"
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.1e9a2ceeb4a0080293633953bb34ad42628e24e0e6174422b4cca37a7d14f3c7.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 3,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.1ea9054797b04ad65b10d37afb9a323bf9821944d73e872c96547f8f6696122d/Dockerfile"
+                },
+                {
+                    "blank": 2,
+                    "code": 59,
+                    "comment": 81,
+                    "filename": "sst/.sst/dist/asset.1ea9054797b04ad65b10d37afb9a323bf9821944d73e872c96547f8f6696122d/live-lambda.mjs"
+                },
+                {
+                    "blank": 0,
+                    "code": 4,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.2459c1816465eef9ed3bd952e0974aed82504f3c448d7076a608d9cf030c0a0b"
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.248d30fea22014aafcc2f886ff862448a7b7f7eb1b0fc239e31552ed23697d6d.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.2bed5635ecc91951f5181c5b9b84ae90e1011339575cb6bab94c76a6fa36ef80.map",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.3931771385708b0a6234293726f5a44add8e17883c33fbcb4c702f12532f2d75.map",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 9,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.3a4fb6e707165f944b6bd8158bbab0a4d274d07b2f36b71f50603116ffca5b04"
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.480278a7e7b1e7b5932fd819e1683e940b5d246bcc7902b03190efa7bb3d3699.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 11,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.4846829df0826dfc2ff26ee59b79d4c0b3361e2db48a5e05ffedccef0cd5a96d/.env.tmp"
+                },
+                {
+                    "blank": 3,
+                    "code": 5,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.4846829df0826dfc2ff26ee59b79d4c0b3361e2db48a5e05ffedccef0cd5a96d/Dockerfile"
+                },
+                {
+                    "blank": 0,
+                    "code": 62,
+                    "comment": 1,
+                    "filename": "sst/.sst/dist/asset.4846829df0826dfc2ff26ee59b79d4c0b3361e2db48a5e05ffedccef0cd5a96d/index.js"
+                },
+                {
+                    "blank": 32,
+                    "code": 63,
+                    "comment": 1,
+                    "filename": "sst/.sst/dist/asset.4846829df0826dfc2ff26ee59b79d4c0b3361e2db48a5e05ffedccef0cd5a96d/index.ts"
+                },
+                {
+                    "blank": 0,
+                    "code": 851,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.4846829df0826dfc2ff26ee59b79d4c0b3361e2db48a5e05ffedccef0cd5a96d/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 13,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.4846829df0826dfc2ff26ee59b79d4c0b3361e2db48a5e05ffedccef0cd5a96d/package.json"
+                },
+                {
+                    "blank": 8,
+                    "code": 11,
+                    "comment": 90,
+                    "filename": "sst/.sst/dist/asset.4846829df0826dfc2ff26ee59b79d4c0b3361e2db48a5e05ffedccef0cd5a96d/tsconfig.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 11,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.4a0ab8e3624dd7501b06ff68009bafdf2458bf9ca733ec26814c40de1469a49d/.env.tmp"
+                },
+                {
+                    "blank": 3,
+                    "code": 5,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.4a0ab8e3624dd7501b06ff68009bafdf2458bf9ca733ec26814c40de1469a49d/Dockerfile"
+                },
+                {
+                    "blank": 0,
+                    "code": 66,
+                    "comment": 1,
+                    "filename": "sst/.sst/dist/asset.4a0ab8e3624dd7501b06ff68009bafdf2458bf9ca733ec26814c40de1469a49d/index.js"
+                },
+                {
+                    "blank": 32,
+                    "code": 63,
+                    "comment": 1,
+                    "filename": "sst/.sst/dist/asset.4a0ab8e3624dd7501b06ff68009bafdf2458bf9ca733ec26814c40de1469a49d/index.ts"
+                },
+                {
+                    "blank": 0,
+                    "code": 851,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.4a0ab8e3624dd7501b06ff68009bafdf2458bf9ca733ec26814c40de1469a49d/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 13,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.4a0ab8e3624dd7501b06ff68009bafdf2458bf9ca733ec26814c40de1469a49d/package.json"
+                },
+                {
+                    "blank": 8,
+                    "code": 11,
+                    "comment": 90,
+                    "filename": "sst/.sst/dist/asset.4a0ab8e3624dd7501b06ff68009bafdf2458bf9ca733ec26814c40de1469a49d/tsconfig.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 6,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.4ac38b16ee58b7b6c36f111ecd69f957d1c0b5dc482a99b2c2cb68e5871888cc/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.4ac38b16ee58b7b6c36f111ecd69f957d1c0b5dc482a99b2c2cb68e5871888cc/package.json"
+                },
+                {
+                    "blank": 23593,
+                    "code": 798788,
+                    "comment": 4500,
+                    "filename": "sst/.sst/dist/asset.4ac38b16ee58b7b6c36f111ecd69f957d1c0b5dc482a99b2c2cb68e5871888cc/serverlessWS/sendMessage.mjs"
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.4b7b04afc763432eaca04d16f2ee9171097babb513d362cdeacd9e61e431a2a4.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 4,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.4cefa02ee126d32367f3074a684e5d7c32212991e70447a3a9cb9bfa8e0bc680"
+                },
+                {
+                    "blank": 0,
+                    "code": 13,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.4d4c5f55453c30aa91bed9f58d63b27af452bff13e90e7dc3c9c8588508c0a6e"
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.4ddd0d548fc28afb561974ebf465f4981e6bdb889b019fa2bdf34c6f99a54234.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 4,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.51b8ba19c922b91ec075069a66fbdf5e942b7c81255cb6a9b9897bdca8d54e0d"
+                },
+                {
+                    "blank": 0,
+                    "code": 11,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.52ca3c67814360164c4e35dc4e9c8037b0147d9bb2c8a9621e78f1da2cba2b77/.env.tmp"
+                },
+                {
+                    "blank": 3,
+                    "code": 5,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.52ca3c67814360164c4e35dc4e9c8037b0147d9bb2c8a9621e78f1da2cba2b77/Dockerfile"
+                },
+                {
+                    "blank": 0,
+                    "code": 55,
+                    "comment": 1,
+                    "filename": "sst/.sst/dist/asset.52ca3c67814360164c4e35dc4e9c8037b0147d9bb2c8a9621e78f1da2cba2b77/index.mjs"
+                },
+                {
+                    "blank": 28,
+                    "code": 55,
+                    "comment": 1,
+                    "filename": "sst/.sst/dist/asset.52ca3c67814360164c4e35dc4e9c8037b0147d9bb2c8a9621e78f1da2cba2b77/index.ts"
+                },
+                {
+                    "blank": 0,
+                    "code": 838,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.52ca3c67814360164c4e35dc4e9c8037b0147d9bb2c8a9621e78f1da2cba2b77/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 12,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.52ca3c67814360164c4e35dc4e9c8037b0147d9bb2c8a9621e78f1da2cba2b77/package.json"
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.57337886c05d5a6d0f9627bd48eba7d77af30c42b3813faa2dbd74fd9e0287f3.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 6,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.597313e456562e18c88ea8442b28075900c8800d53c10828917e115a4bb53540/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.597313e456562e18c88ea8442b28075900c8800d53c10828917e115a4bb53540/package.json"
+                },
+                {
+                    "blank": 23593,
+                    "code": 798781,
+                    "comment": 4500,
+                    "filename": "sst/.sst/dist/asset.597313e456562e18c88ea8442b28075900c8800d53c10828917e115a4bb53540/serverlessWS/sendMessage.mjs"
+                },
+                {
+                    "blank": 0,
+                    "code": 14,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.5bc602ecde93c947efe5899ae355f999986a1acbe610b1c0b9c468d738857555/index.d.ts"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.5bc602ecde93c947efe5899ae355f999986a1acbe610b1c0b9c468d738857555/index.js"
+                },
+                {
+                    "blank": 0,
+                    "code": 6,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.5c09acb1ea153ae41b12a6e0370bcf9114b18f1a689f9711225ac00eeb9eb3e4/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.5c09acb1ea153ae41b12a6e0370bcf9114b18f1a689f9711225ac00eeb9eb3e4/package.json"
+                },
+                {
+                    "blank": 23593,
+                    "code": 798770,
+                    "comment": 4500,
+                    "filename": "sst/.sst/dist/asset.5c09acb1ea153ae41b12a6e0370bcf9114b18f1a689f9711225ac00eeb9eb3e4/serverlessWS/disconnect.mjs"
+                },
+                {
+                    "blank": 0,
+                    "code": 6,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.5e83e5a61702b518140e97eeb9041743eb7c604d4f77e4e3b49792791e828994/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.5e83e5a61702b518140e97eeb9041743eb7c604d4f77e4e3b49792791e828994/package.json"
+                },
+                {
+                    "blank": 23673,
+                    "code": 802413,
+                    "comment": 5266,
+                    "filename": "sst/.sst/dist/asset.5e83e5a61702b518140e97eeb9041743eb7c604d4f77e4e3b49792791e828994/serverlessWS/connect.mjs"
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.602abcf0c5ffe83781794c793306c93bd4a3314e45051aedeaeec500058a81bb.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 11,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.6075661a3f76fbccf263f3556079e623a1774cbe312475f940fb90c5600cf92c/.env.tmp"
+                },
+                {
+                    "blank": 0,
+                    "code": 66,
+                    "comment": 2,
+                    "filename": "sst/.sst/dist/asset.6075661a3f76fbccf263f3556079e623a1774cbe312475f940fb90c5600cf92c/dist/index.js"
+                },
+                {
+                    "blank": 0,
+                    "code": 79,
+                    "comment": 4,
+                    "filename": "sst/.sst/dist/asset.6075661a3f76fbccf263f3556079e623a1774cbe312475f940fb90c5600cf92c/dist/signalingServer.js"
+                },
+                {
+                    "blank": 3,
+                    "code": 6,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.6075661a3f76fbccf263f3556079e623a1774cbe312475f940fb90c5600cf92c/Dockerfile"
+                },
+                {
+                    "blank": 0,
+                    "code": 851,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.6075661a3f76fbccf263f3556079e623a1774cbe312475f940fb90c5600cf92c/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 17,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.6075661a3f76fbccf263f3556079e623a1774cbe312475f940fb90c5600cf92c/package.json"
+                },
+                {
+                    "blank": 43,
+                    "code": 79,
+                    "comment": 4,
+                    "filename": "sst/.sst/dist/asset.6075661a3f76fbccf263f3556079e623a1774cbe312475f940fb90c5600cf92c/src/signalingServer.ts"
+                },
+                {
+                    "blank": 8,
+                    "code": 13,
+                    "comment": 88,
+                    "filename": "sst/.sst/dist/asset.6075661a3f76fbccf263f3556079e623a1774cbe312475f940fb90c5600cf92c/tsconfig.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 9,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.623efee9bbfbcd52d452a3cff761c53cbb0cb1263a366dfe1894b699e4aa1524"
+                },
+                {
+                    "blank": 0,
+                    "code": 9,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.63473f7182548c56d86a8cf4588c6069810e2ea491376db456a8a2121c2b15bf"
+                },
+                {
+                    "blank": 0,
+                    "code": 11,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.66bdce26ee42da44de227079820db18acbd88f6727d0113e35aaaea73368b8ce/.env.tmp"
+                },
+                {
+                    "blank": 0,
+                    "code": 66,
+                    "comment": 2,
+                    "filename": "sst/.sst/dist/asset.66bdce26ee42da44de227079820db18acbd88f6727d0113e35aaaea73368b8ce/dist/index.js"
+                },
+                {
+                    "blank": 3,
+                    "code": 6,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.66bdce26ee42da44de227079820db18acbd88f6727d0113e35aaaea73368b8ce/Dockerfile"
+                },
+                {
+                    "blank": 0,
+                    "code": 851,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.66bdce26ee42da44de227079820db18acbd88f6727d0113e35aaaea73368b8ce/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 17,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.66bdce26ee42da44de227079820db18acbd88f6727d0113e35aaaea73368b8ce/package.json"
+                },
+                {
+                    "blank": 41,
+                    "code": 75,
+                    "comment": 4,
+                    "filename": "sst/.sst/dist/asset.66bdce26ee42da44de227079820db18acbd88f6727d0113e35aaaea73368b8ce/src/signalingServer.ts"
+                },
+                {
+                    "blank": 8,
+                    "code": 13,
+                    "comment": 88,
+                    "filename": "sst/.sst/dist/asset.66bdce26ee42da44de227079820db18acbd88f6727d0113e35aaaea73368b8ce/tsconfig.json"
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.69cbb0534fbe0582e1e19cf6225066ee51b82f7fed1ec7bcfb7a8a013768aa68.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.6a19c6aef8b98278cf73d48d912e3eacd38964abb6ce9708c305b42b30bf57a3.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.6e4d88e27762f96df5e946d23b4764bc11dabf8d593cb6d443c125a2dd86562a.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.706e23768c05f4a69f3bbc318935b8fecf0d27ee067a1f8398da42e6d1a63aa3.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 9,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.72b00afa9adc6fd76ad01d6b525ed37bc47a88f67d32413367cb8e727f61e8bc"
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.72ccbc85de301da5d6841a29cbd2fb755bf49dd15e5a690fda900edde0563415.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.747acbdbeb663f558ee4d343cd7e4cb57d8aef7676db6f68968ef15c336eeb39.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.81003930bf321ac75d959d6c8d0e55bf16c35a98154f2083a4cf98e4727f8671.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 11,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.8b48a9fc40dcb0180c4f45081a83c9452ca7bc0bf50840a1d68c592df14da010/.env.tmp"
+                },
+                {
+                    "blank": 0,
+                    "code": 66,
+                    "comment": 2,
+                    "filename": "sst/.sst/dist/asset.8b48a9fc40dcb0180c4f45081a83c9452ca7bc0bf50840a1d68c592df14da010/dist/index.js"
+                },
+                {
+                    "blank": 0,
+                    "code": 79,
+                    "comment": 4,
+                    "filename": "sst/.sst/dist/asset.8b48a9fc40dcb0180c4f45081a83c9452ca7bc0bf50840a1d68c592df14da010/dist/signalingServer.js"
+                },
+                {
+                    "blank": 3,
+                    "code": 6,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.8b48a9fc40dcb0180c4f45081a83c9452ca7bc0bf50840a1d68c592df14da010/Dockerfile"
+                },
+                {
+                    "blank": 0,
+                    "code": 851,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.8b48a9fc40dcb0180c4f45081a83c9452ca7bc0bf50840a1d68c592df14da010/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 17,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.8b48a9fc40dcb0180c4f45081a83c9452ca7bc0bf50840a1d68c592df14da010/package.json"
+                },
+                {
+                    "blank": 41,
+                    "code": 75,
+                    "comment": 4,
+                    "filename": "sst/.sst/dist/asset.8b48a9fc40dcb0180c4f45081a83c9452ca7bc0bf50840a1d68c592df14da010/src/signalingServer.ts"
+                },
+                {
+                    "blank": 8,
+                    "code": 13,
+                    "comment": 88,
+                    "filename": "sst/.sst/dist/asset.8b48a9fc40dcb0180c4f45081a83c9452ca7bc0bf50840a1d68c592df14da010/tsconfig.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 11,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.8e3bf90630e30cefaad2490ac3014fd267d5f6dcccffaf13b23897fbaf1a749c/.env.tmp"
+                },
+                {
+                    "blank": 3,
+                    "code": 5,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.8e3bf90630e30cefaad2490ac3014fd267d5f6dcccffaf13b23897fbaf1a749c/Dockerfile"
+                },
+                {
+                    "blank": 0,
+                    "code": 63,
+                    "comment": 2,
+                    "filename": "sst/.sst/dist/asset.8e3bf90630e30cefaad2490ac3014fd267d5f6dcccffaf13b23897fbaf1a749c/index.js"
+                },
+                {
+                    "blank": 32,
+                    "code": 62,
+                    "comment": 2,
+                    "filename": "sst/.sst/dist/asset.8e3bf90630e30cefaad2490ac3014fd267d5f6dcccffaf13b23897fbaf1a749c/index.ts"
+                },
+                {
+                    "blank": 0,
+                    "code": 851,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.8e3bf90630e30cefaad2490ac3014fd267d5f6dcccffaf13b23897fbaf1a749c/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 13,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.8e3bf90630e30cefaad2490ac3014fd267d5f6dcccffaf13b23897fbaf1a749c/package.json"
+                },
+                {
+                    "blank": 8,
+                    "code": 11,
+                    "comment": 90,
+                    "filename": "sst/.sst/dist/asset.8e3bf90630e30cefaad2490ac3014fd267d5f6dcccffaf13b23897fbaf1a749c/tsconfig.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 4,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.8e8f03e7a4e2aa0e58d56aece5d2dd74d652d1e963e3a93115d3a2a65d0d07e9"
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.91239b0022465a64311adf51dbcc2c67a3aee315a681132ddab60f3b335f2f79.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 9,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.9380ee77edfdba07c9e85322697f4f70f150bbbd596f7e9fbf02cf568e5b1aa8"
+                },
+                {
+                    "blank": 0,
+                    "code": 9,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.942d90e7013a1496d72855f30c1a4a75e3e2c539a31dfe60e2228c1879a34550"
+                },
+                {
+                    "blank": 662,
+                    "code": 44921,
+                    "comment": 1845,
+                    "filename": "sst/.sst/dist/asset.95154e7ea90702650929c609b45b436d9ee659f7b1559c81f94d6ae2c967bda2/index.mjs"
+                },
+                {
+                    "blank": 0,
+                    "code": 9,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.9f3e769d775a47d1cc712faf510bb9fdd55a839a4bbd096102ef3aad9f82aad5"
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.a513a92cabb50512c64688f37e7fc750ecd1e5b1420afcddb2a3bf9e4948aacf.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.a6c0a4f52dfc860806943aa441cdbbb9891850e0d155903a25e9f3c07f27d8d3.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 11,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.a6c664dbedce310cc2c79e81627eef2d16e62a63d25e5215da66368ab9239f3c/.env.tmp"
+                },
+                {
+                    "blank": 0,
+                    "code": 66,
+                    "comment": 2,
+                    "filename": "sst/.sst/dist/asset.a6c664dbedce310cc2c79e81627eef2d16e62a63d25e5215da66368ab9239f3c/dist/index.js"
+                },
+                {
+                    "blank": 3,
+                    "code": 6,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.a6c664dbedce310cc2c79e81627eef2d16e62a63d25e5215da66368ab9239f3c/Dockerfile"
+                },
+                {
+                    "blank": 0,
+                    "code": 851,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.a6c664dbedce310cc2c79e81627eef2d16e62a63d25e5215da66368ab9239f3c/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 16,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.a6c664dbedce310cc2c79e81627eef2d16e62a63d25e5215da66368ab9239f3c/package.json"
+                },
+                {
+                    "blank": 32,
+                    "code": 62,
+                    "comment": 2,
+                    "filename": "sst/.sst/dist/asset.a6c664dbedce310cc2c79e81627eef2d16e62a63d25e5215da66368ab9239f3c/src/index.ts"
+                },
+                {
+                    "blank": 8,
+                    "code": 13,
+                    "comment": 88,
+                    "filename": "sst/.sst/dist/asset.a6c664dbedce310cc2c79e81627eef2d16e62a63d25e5215da66368ab9239f3c/tsconfig.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 9,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.a87e40cd0451e3dd460a60f0b3265b306c3e5134b17fcf11193fe8a8516ae6e6"
+                },
+                {
+                    "blank": 0,
+                    "code": 11,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.aecd2c3712310ed994496e2eb5952d119f118e7b1af0ff48500300b4f86169a3"
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.b2031763499922b17855fce54fd8b41f3a2185698cdbe50949806c9375f40d08.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.b7f1fc8aeefade17b07c2d68a6ff5c74c39e7782d044792cb4540b36191c086b.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 1,
+                    "filename": "sst/.sst/dist/asset.b7f33614a69548d6bafe224d751a7ef238cde19097415e553fe8b63a4c8fd8a6/index.js"
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.b8d12c95d5c4926d3c87d0fd7d55ece158c0d83da27001d1a9968d83403439c1.map",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.bb8ced5592020b6deec5660ace4932d43c03fcdabfc93b61d6cafeaa702fc7ab.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.bf5c180918256e6c02ee166edaf1c933eff2b05cdf4a446eecb2ff85bb153dd2.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.c145c35558a49a9c12d560b47f264a5e8c31fded55af81d305274bdfd873f07c.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.c79338c0e29225c6bf517f15483e63c574338e04633c2f6e02ef7485b73eeab5.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.cb1dfd52cb45e8724287ba3b62f29140875ce6773c813eda2aff47f10eb8ac41.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 6,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.d055d7b286e32bafa9b5235ea84e283a33b6d6a865171e2b8182c9cdeecdd365"
+                },
+                {
+                    "blank": 3,
+                    "code": 5,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.d06f5cc9eae43733f6e8f982252738b02119efbab38d018b558ee9e2d362c7fe/Dockerfile"
+                },
+                {
+                    "blank": 0,
+                    "code": 55,
+                    "comment": 1,
+                    "filename": "sst/.sst/dist/asset.d06f5cc9eae43733f6e8f982252738b02119efbab38d018b558ee9e2d362c7fe/index.mjs"
+                },
+                {
+                    "blank": 28,
+                    "code": 55,
+                    "comment": 1,
+                    "filename": "sst/.sst/dist/asset.d06f5cc9eae43733f6e8f982252738b02119efbab38d018b558ee9e2d362c7fe/index.ts"
+                },
+                {
+                    "blank": 0,
+                    "code": 838,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.d06f5cc9eae43733f6e8f982252738b02119efbab38d018b558ee9e2d362c7fe/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 12,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.d06f5cc9eae43733f6e8f982252738b02119efbab38d018b558ee9e2d362c7fe/package.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 6,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.d209f1643d08d5451663e3e7d026195e27ed0f6f8242cd2d5cc9d7ae0f1edb2a/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.d209f1643d08d5451663e3e7d026195e27ed0f6f8242cd2d5cc9d7ae0f1edb2a/package.json"
+                },
+                {
+                    "blank": 23593,
+                    "code": 798770,
+                    "comment": 4500,
+                    "filename": "sst/.sst/dist/asset.d209f1643d08d5451663e3e7d026195e27ed0f6f8242cd2d5cc9d7ae0f1edb2a/serverlessWS/connect.mjs"
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.d8c8a1a4d7f160de583e43c2b8d028063da086d6a8b406bbc5efbc31b42755d7.map",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 9,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.d9f4d2e0cbaf53b2af50814a4e484588925848488788e40d04b3f7a4c4aace06"
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.de5212f6f1d6b822c4355af15d0a4f6d8211a14d9d0255ff9cce80594e38277e.map",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 11,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.df0f04f72339fe43e0757b609fc9def5b031042b27154b01b5d2d0d2f9ee4411/.env.tmp"
+                },
+                {
+                    "blank": 3,
+                    "code": 5,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.df0f04f72339fe43e0757b609fc9def5b031042b27154b01b5d2d0d2f9ee4411/Dockerfile"
+                },
+                {
+                    "blank": 0,
+                    "code": 66,
+                    "comment": 1,
+                    "filename": "sst/.sst/dist/asset.df0f04f72339fe43e0757b609fc9def5b031042b27154b01b5d2d0d2f9ee4411/index.js"
+                },
+                {
+                    "blank": 31,
+                    "code": 62,
+                    "comment": 1,
+                    "filename": "sst/.sst/dist/asset.df0f04f72339fe43e0757b609fc9def5b031042b27154b01b5d2d0d2f9ee4411/index.ts"
+                },
+                {
+                    "blank": 0,
+                    "code": 851,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.df0f04f72339fe43e0757b609fc9def5b031042b27154b01b5d2d0d2f9ee4411/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 13,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.df0f04f72339fe43e0757b609fc9def5b031042b27154b01b5d2d0d2f9ee4411/package.json"
+                },
+                {
+                    "blank": 8,
+                    "code": 11,
+                    "comment": 90,
+                    "filename": "sst/.sst/dist/asset.df0f04f72339fe43e0757b609fc9def5b031042b27154b01b5d2d0d2f9ee4411/tsconfig.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 9,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.e0f56e3eb0eae985d249bcf0618eb8a82f74544bb6343606496e078e10b69b6d"
+                },
+                {
+                    "blank": 0,
+                    "code": 4,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.e484c901ad7f4612aa46219b35ff57bd6ddcdf7ad55e852f71e287fb1ea79f68"
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.e5aa5735cd90b824d4e67f98749414bf0c48f54731a22f31057a3df5e01b8791.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "sst/.sst/dist/asset.e904cc107ec36fb5c532976336536f48049c871e3fee0957c4535807626788b6.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 11,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.eab67a15dc5a839a6623e3475564f81c8904008f5ef1c0bafa0e91312b33a4d6/.env.tmp"
+                },
+                {
+                    "blank": 0,
+                    "code": 66,
+                    "comment": 2,
+                    "filename": "sst/.sst/dist/asset.eab67a15dc5a839a6623e3475564f81c8904008f5ef1c0bafa0e91312b33a4d6/dist/index.js"
+                },
+                {
+                    "blank": 3,
+                    "code": 6,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.eab67a15dc5a839a6623e3475564f81c8904008f5ef1c0bafa0e91312b33a4d6/Dockerfile"
+                },
+                {
+                    "blank": 0,
+                    "code": 851,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.eab67a15dc5a839a6623e3475564f81c8904008f5ef1c0bafa0e91312b33a4d6/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 16,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.eab67a15dc5a839a6623e3475564f81c8904008f5ef1c0bafa0e91312b33a4d6/package.json"
+                },
+                {
+                    "blank": 37,
+                    "code": 71,
+                    "comment": 3,
+                    "filename": "sst/.sst/dist/asset.eab67a15dc5a839a6623e3475564f81c8904008f5ef1c0bafa0e91312b33a4d6/src/signalingServer.ts"
+                },
+                {
+                    "blank": 8,
+                    "code": 13,
+                    "comment": 88,
+                    "filename": "sst/.sst/dist/asset.eab67a15dc5a839a6623e3475564f81c8904008f5ef1c0bafa0e91312b33a4d6/tsconfig.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 6,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.ebcfababc3523b9c64ebf88871994f745a29a24810e62173f6c0675f11bb18b6/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.ebcfababc3523b9c64ebf88871994f745a29a24810e62173f6c0675f11bb18b6/package.json"
+                },
+                {
+                    "blank": 23593,
+                    "code": 798781,
+                    "comment": 4500,
+                    "filename": "sst/.sst/dist/asset.ebcfababc3523b9c64ebf88871994f745a29a24810e62173f6c0675f11bb18b6/serverlessWS/sendMessage.mjs"
+                },
+                {
+                    "blank": 0,
+                    "code": 8,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.ed6acc3c716ff0da68b7b7753ee297e9ecfd602a8642cd03fbd7d835aad7062b"
+                },
+                {
+                    "blank": 0,
+                    "code": 6,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.f314842b7001a4d5149b7ec7b0abb6ad1b9f8dd106bb79ebd19877123a962a68/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.f314842b7001a4d5149b7ec7b0abb6ad1b9f8dd106bb79ebd19877123a962a68/package.json"
+                },
+                {
+                    "blank": 23593,
+                    "code": 798770,
+                    "comment": 4500,
+                    "filename": "sst/.sst/dist/asset.f314842b7001a4d5149b7ec7b0abb6ad1b9f8dd106bb79ebd19877123a962a68/serverlessWS/disconnect.mjs"
+                },
+                {
+                    "blank": 0,
+                    "code": 9,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.fd507cffd0a2128b340e59a60f1ffb1506d9d6921926d5835402a86b49b6bfde"
+                },
+                {
+                    "blank": 0,
+                    "code": 8,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/asset.ff1c5777e3d30c3b8d6a68993c20460ffbe7e752e65fe8dcc828c0bc3cc1fadc"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/cdk.out"
+                },
+                {
+                    "blank": 2,
+                    "code": 178,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/manifest.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 34,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/nathanlee-signaling-API.assets.json"
+                },
+                {
+                    "blank": 4,
+                    "code": 124,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/nathanlee-signaling-API.template.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 76,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/prod-signaling-API.assets.json"
+                },
+                {
+                    "blank": 36,
+                    "code": 589,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/prod-signaling-API.template.json"
+                },
+                {
+                    "blank": 20,
+                    "code": 829,
+                    "comment": 0,
+                    "filename": "sst/.sst/dist/tree.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 5,
+                    "comment": 0,
+                    "filename": "sst/.sst/outputs.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "sst/.sst/stage"
+                },
+                {
+                    "blank": 2,
+                    "code": 15,
+                    "comment": 0,
+                    "filename": "sst/.sst/types/index.ts"
+                },
+                {
+                    "blank": 1,
+                    "code": 9,
+                    "comment": 0,
+                    "filename": "sst/cdk.context.json"
+                },
+                {
+                    "blank": 124,
+                    "code": 15611,
+                    "comment": 0,
+                    "filename": "sst/package-lock.json"
+                },
+                {
+                    "blank": 1,
+                    "code": 24,
+                    "comment": 0,
+                    "filename": "sst/package.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 2,
+                    "comment": 0,
+                    "filename": "sst/pnpm-workspace.yaml"
+                },
+                {
+                    "blank": 131,
+                    "code": 1064,
+                    "comment": 0,
+                    "filename": "sst/profile001.callgraph.out"
+                },
+                {
+                    "blank": 0,
+                    "code": 12,
+                    "comment": 0,
+                    "filename": "sst/sst.config.js"
+                },
+                {
+                    "blank": 1,
+                    "code": 13,
+                    "comment": 0,
+                    "filename": "sst/sst.config.ts"
+                },
+                {
+                    "blank": 2,
+                    "code": 11,
+                    "comment": 0,
+                    "filename": "sst/stacks/MyStack.ts"
+                },
+                {
+                    "blank": 0,
+                    "code": 8,
+                    "comment": 0,
+                    "filename": "sst/tsconfig.json"
+                },
+                {
+                    "blank": 3,
+                    "code": 12,
+                    "comment": 0,
+                    "filename": "test_server/ffmpeg.js"
+                },
+                {
+                    "blank": 35,
+                    "code": 82,
+                    "comment": 6,
+                    "filename": "test_server/index.ts"
+                },
+                {
+                    "blank": 19,
+                    "code": 3725,
+                    "comment": 0,
+                    "filename": "test_server/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 28,
+                    "comment": 0,
+                    "filename": "test_server/package.json"
+                },
+                {
+                    "blank": 54,
+                    "code": 151,
+                    "comment": 15,
+                    "filename": "test_server/public/benchmarking/fetchSizes.js"
+                },
+                {
+                    "blank": 21,
+                    "code": 73,
+                    "comment": 0,
+                    "filename": "test_server/public/benchmarking/index.html"
+                },
+                {
+                    "blank": 4,
+                    "code": 13,
+                    "comment": 0,
+                    "filename": "test_server/public/benchmarking/sizetest.html"
+                },
+                {
+                    "blank": 1,
+                    "code": 5,
+                    "comment": 1,
+                    "filename": "test_server/public/foo.html"
+                },
+                {
+                    "blank": 9,
+                    "code": 30,
+                    "comment": 0,
+                    "filename": "test_server/public/hls.html"
+                },
+                {
+                    "filename": "test_server/public/img.jpg",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 6,
+                    "code": 15,
+                    "comment": 0,
+                    "filename": "test_server/public/index.html"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "test_server/public/nested/deeper/index.html"
+                },
+                {
+                    "blank": 5,
+                    "code": 10,
+                    "comment": 1,
+                    "filename": "test_server/public/nested/index.html"
+                },
+                {
+                    "blank": 0,
+                    "code": 3,
+                    "comment": 0,
+                    "filename": "test_server/public/nested/nested.css"
+                },
+                {
+                    "blank": 12,
+                    "code": 24,
+                    "comment": 0,
+                    "filename": "test_server/public/page.html"
+                },
+                {
+                    "blank": 4,
+                    "code": 9,
+                    "comment": 1,
+                    "filename": "test_server/public/script.js"
+                },
+                {
+                    "blank": 9,
+                    "code": 18,
+                    "comment": 0,
+                    "filename": "test_server/public/simpler.html"
+                },
+                {
+                    "filename": "test_server/public/small.jpg",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 3,
+                    "comment": 0,
+                    "filename": "test_server/public/styles.css"
+                },
+                {
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0,
+                    "filename": "test_server/public/test.mp4:Zone.Identifier"
+                },
+                {
+                    "blank": 0,
+                    "code": 4,
+                    "comment": 2,
+                    "filename": "test_server/public/test2.mp4:Zone.Identifier"
+                },
+                {
+                    "blank": 0,
+                    "code": 17,
+                    "comment": 0,
+                    "filename": "test_server/public/videos/output.m3u8"
+                },
+                {
+                    "blank": 89,
+                    "code": 14567,
+                    "comment": 6714,
+                    "filename": "test_server/public/videos/output1.ts"
+                },
+                {
+                    "blank": 0,
+                    "code": 33,
+                    "comment": 0,
+                    "filename": "test_server/public/videos/output2.m3u8"
+                },
+                {
+                    "blank": 41,
+                    "code": 8544,
+                    "comment": 5564,
+                    "filename": "test_server/public/videos/output20.ts"
+                },
+                {
+                    "blank": 72,
+                    "code": 7499,
+                    "comment": 2990,
+                    "filename": "test_server/public/videos/output21.ts"
+                },
+                {
+                    "blank": 23,
+                    "code": 7747,
+                    "comment": 3085,
+                    "filename": "test_server/public/videos/output210.ts"
+                },
+                {
+                    "blank": 31,
+                    "code": 8804,
+                    "comment": 4512,
+                    "filename": "test_server/public/videos/output211.ts"
+                },
+                {
+                    "blank": 31,
+                    "code": 8804,
+                    "comment": 4512,
+                    "filename": "test_server/public/videos/output211.ts"
+                },
+                {
+                    "blank": 42,
+                    "code": 9060,
+                    "comment": 6476,
+                    "filename": "test_server/public/videos/output212.ts"
+                },
+                {
+                    "blank": 42,
+                    "code": 9060,
+                    "comment": 6476,
+                    "filename": "test_server/public/videos/output212.ts"
+                },
+                {
+                    "blank": 4,
+                    "code": 1529,
+                    "comment": 827,
+                    "filename": "test_server/public/videos/output213.ts"
+                },
+                {
+                    "blank": 41,
+                    "code": 6899,
+                    "comment": 3611,
+                    "filename": "test_server/public/videos/output22.ts"
+                },
+                {
+                    "blank": 49,
+                    "code": 7730,
+                    "comment": 2427,
+                    "filename": "test_server/public/videos/output23.ts"
+                },
+                {
+                    "blank": 35,
+                    "code": 6954,
+                    "comment": 3805,
+                    "filename": "test_server/public/videos/output24.ts"
+                },
+                {
+                    "blank": 26,
+                    "code": 6701,
+                    "comment": 4795,
+                    "filename": "test_server/public/videos/output25.ts"
+                },
+                {
+                    "blank": 28,
+                    "code": 7307,
+                    "comment": 4581,
+                    "filename": "test_server/public/videos/output26.ts"
+                },
+                {
+                    "blank": 37,
+                    "code": 9253,
+                    "comment": 4610,
+                    "filename": "test_server/public/videos/output27.ts"
+                },
+                {
+                    "blank": 49,
+                    "code": 9569,
+                    "comment": 4955,
+                    "filename": "test_server/public/videos/output28.ts"
+                },
+                {
+                    "blank": 49,
+                    "code": 9569,
+                    "comment": 4955,
+                    "filename": "test_server/public/videos/output28.ts"
+                },
+                {
+                    "blank": 26,
+                    "code": 8042,
+                    "comment": 5023,
+                    "filename": "test_server/public/videos/output29.ts"
+                },
+                {
+                    "blank": 26,
+                    "code": 8042,
+                    "comment": 5023,
+                    "filename": "test_server/public/videos/output29.ts"
+                },
+                {
+                    "blank": 81,
+                    "code": 17819,
+                    "comment": 9234,
+                    "filename": "test_server/public/videos/output3.ts"
+                },
+                {
+                    "blank": 55,
+                    "code": 16746,
+                    "comment": 7178,
+                    "filename": "test_server/public/videos/output4.ts"
+                },
+                {
+                    "blank": 46,
+                    "code": 10597,
+                    "comment": 7305,
+                    "filename": "test_server/public/videos/output5.ts"
+                },
+                {
+                    "filename": "test_server/uploads/00cd15fd5ea5b29dbe77f320a25d3f83.jpg",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/021a418077d830a7c1dca754b124a372",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/03243e272647345073656ea619643ddd",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/05c90e77648b991785942f0762bc4215",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/06977516dc0d69af9d7ec513c5b90ab1",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/07ead2ac1379ac9395999e4e7fe3308e",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/08a65968fffd61e60b36b99b620a3779",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/09722d593c263ffb28a26069f4ff08da",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/0c29681d5fe9d4e2f4394eb32da1cafa",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/0ea1a0c9088d428de9d0c436ff5f0abb",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/0f4c60c6659694c998aeb6547ea741a1",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/0f5337edcf14612a23d195eac08f16d5",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/108883344ed343a21eae8f7d1139eadc",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/147c7a524106a7ae5a6a4b5c300e5819",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/14e44a6cec60b2ed756fe88c38616a01",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/1903257225f0983465ad04c7f037810b",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/194e81418480d6dd09b008b72151d61d",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/19e4c42047f05bcc41b3702855e68cb2",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/1a9bc6085e7c247b55139c38e8c9442f",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/1bb4e70b14312b112d80b91672ee25c7",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/227fa4ba9b1755576ccc21576f0e5fa1",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/22f77bfc95b19abf26ac174c342a9de9",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/2436bda8f11e81cd0ab294cba7535af8",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/2655693b2e90e29219a3e461e7b69c7f.jpg",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/29848b0179f3b949ea59b3650bbd83ef",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/2bdfeefd0dd5b0548ddb0f124417ab1e.jpg",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/2cb307b99ef2dd1811f918ea912a23a6",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/2d61bf45596f2fbd8fb193ca2a371602",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/2e1db9787679e8ca6079dd5113dedc45",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/2e2d83317c6d6e05c2279fce4f977f39",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/2f964dd909bb7f34d917ffeb19c593c4",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/300e8bd41cc4c34407e4c9e6c25c0052",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/301ab4aa852ce8bfe484915fdac987c9",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/312102ef8ec799a1e223d6e97bae5c31",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/31239bac4f9b6ea0ccc27d29013e1b5c.jpg",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/32f341c35b18f3b8d08cc73284d5fce9",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/33ae21a88ccb1f3599c226087fce3bf1",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/346624933f2089332e5fc3d0784b2ad8",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/38096965fe186c5862bb2b915024cf8b",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/388ae69a02940adb15e65838038fa208",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/3f73e0aba75fa493d0e0c148e3e66209",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/408e258b7df8b615b2983a5a60294514",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/45cc40ce30b2a78311df19ec0acfd6cb",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/47f22c71e8a1ddde58eb21a229e91ea4",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/4b77198acba53dfbc3b740454d02cfa5",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/4f0182cf3b961a03c5d87c8a5446c74d",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/4f3516b8ea0f88e7756edd3d85117ec9",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/504bef7b393b008cf622e39952dbf98b",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/5101f893481c18bf6104b2d231391994",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/51b94d214e7d688bf0344f4aa6261598",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/53f8bb9be1882046c66f5b0cda3b69dd",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/5a1e5846df90569adb21df99dfaa1b37",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/5a5a2a7504d9eb0e63d46eef0ce6781a",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/5d4aa7c6800d54f325588f2f64d4f766",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/5d51970f22a97604ba855b21b5ccb95e",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/5eb9efd31e1328c0ffbb76f4409819fe",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/5ed048acb4c44c0eac99ad23f3ef7f1a",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/60a2cf8c00182277845a4eee6e97c6f1",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/6108bd532abc597148c6173968b263ad",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/61c7cc96b6814b4236a47293754ea527",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/6507252d2835b278cc73bf5cc323450d",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/6632da7f20cd1ef618538580b28445f4",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/680f7351a37e660d2f66e6c622861900",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/6b28ca57c7948d0e092c75c3a7586d5e.jpg",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/71f972f6b89360bad9a8b26e11e86e3b",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/72243595bc33c9407f4c5739732909d3",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/733aa8e7f1123d92f4b8a155efc8b689",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/74d364c18ac257e3227b87efe3283e4a",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/76b4d4a2c88ad99e1dc9584c66475971",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/7742bb4e0eee8d4734386fe636fa56d6",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/77d2dd19524b93a88cc71e4795537b41",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/788b8b5d846b0e7f6bc7ac41565b8a74",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/8239d9308b4e52c56370ce17c16e4471",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/8501d0639599b28be7686f4ec5f6d3ec",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/8667ce9097e4edfdb9e38d0d650a5f7c",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/8746ba7b7cd75bde62ac5c9bdd92b1c6",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/887956b062e92b5d8b58c35cf730faba",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/88ef1df38edaac8ebb0f397b3107cdb1",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/89264818ebc4c54bc3169c3129094a2c",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/8c7195ea39168fab96e63fe2a15b9d20",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/8ec661fb271b41a331228d3e760d758c",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/8fd8ceabec361afae95008e3c7fe4210",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/92c768e207d1ec5a7c15ad2408f43d51",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/939788b0f632d6077152f474b5d59d97",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/96381296f3e35fe7e941b3e8251e2748",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/969f92a702d7e160d39a2cde45adba03",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/9749e999248a9ab01a30282f4766545c",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/98da0f5b87203cef5a354346da9c1452",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/9df93019e50f51c7888116f84fb24edf",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/a35fff283bf8ae0949600067fa74f551",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/a495c035401e1829a39620b1ac219566",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/a609d4a24599079ad6e9ec60aee9fe89",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/ab6c697742a1bb7ce52907818db2b2dd",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/ac751041220dfcb0a66f683db4856812",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/aca8b41d0d5f3da4f43f3f6e6e1bd8e2",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/adb347f68284eea77d99503d5cd0beaf",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/afbb74cab0132f094100af5b1eece769",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/b0a3aae8b7373d3cca46307a30865977",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/b23cc2e337109a979ac0ab28bece3a00",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/b6cda4df4c262863a72f7f1be8cf4997",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/b7821b47b8aa46fb0a94e4f1b7cc62dd",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/b8f7ef04cea328c55dfbd5ad0268c949",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/ba14cf0514801e397455a162d45d2e62",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/baba158c5f06408452e080fa454b9fc9",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/bcb0bcce8fba616a9f45665c56b41333.jpg",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/bcedfbea79756eff22bb82446cb5ad59",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/bcf46755901f30b95d7895a00d8c3666",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/c0735ac53ab9d53fa7a0cd2ce80d061f",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/c1488b6cad2d7df8793d8bd95d640170",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/c173d17051ed14baa313e0e4af05a5b1.jpg",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/c182bb3d08cc0d6f0bcc3c173fe403ca",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/c2fc8216af2c044d03eb593260140784",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/c4abfd615fdae92b60793395c35ad7d6",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/c54f6409e63c5204f29b6894cc7d3567",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/c8368887589e7ae3df11a6acd1458a8f",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/c8df1480a98caeb103530440616fa41a",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/c9c36201dc54ca772f23155678f53470",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/cfea11bd6bb0cb212a96a4c4f97c7b34",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/d04dad18ffe7276a532cf11fcb6a2ae8",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/d04f2debbfd67f7ade814f3ddf98cf65",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/d287179d9329ee359b45642b9a35cc70",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/d763bf29415c1a69f423ea7124ca06bd",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/db2cc26df4c6efa25e121c9982ac8e37",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/dd3c8a3c46e4796a88b4fa9b9d94fb51",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/dd5cd18e017e00965887fcf8d18cacaf",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/de11ec80c9888032e77635c255609916",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/e34548ee57f394ee72d6d4f598e85606",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/e40e7311cdc8694eb5a0f0492cc7ab36",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/e4f113a3c8c55af74ae4fefbada107e8",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/e6ae986580e19fac4c673d42b7738f47",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/e9e4f008f295de2aea1b8393a511af5a",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/eb41a927ee3c5dc701bd8e5b57fd5d1f",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/eb9eb92d40b6c2c85d1eca9107e69341",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/f0fdcc4b516ea312612534ee1581556f",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/f178e9a3e68bd5531b8760f6e10f8eb2",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/f24041a5ea816e310bcc5387b252554c",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/f2b578e3ac043f8f2bfe8bc613b44e49",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/f2c5df16e7e3ad24c10b1d7184bbe104",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/f2df8bbeeae55bb64526fb04df94b6aa",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/f34cb5b4445935c72361b07c58521f22",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/f3c36ed1c4fc3fc993f4666e6da43a39",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/f7c0518f2f5802f6efe3158cecd704ec",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/f824e66305ad8837a41f63aaed762e0f",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/f8c64bdddf7c280ebf17c7b6d3974795",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/f9abdc82093211bc59a0ca2571c097c9",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "test_server/uploads/fced39f6a4c0659a73f7ecb6c7ba5819",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 1,
+                    "code": 13,
+                    "comment": 0,
+                    "filename": "test_ws_interceptor/index.html"
+                },
+                {
+                    "blank": 77,
+                    "code": 723,
+                    "comment": 0,
+                    "filename": "test_ws_interceptor/package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 15,
+                    "comment": 0,
+                    "filename": "test_ws_interceptor/package.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "test_ws_interceptor/public/vite.svg"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "test_ws_interceptor/src/.ipynb_checkpoints/typescript-checkpoint.svg"
+                },
+                {
+                    "blank": 0,
+                    "code": 9,
+                    "comment": 0,
+                    "filename": "test_ws_interceptor/src/counter.ts"
+                },
+                {
+                    "blank": 6,
+                    "code": 14,
+                    "comment": 4,
+                    "filename": "test_ws_interceptor/src/main.ts"
+                },
+                {
+                    "blank": 11,
+                    "code": 85,
+                    "comment": 0,
+                    "filename": "test_ws_interceptor/src/style.css"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "test_ws_interceptor/src/typescript.svg"
+                },
+                {
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 1,
+                    "filename": "test_ws_interceptor/src/vite-env.d.ts"
+                },
+                {
+                    "blank": 9,
+                    "code": 76,
+                    "comment": 11,
+                    "filename": "test_ws_interceptor/src/wsHook.js"
+                },
+                {
+                    "blank": 2,
+                    "code": 19,
+                    "comment": 2,
+                    "filename": "test_ws_interceptor/tsconfig.json"
+                }
+            ]
+        }
+    ]
+}

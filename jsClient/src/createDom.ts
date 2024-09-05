@@ -53,9 +53,11 @@ export async function createDom(pagePath: string, iframe: HTMLIFrameElement) {
   document.body.style.cursor = "wait";
 
   // cancel requests
+  /*
   registration.active?.postMessage({
     type: "cancelRequests"
   });
+  */
 
   const contentDocument = iframe.contentDocument;
 
@@ -75,6 +77,12 @@ export async function createDom(pagePath: string, iframe: HTMLIFrameElement) {
   document.body.style.cursor = "default";
 
   const content = await fetchedPage.text();
+
+  contentDocument.open();
+  contentDocument.write(content);
+  contentDocument.close();
+
+  /*
 
   const parser = new DOMParser();
   const fullDom = parser.parseFromString(content, "text/html");
@@ -108,13 +116,19 @@ export async function createDom(pagePath: string, iframe: HTMLIFrameElement) {
 
   contentDocument.head.appendChild(headFragment)
   contentDocument.body.appendChild(bodyFragment)
+  */
 
   enableClientSideRouting(contentDocument)
 }
 
-export function enableClientSideRouting(document: Document = window.document) {
+async function createNewDom(path: string) {
 
-  const iframe = getIframe();
+  const newIframe = await setupIframe()
+  await createDom(path, newIframe);
+
+}
+
+export function enableClientSideRouting(document: Document = window.document) {
 
   document.body.addEventListener('click', async function (event) {
     let target = event.target as HTMLElement;
@@ -145,7 +159,7 @@ export function enableClientSideRouting(document: Document = window.document) {
     var url = target.href;
     window.parent.history.pushState({ path: url }, '', url);
 
-    await createDom(url, iframe); // Load content dynamically
+    await createNewDom(url); // Load content dynamically
     console.log("going to ", url);
 
     // Update the URL in the browser address bar
@@ -162,11 +176,11 @@ export function enableClientSideRouting(document: Document = window.document) {
     console.log("going back!", event.state, event.state?.path, window.location.pathname);
     // Handle browser navigation (forward/back)
     if (event.state && event.state.path) {
-      await createDom(event.state.path, iframe);
+      await createNewDom(event.state.path);
       return;
     }
 
-    await createDom(window.location.pathname, iframe);
+    await createNewDom(window.location.pathname);
   });
 
 }

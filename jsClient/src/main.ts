@@ -1,13 +1,9 @@
-import { createFrame } from '../serviceWorker/createPacket';
 import { setupBenchamrking } from './benchmarking';
 import { createDom, setupIframe } from './createDom';
-import { DataChannelSendQueue } from './dataChannelQueue';
-import { connect, ConnectionManager } from './peer'
-import { connectSW } from './peer2';
-import { registerProtocolHandler } from './protocolHandler';
+import { ConnectionManager } from './peer'
 import './style.css'
-import { log, logSelectedCandidatePair, sleep, timer, timers } from './utils'
-import { createTimeline, testConnectionSpeed, test_connection } from './wrtcBenchmarks';
+import { log, logSelectedCandidatePair, timers } from './utils'
+import { createTimeline } from './wrtcBenchmarks';
 
 export const waitForSW = async () => {
   const registration = await navigator.serviceWorker.ready;
@@ -85,7 +81,7 @@ async function main() {
   const id = getId()
   console.log("ID", id)
 
-  
+
   let iframe: HTMLIFrameElement
   iframe = await setupIframe()
 
@@ -126,13 +122,10 @@ async function main() {
   })
 
   connectionManager.addEventListener("message", event => {
-    console.log('received message', event)
     registration.active?.postMessage({ type: "data", payload: event.detail }, [event.detail])
   })
 
-  console.time("waiting for connection")
   await waitForSWReady(registration)
-  console.timeEnd("waiting for connection")
 
   log("Connected")
 

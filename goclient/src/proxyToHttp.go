@@ -41,7 +41,7 @@ func sendPacket(dc *webrtc.DataChannel, packet *Packet) error {
 
 func makePackets(stream io.ReadCloser, dc *webrtc.DataChannel, streamIdentifier uint32, ctx context.Context, cancel context.CancelFunc) {
 	// const payloadSize = 16*1024 - 11
-	const payloadSize = 64000 - 11
+	const payloadSize = 65535 - 11
 
 	buffer := make([]byte, payloadSize)
 
@@ -252,6 +252,10 @@ func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *webr
 		// fmt.Println("Body", packet)
 
 		// check if data channel is closed
+		if stream.dataChannel == nil {
+			fmt.Println("Data channel closed")
+			return
+		}
 
 		stream.dataChannel <- *packet
 		return

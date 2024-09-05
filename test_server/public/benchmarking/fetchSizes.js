@@ -16,6 +16,16 @@ class DynamicTable {
         this.titleElement.textContent = title;
         this.titleElement.style.textAlign = 'center';
 
+        // add a button to download the csv
+        const downloadButton = document.createElement('button');
+        downloadButton.textContent = 'Download CSV';
+        downloadButton.style.margin = '20px auto';
+        downloadButton.style.display = 'block';
+        downloadButton.addEventListener('click', () => {
+            this.downloadCsv('benchmark.csv');
+        });
+        this.titleElement.appendChild(downloadButton);
+
         // Create the table and apply basic styles
         this.table = document.createElement('table');
         this.table.style.width = '80%';
@@ -77,6 +87,30 @@ class DynamicTable {
         avgCell.textContent = average.toFixed(2);
         avgCell.style.fontWeight = 'bold';
         avgCell.style.backgroundColor = '#e8e8e8';
+    }
+
+    toCsv() {
+        let csv = '';
+        for (let i = 0; i < this.table.rows.length; i++) {
+            let row = this.table.rows[i];
+            for (let j = 0; j < row.cells.length; j++) {
+                csv += row.cells[j].textContent + ',';
+            }
+            csv = csv.slice(0, -1); // Remove trailing comma
+            csv += '\n';
+        }
+        return csv;
+    }
+
+    downloadCsv(filename) {
+        const csv = this.toCsv();
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
     }
 }
 
@@ -159,24 +193,42 @@ async function loadTest(trials, size, table) {
     await Promise.all(Array(trials).fill(0).map(() => fetchBuffer(size)))
 
     const end = performance.now()
-
     const time = end - start
-    const rps = trials / (time / 1000)
 
-    table.addRow([size, time, rps])
+    const latency = time / trials
+
+    // 60kb
+    const packetSize = 60 * 1024
+    const numPackets = size / packetSize
+
+    table.addRow([trials, size, time, latency, numPackets])
+}
+
+async function runTrials(trials, table) {
+    // const sizes = [1, 10, 100, 1000, 10000, 100000]
+
+    // give me sizes evenly from 1 byte to 1mb in even increments
+    const sizes = Array(10).fill(0).map((_, i) => ((10 ** 6) / 10) * i)
+
+    // onst table = new DynamicTable('container', ['Size Response (bytes)', 'Time', 'RPS', 'Average Latency (ms)'], `Load Test Benchmark ${trials} trials`);
+
+    for (const size of sizes) {
+        await loadTest(trials, size, table)
+    }
 }
 
 document.getElementById("loadtest")?.addEventListener("click", async () => {
 
 
-    const trials = 400;
+    const bigTable = new DynamicTable('container', ['Trials', 'Size Response (bytes)', 'Time', 'Average Latency (ms)', 'Num Packets Transferred'], `Load Test Benchmark`);
 
-    const sizes = [1, 10, 100, 1000, 10000, 100000]
-    const table = new DynamicTable('container', ['Size Response (bytes)', 'Time', 'RPS'], `Load Test Benchmark`);
+    for (let i = 100; i <= 1000; i+=100) {
+        await runTrials(i, bigTable)
 
-    for (const size of sizes) {
-        await loadTest(trials, size, table)
     }
+
+
+   
 
 })
 
