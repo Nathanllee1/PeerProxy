@@ -10,15 +10,27 @@
         body {
             font-family: Arial, sans-serif;
         }
-
+    
+        #editor-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+    
         .editor {
+            height: 300px;
             border: 1px solid #ccc;
         }
-
+    
+        .editorContainer {
+            display: flex;
+            flex-direction: column;
+        }
+    
         #runButton {
             margin-top: 10px;
         }
-
+    
         #output {
             margin-top: 20px;
             background-color: #f9f9f9;
@@ -27,39 +39,34 @@
             height: 100px;
             overflow: auto;
         }
-
+    
         #sandbox {
             width: 100%;
             height: auto;
             border: 1px solid #ccc;
             margin-top: 20px;
         }
-
-        #code {
-            display: flex;
-
-            gap: 10px;
-        }
     </style>
-</head>
-
-<body>
-    <h1>JavaScript and DOM Sandbox</h1>
-    <div id="code">
-        <div>
-            <h2>JS</h2>
-            <div class="editor" id="js"></div>
-        </div>
-        <div>
-            <h2>HTML</h2>
-            <div class="editor" id="html"></div>
-        </div>
-        
-    </div>
+    </head>
     
-
-    <h3>Sandboxed DOM:</h3>
-    <div id="sandbox"></div>
+    <body>
+        <h1>JavaScript and DOM Sandbox</h1>
+    
+        <!-- Grid container for side-by-side editors -->
+        <div id="editor-container">
+            <div class="editorContainer">
+                <h2>HTML</h2>
+                <div id="html" class="editor"></div>
+            </div>
+    
+            <div class="editorContainer">
+                <h2>JS</h2>
+                <div id="editor" class="editor"></div>
+            </div>
+        </div>
+    
+        <button id="runButton">Run JavaScript</button>
+        <div id="sandbox"></div>
 
     <!-- CodeMirror JS and Theme -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.14/codemirror.min.js"></script>
@@ -71,14 +78,15 @@
         const outputElement = document.getElementById('output');
         const sandbox = document.getElementById('sandbox');
 
-        // Initialize CodeMirror editor
-        const editor = CodeMirror(document.getElementById('js'), {
-            mode: 'javascript',
+        // Initialize CodeMirror editor for HTML
+        const htmlEditor = CodeMirror(document.getElementById('html'), {
+            mode: 'htmlmixed',
             lineNumbers: true
         });
 
-        const htmlEditor = CodeMirror(document.getElementById('html'), {
-            mode: 'htmlmixed',
+        // Initialize CodeMirror editor for JavaScript
+        const editor = CodeMirror(document.getElementById('editor'), {
+            mode: 'javascript',
             lineNumbers: true
         });
 
@@ -104,7 +112,6 @@
             localStorage.setItem('code', editor.getValue());
         });
 
-
         function runCode() {
             // Clear previous output and sandbox content
             sandbox.innerHTML = '';
@@ -122,7 +129,7 @@
             } catch (error) {
             }
         }
-        
+
         runCode()
     </script>
 </body>

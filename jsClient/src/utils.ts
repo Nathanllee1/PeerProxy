@@ -1,10 +1,17 @@
+import { debug } from "./main"
+
 export function log(text: string, ...args: any[]) {
 
     text = text + " " + args.join(" ")
 
     const root = document.getElementById("log")
     const newElement = document.createElement("div")
-    console.log(text)
+
+    if (debug) {
+        console.log(text)
+
+    }
+
     newElement.textContent = text
 
     root?.append(

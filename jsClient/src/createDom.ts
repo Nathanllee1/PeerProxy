@@ -10,7 +10,6 @@ export function setupIframe() {
   }
 
   return new Promise<HTMLIFrameElement>(async (resolve, reject) => {
-    console.log("Creating iframe")
     const iframe = document.createElement("iframe");
     iframe.onload = () => resolve(iframe);
     iframe.id = "webFrame";
@@ -48,7 +47,6 @@ function getBaseURL(pagePath: string) {
 }
 
 export async function createDom(pagePath: string, iframe: HTMLIFrameElement) {
-  console.log("Creating dom")
   // set cursor style to loading
   document.body.style.cursor = "wait";
 

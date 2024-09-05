@@ -16,15 +16,11 @@ export const enableIframe = true
 
 async function initializeSW() {
 
-  console.time("waiting for SW")
   const registration = await waitForSW()
-
-  console.log(registration)
 
   registration.active?.postMessage({
     type: "disconnected"
   })
-  console.timeEnd("waiting for SW")
 
   return registration
 
@@ -97,8 +93,6 @@ async function main() {
     setupBenchamrking(pc)
     createTimeline(stats.events)
   }
-
-  console.log("Connected")
 
   // registerProtocolHandler()
 

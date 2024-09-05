@@ -101,7 +101,7 @@ self.addEventListener("message", async (event) => {
     // console.log(event, self.clients)
     switch (event.data.type) {
         case "disconnected":
-            console.log("Disconnected, resetting")
+            // console.log("Disconnected, resetting")
             peerConnected = false
             proxy.reset()
             break;

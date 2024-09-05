@@ -310,7 +310,6 @@
           if (!this.stream.locked && this.controller) {
             this.controller.close();
           }
-          console.log(`Stream cancelled, reason: ${reason}`);
           this.outOfOrderPackets = {};
           this.cancelled = true;
         }
@@ -379,7 +378,6 @@
     currentIdentifier = 1;
     client;
     reset() {
-      console.log("Resetting requests");
       this.requests = {};
       this.responses = {};
     }
@@ -501,7 +499,6 @@
     const client = await self.clients.get(clientObj.id);
     switch (event.data.type) {
       case "disconnected":
-        console.log("Disconnected, resetting");
         peerConnected = false;
         proxy.reset();
         break;

@@ -164,10 +164,7 @@ export class ConnectionManager extends EventTarget {
   }
 
   async connect() {
-    console.log("Connecting to server", this.serverId)
     const { pc, dc, stats } = await connect(this.serverId)
-
-    console.log("connected")
 
     this.pc = pc
     this.dc = dc

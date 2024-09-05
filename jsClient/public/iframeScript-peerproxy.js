@@ -7,7 +7,7 @@ async function registerServiceWorker() {
 
     let registration = await navigator.serviceWorker.getRegistration()
 
-    console.log(registration ? 'Service Worker registered in iframe' : 'Service Worker not registered in iframe')
+    // console.log(registration ? 'Service Worker registered in iframe' : 'Service Worker not registered in iframe')
 
     if (registration) {
         return registration
