@@ -1,6 +1,6 @@
 
 async function fetchBuffer(sizeBytes) {
-    return fetch(`/buffer?size=${sizeBytes}`)
+    return fetch(`/buffer?size=${sizeBytes}`, { cache: 'no-store'})
 }
 
 let autoDownload = true;
@@ -287,8 +287,8 @@ async function loadTest(trials, size, table) {
 async function runTrials(trials, table) {
     // const sizes = [1, 10, 100, 1000, 10000, 100000]
 
-    const sizes = Array(5).fill(0).map((_, i) => ((10 ** 6) / 10) * i)
-
+    // const sizes = Array(5).fill(0).map((_, i) => ((10 ** 6) / 10) * i)
+    const sizes = makeExponentialSizes(10, 6)
     // onst table = new DynamicTable('container', ['Size Response (bytes)', 'Time', 'RPS', 'Average Latency (ms)'], `Load Test Benchmark ${trials} trials`);
 
     for (const size of sizes) {
