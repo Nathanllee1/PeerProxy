@@ -20,6 +20,13 @@ async function run() {
     });
 
     const page = await browser.newPage();
+    
+    page.on('console', msg => {
+
+	    if (msg.type() === 'error') {
+		    console.error('Page Error:', msg.text())
+	    }
+    })
 
     // log current time
 
