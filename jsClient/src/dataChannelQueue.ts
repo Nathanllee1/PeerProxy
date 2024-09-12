@@ -49,7 +49,7 @@ export class DataChannelSendQueue {
     private processQueue(): void {
         if (this.dataChannel.readyState !== "open") return;
 
-        console.log("Processing queue", this.queue.length, "items");
+        // console.log("Processing queue", this.queue.length, "items");
 
         this.sending = true;
 

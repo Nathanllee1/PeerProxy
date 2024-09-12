@@ -9,7 +9,7 @@ const ngrokURL = 'https:/nathanlee.ngrok.io/benchmarking/sizetest.html';
 const TEST = 'ngrok'
 const url = TEST === 'ngrok' ? ngrokURL : proxyURL;
 
-function getFormattedDateTime() {
+export function getFormattedDateTime() {
     const now = new Date();
 
     const year = now.getFullYear();
@@ -71,4 +71,4 @@ async function measurePerformance() {
 
 }
 
-measurePerformance()
+//measurePerformance()
