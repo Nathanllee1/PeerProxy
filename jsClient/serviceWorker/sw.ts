@@ -46,7 +46,7 @@ async function handleIframeRequest(event: FetchEvent, client: Client) {
         return fetch(event.request)
     }
 
-    // console.log(client.frameType, event.request.url)
+    // console.log(peerConnected, client.frameType, event.request.url, event)
 
 
     const clientHostname = new URL(client.url).hostname
@@ -68,7 +68,7 @@ async function handleIframeRequest(event: FetchEvent, client: Client) {
 
     const url = new URL(event.request.url)
 
-    if (url.pathname === "/iframe.html" || url.pathname === "/iframeScript.js") {
+    if (url.pathname === "/iframe-peerproxy.html" || url.pathname === "/iframeScript-peerproxy.js") {
         return fetch(event.request)
     }
 
@@ -101,7 +101,7 @@ self.addEventListener("message", async (event) => {
     // console.log(event, self.clients)
     switch (event.data.type) {
         case "disconnected":
-            console.log("Disconnected, resetting")
+            // console.log("Disconnected, resetting")
             peerConnected = false
             proxy.reset()
             break;

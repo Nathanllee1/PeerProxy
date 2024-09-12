@@ -60,7 +60,7 @@ function createHeaderPacket(request: Request, currentIdentifier: number): ArrayB
     formattedHeaders["method"] = request.method
     formattedHeaders["url"] = new URL(request.url).pathname + new URL(request.url).search + new URL(request.url).hash
 
-    console.log(formattedHeaders)
+    // console.log(formattedHeaders)
 
     // TODO: come up with a more efficient header representation
     const encodedHeader = new TextEncoder().encode(JSON.stringify(formattedHeaders))

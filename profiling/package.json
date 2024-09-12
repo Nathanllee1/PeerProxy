@@ -9,6 +9,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "k6": "^0.0.0",
+    "pidtree": "^0.6.0",
+    "pidusage": "^3.0.2",
     "puppeteer": "^22.14.0"
   }
 }

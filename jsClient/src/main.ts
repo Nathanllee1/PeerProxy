@@ -1,11 +1,9 @@
-import { createFrame } from '../serviceWorker/createPacket';
 import { setupBenchamrking } from './benchmarking';
 import { createDom, setupIframe } from './createDom';
-import { connect } from './peer'
-import { connectSW } from './peer2';
+import { ConnectionManager } from './peer'
 import './style.css'
-import { log, sleep, timer, timers } from './utils'
-import { createTimeline, testConnectionSpeed, test_connection } from './wrtcBenchmarks';
+import { log, logSelectedCandidatePair, timers } from './utils'
+import { createTimeline } from './wrtcBenchmarks';
 
 export const waitForSW = async () => {
   const registration = await navigator.serviceWorker.ready;
@@ -16,23 +14,13 @@ export const waitForSW = async () => {
 export const debug = false
 export const enableIframe = true
 
-document.getElementById("makeDom")?.addEventListener("click", async () => {
-  await createDom(window.location.pathname)
-})
-
-
-
 async function initializeSW() {
 
-  console.time("waiting for SW")
   const registration = await waitForSW()
-
-  console.log(registration)
 
   registration.active?.postMessage({
     type: "disconnected"
   })
-  console.timeEnd("waiting for SW")
 
   return registration
 
@@ -45,9 +33,15 @@ export function getId() {
   const hostname = window.location.hostname;
   const parts = hostname.split('.');
   let serverId = "foo";
+
   if (parts.length > 2) {
     serverId = parts.slice(0, parts.length - 2).join('.');
     return serverId
+  }
+
+  if (searchParams.has("peerproxyid")) {
+    // redirect to subdomain with peerproxyid
+    window.location.href = `https://${searchParams.get("peerproxyid")}.${hostname}${window.location.pathname}`
   }
 
   return serverId;
@@ -73,12 +67,7 @@ function waitForSWReady(registration: ServiceWorkerRegistration) {
 
 }
 
-async function sendHeartbeat(dc: RTCDataChannel) {
-  setInterval(() => {
-    const testPacket = createFrame(0, 'HEADER', new Uint8Array(), true, 0, true)
-    dc.send(testPacket)
-  }, 1000)
-}
+
 
 export let registration: ServiceWorkerRegistration
 
@@ -88,49 +77,31 @@ async function main() {
   const id = getId()
   console.log("ID", id)
 
-  await setupIframe()
+
+  let iframe: HTMLIFrameElement
+  iframe = await setupIframe()
 
   registration = await initializeSW()
 
-  const { dc, stats } = await connect(id)
+  const connectionManager = new ConnectionManager(id)
+  const { dc, stats, pc } = await connectionManager.connect()
 
-  let iframe: HTMLIFrameElement
-  if (!debug) {
-    iframe = await setupIframe()
+  logSelectedCandidatePair(pc)
 
-  }
 
   if (debug) {
-    setupBenchamrking()
-
-    const speedButton = document.createElement("button")
-    speedButton.innerText = "Test Connection Speed"
-    speedButton.id = "connectionSpeed"
-
-    speedButton.addEventListener("click", async () => {
-      await testConnectionSpeed()
-    })
-
-    document.body.appendChild(speedButton)
-
-  }
-
-  console.log("Connected")
-
-  sendHeartbeat(dc)
-
-  console.log(stats.events)
-
-  if (debug) {
+    setupBenchamrking(pc)
     createTimeline(stats.events)
-
   }
 
-  // navigator.registerProtocolHandler('web+webrtc', 'http://localhost:5173/?id=%s')
+  // registerProtocolHandler()
+
   navigator.serviceWorker.addEventListener("message", (message) => {
     switch (message.data.type) {
       case "data":
-        dc.send(message.data.payload)
+        // dc.send(message.data.payload)
+        // console.log("Sending data", message.data.payload)
+        connectionManager.send(message.data.payload)
         break
 
       case "set-cookie":
@@ -144,19 +115,18 @@ async function main() {
     }
   })
 
-  dc.onmessage = event => {
-    registration.active?.postMessage({ type: "data", payload: event.data }, [event.data])
-  }
+  connectionManager.addEventListener("message", event => {
+    registration.active?.postMessage({ type: "data", payload: event.detail }, [event.detail])
+  })
 
-  console.time("waiting for connection")
   await waitForSWReady(registration)
-  console.timeEnd("waiting for connection")
 
   log("Connected")
 
-  if (!debug) {
-    await createDom(window.location.pathname)
-  }
+
+  await createDom(window.location.pathname, iframe)
+
+
 }
 
 main()

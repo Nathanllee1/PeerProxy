@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript and DOM Sandbox</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.14/codemirror.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+    
+        #editor-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+    
+        .editor {
+            height: 300px;
+            border: 1px solid #ccc;
+        }
+    
+        .editorContainer {
+            display: flex;
+            flex-direction: column;
+        }
+    
+        #runButton {
+            margin-top: 10px;
+        }
+    
+        #output {
+            margin-top: 20px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 10px;
+            height: 100px;
+            overflow: auto;
+        }
+    
+        #sandbox {
+            width: 100%;
+            height: auto;
+            border: 1px solid #ccc;
+            margin-top: 20px;
+        }
+    </style>
+    </head>
+    
+    <body>
+        <h1>JavaScript and DOM Sandbox</h1>
+    
+        <!-- Grid container for side-by-side editors -->
+        <div id="editor-container">
+            <div class="editorContainer">
+                <h2>HTML</h2>
+                <div id="html" class="editor"></div>
+            </div>
+    
+            <div class="editorContainer">
+                <h2>JS</h2>
+                <div id="editor" class="editor"></div>
+            </div>
+        </div>
+    
+        <button id="runButton">Run JavaScript</button>
+        <div id="sandbox"></div>
+
+    <!-- CodeMirror JS and Theme -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.14/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.14/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.14/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.14/mode/htmlmixed/htmlmixed.min.js"></script>
+
+    <script>
+        const outputElement = document.getElementById('output');
+        const sandbox = document.getElementById('sandbox');
+
+        // Initialize CodeMirror editor for HTML
+        const htmlEditor = CodeMirror(document.getElementById('html'), {
+            mode: 'htmlmixed',
+            lineNumbers: true
+        });
+
+        // Initialize CodeMirror editor for JavaScript
+        const editor = CodeMirror(document.getElementById('editor'), {
+            mode: 'javascript',
+            lineNumbers: true
+        });
+
+        // Load HTML from local storage
+        const savedHtml = localStorage.getItem('html');
+        if (savedHtml) {
+            htmlEditor.setValue(savedHtml);
+        }
+
+        // On change event, write to local storage
+        htmlEditor.on('change', () => {
+            localStorage.setItem('html', htmlEditor.getValue());
+        });
+
+        // Load code from local storage
+        const savedCode = localStorage.getItem('code');
+        if (savedCode) {
+            editor.setValue(savedCode);
+        }
+
+        // On change event, write to local storage
+        editor.on('change', () => {
+            localStorage.setItem('code', editor.getValue());
+        });
+
+        function runCode() {
+            // Clear previous output and sandbox content
+            sandbox.innerHTML = '';
+
+            try {
+                // Inject the user-provided HTML into the sandbox
+                sandbox.innerHTML = htmlEditor.getValue();
+
+                // Inject the user-provided JavaScript into the DOM
+                const script = document.createElement('script');
+                script.type = 'text/javascript';
+                script.textContent = editor.getValue();
+                document.body.appendChild(script);
+
+            } catch (error) {
+            }
+        }
+
+        runCode()
+    </script>
+</body>
+
+</html>

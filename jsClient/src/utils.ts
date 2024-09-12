@@ -1,10 +1,17 @@
+import { debug } from "./main"
+
 export function log(text: string, ...args: any[]) {
 
     text = text + " " + args.join(" ")
 
     const root = document.getElementById("log")
     const newElement = document.createElement("div")
-    console.log(text)
+
+    if (debug) {
+        console.log(text)
+
+    }
+
     newElement.textContent = text
 
     root?.append(
@@ -75,3 +82,20 @@ export class timer {
 }
 
 export const timers = new timer()
+
+export function getFormattedDateTime() {
+    const now = new Date();
+
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+    const day = String(now.getDate()).padStart(2, '0');
+
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+
+    // Combine date and time parts into a single string, replacing ':' with '-'
+    const formattedDateTime = `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
+
+    return formattedDateTime;
+}

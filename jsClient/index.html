@@ -26,11 +26,17 @@
   <div id="timeline"></div>
   <div id="results"></div>
   
+  
   <!--
   <h1>Benchmarking</h1>
 
   <button id="testPacketProcessing">Benchmark Packet Processing Speed</button>
   -->
+
+  <div id="debugPanel" style="visibility: hidden;">
+    <div>Debug Panel</div>
+    <button id="connectionSpeed">Test Data Channel Speed</button>
+  </div>
 
 
 </body>
@@ -38,7 +44,16 @@
 </html>
 
 <style>
-  iframe {
+
+  #debugPanel {
+    z-index: 150;
+    background-color: white;
+    position:fixed;
+    padding: 10px;
+    
+  }
+
+  #webFrame {
     position: fixed;
     top: 0px;
     bottom: 0px;
@@ -48,7 +63,7 @@
     margin: 0;
     padding: 0;
     overflow: hidden;
-    z-index: 999999;
+    z-index: 10;
     height: 100%;
   }
 </style>

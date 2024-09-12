@@ -28,7 +28,6 @@ export class HTTPProxy {
     client: Client
 
     reset() {
-        console.log("Resetting requests")
         this.requests = {}
         this.responses = {}
         // this.currentIdentifier = 1

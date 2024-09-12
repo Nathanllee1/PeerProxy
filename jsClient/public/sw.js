@@ -224,7 +224,6 @@
     }
     formattedHeaders["method"] = request.method;
     formattedHeaders["url"] = new URL(request.url).pathname + new URL(request.url).search + new URL(request.url).hash;
-    console.log(formattedHeaders);
     const encodedHeader = new TextEncoder().encode(JSON.stringify(formattedHeaders));
     const frame = createFrame(currentIdentifier, "HEADER", encodedHeader, true, 0);
     return frame;
@@ -311,7 +310,6 @@
           if (!this.stream.locked && this.controller) {
             this.controller.close();
           }
-          console.log(`Stream cancelled, reason: ${reason}`);
           this.outOfOrderPackets = {};
           this.cancelled = true;
         }
@@ -380,7 +378,6 @@
     currentIdentifier = 1;
     client;
     reset() {
-      console.log("Resetting requests");
       this.requests = {};
       this.responses = {};
     }
@@ -482,7 +479,7 @@
       return fetch(event.request);
     }
     const url = new URL(event.request.url);
-    if (url.pathname === "/iframe.html" || url.pathname === "/iframeScript.js") {
+    if (url.pathname === "/iframe-peerproxy.html" || url.pathname === "/iframeScript-peerproxy.js") {
       return fetch(event.request);
     }
     return proxy.makeRequest(event.request, pageClient);
@@ -502,7 +499,6 @@
     const client = await self.clients.get(clientObj.id);
     switch (event.data.type) {
       case "disconnected":
-        console.log("Disconnected, resetting");
         peerConnected = false;
         proxy.reset();
         break;

@@ -10,22 +10,31 @@ export function setupIframe() {
   }
 
   return new Promise<HTMLIFrameElement>(async (resolve, reject) => {
-    console.log("Creating iframe")
     const iframe = document.createElement("iframe");
     iframe.onload = () => resolve(iframe);
-
     iframe.id = "webFrame";
+
+    if (debug) {
+      iframe.id = "testFrame"
+    }
     iframe.width = "100%";
     iframe.height = "900";
-    iframe.src = '/iframe.html';
+    iframe.src = '/iframe-peerproxy.html';
 
-    // if debug, set display to none
-    if (debug) {
-      iframe.style.display = "none";
-    }
+
 
     document.body.appendChild(iframe);
   });
+}
+
+function getIframe() {
+  const iframe = document.getElementById("webFrame") as HTMLIFrameElement;
+
+  if (!iframe) {
+    throw new Error("No iframe")
+  }
+
+  return iframe;
 }
 
 function getBaseURL(pagePath: string) {
@@ -37,17 +46,16 @@ function getBaseURL(pagePath: string) {
   return pagePath;
 }
 
-export async function createDom(pagePath: string) {
-
+export async function createDom(pagePath: string, iframe: HTMLIFrameElement) {
   // set cursor style to loading
   document.body.style.cursor = "wait";
 
   // cancel requests
+  /*
   registration.active?.postMessage({
     type: "cancelRequests"
   });
-
-  const iframe = await setupIframe();
+  */
 
   const contentDocument = iframe.contentDocument;
 
@@ -67,6 +75,12 @@ export async function createDom(pagePath: string) {
   document.body.style.cursor = "default";
 
   const content = await fetchedPage.text();
+
+  contentDocument.open();
+  contentDocument.write(content);
+  contentDocument.close();
+
+  /*
 
   const parser = new DOMParser();
   const fullDom = parser.parseFromString(content, "text/html");
@@ -100,11 +114,20 @@ export async function createDom(pagePath: string) {
 
   contentDocument.head.appendChild(headFragment)
   contentDocument.body.appendChild(bodyFragment)
+  */
 
   enableClientSideRouting(contentDocument)
 }
 
+async function createNewDom(path: string) {
+
+  const newIframe = await setupIframe()
+  await createDom(path, newIframe);
+
+}
+
 export function enableClientSideRouting(document: Document = window.document) {
+
   document.body.addEventListener('click', async function (event) {
     let target = event.target as HTMLElement;
 
@@ -134,7 +157,7 @@ export function enableClientSideRouting(document: Document = window.document) {
     var url = target.href;
     window.parent.history.pushState({ path: url }, '', url);
 
-    await createDom(url); // Load content dynamically
+    await createNewDom(url); // Load content dynamically
     console.log("going to ", url);
 
     // Update the URL in the browser address bar
@@ -151,11 +174,11 @@ export function enableClientSideRouting(document: Document = window.document) {
     console.log("going back!", event.state, event.state?.path, window.location.pathname);
     // Handle browser navigation (forward/back)
     if (event.state && event.state.path) {
-      await createDom(event.state.path);
+      await createNewDom(event.state.path);
       return;
     }
 
-    await createDom(window.location.pathname);
+    await createNewDom(window.location.pathname);
   });
 
 }

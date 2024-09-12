@@ -31,7 +31,7 @@ export class CustomStream {
                 if (!this.stream.locked && this.controller) {
                     this.controller.close();
                 }
-                console.log(`Stream cancelled, reason: ${reason}`);
+                // console.log(`Stream cancelled, reason: ${reason}`);
                 this.outOfOrderPackets = {}
 
                 this.cancelled = true

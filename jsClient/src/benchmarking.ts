@@ -1,5 +1,6 @@
 import { createFrame } from "../serviceWorker/createPacket";
 import { HTTPProxy } from "../serviceWorker/requestHandler";
+import { monitorConnectionSpeed, testConnectionSpeed } from "./wrtcBenchmarks";
 
 
 async function testPackets() {
@@ -9,7 +10,7 @@ async function testPackets() {
 
     const res = await proxy.makeRequest(new Request("https://www.google.com"), null)
 
-    
+
 }
 
 async function testSerialization() {
@@ -34,15 +35,20 @@ async function testSerialization() {
 
 }
 
-function makeBenchmarkButton(text: string, callback: () => void) {
+function makeBenchmarkButton(text: string, callback: (...args: any[]) => any, id: string | undefined = undefined) {
     const button = document.createElement("button")
     button.innerText = text
+
+    if (id) button.id = id
+
     button.addEventListener("click", callback)
 
     document.body.appendChild(button)
 }
 
-export function setupBenchamrking() {
+export function setupBenchamrking(pc: RTCPeerConnection) {
     makeBenchmarkButton("Test packets", testPackets)
     makeBenchmarkButton("Test Serialization", testSerialization)
+    makeBenchmarkButton("Test Connection Speed", testConnectionSpeed)
+    makeBenchmarkButton("Monitor Connection Speed", monitorConnectionSpeed(pc))
 }

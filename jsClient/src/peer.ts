@@ -1,5 +1,7 @@
 import { DataSet } from "vis-timeline/standalone";
 import { displayError, log, logSelectedCandidatePair, timers, timers } from "./utils";
+import { DataChannelSendQueue } from "./dataChannelQueue";
+import { createFrame } from "../serviceWorker/createPacket";
 
 export async function fetchICE() {
 
@@ -16,7 +18,7 @@ export async function connect(serverId: string) {
   const events = new DataSet()
   events.add({ id: 0, content: "Connection Started", start: new Date(), group: "Connection" })
 
-  return new Promise<{ pc: RTCPeerConnection, dc: RTCDataChannel, stats: {events: DataSet<any>, wsTime: number} }>(async (resolve, reject) => {
+  return new Promise<{ pc: RTCPeerConnection, dc: RTCDataChannel, stats: { events: DataSet<any>, wsTime: number } }>(async (resolve, reject) => {
 
     // const signalingServer = "ws://localhost:8080"
     // const signalingServer = "wss://d1syxz7xf05rvd.cloudfront.net"
@@ -85,26 +87,26 @@ export async function connect(serverId: string) {
     }
 
     let dc = pc.createDataChannel('data', {
-      // ordered: true,
+      ordered: false,
     })
 
     dc.onclose = () => {
       console.log("Datachannel Closed")
       connect(serverId)
     }
-
-    dc.bufferedAmountLowThreshold = 10240
+    
+    dc.bufferedAmountLowThreshold = 102400
     dc.onbufferedamountlow = () => {
-      /* use send() to queue more data to be sent */
       console.log("buffered amount low")
     };
+    
 
     dc.binaryType = "arraybuffer"
 
     dc.onopen = () => {
       events.add({ id: 1, content: "Data Channel Opened", start: new Date(), group: "Connection" })
 
-      resolve({ pc, dc, stats: { wsTime, events }})
+      resolve({ pc, dc, stats: { wsTime, events } })
     }
 
     pc.onicecandidate = e => {
@@ -136,4 +138,97 @@ export async function connect(serverId: string) {
 
     }
   })
+}
+
+function sendHeartbeat(dc: RTCDataChannel) {
+  return setInterval(() => {
+    const testPacket = createFrame(0, 'HEADER', new Uint8Array(), true, 0, true)
+    dc.send(testPacket)
+  }, 1000)
+}
+
+export class ConnectionManager extends EventTarget {
+
+  pc: RTCPeerConnection
+  dc: RTCDataChannel
+
+  queue: DataChannelSendQueue
+  reconnectAttempts: number = 0
+  maxReconnectAttempts: number = 5
+  serverId: string
+  heartbeat: NodeJS.Timeout
+
+  constructor(serverId: string) {
+    super()
+    this.serverId = serverId
+  }
+
+  async connect() {
+    const { pc, dc, stats } = await connect(this.serverId)
+
+    this.pc = pc
+    this.dc = dc
+
+    if (!this.queue) {
+      this.queue = new DataChannelSendQueue(dc)
+    }
+
+    this.queue.setDataChannel(dc)
+
+    this.setupConnectionListeners()
+
+    this.reconnectAttempts = 0
+
+    clearInterval(this.heartbeat)
+    this.heartbeat = sendHeartbeat(dc)
+
+    dc.onmessage = (e) => {
+      this.emitMessage(e.data)
+    }
+
+    return { pc, stats, dc }
+  }
+
+  setupConnectionListeners() {
+    this.pc.oniceconnectionstatechange = async () => {
+      if (this.pc.iceConnectionState === 'disconnected' || this.pc.iceConnectionState === 'failed') {
+        await this.handleReconnection()
+      }
+    }
+
+    this.dc.onclose = async () => {
+      if (this.pc.iceConnectionState !== 'disconnected' && this.pc.iceConnectionState !== 'failed') {
+        await this.handleReconnection()
+      }
+    }
+  }
+
+  async handleReconnection() {
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      console.error("Max reconnection attempts reached")
+      return
+    }
+
+    console.log("Attempting to reconnect...")
+
+    this.reconnectAttempts++
+    await this.connect()
+
+    // Optionally wait a bit before next reconnection attempt
+    await new Promise(resolve => setTimeout(resolve, 2000))
+  }
+
+
+  async send(data: ArrayBuffer) {
+    // console.log("Sending data")
+    await this.queue.send(data)
+  }
+
+  emitMessage(data: ArrayBuffer) {
+    this.dispatchEvent(new CustomEvent("message", { detail: data }))
+  }
+
+
+
+
 }
