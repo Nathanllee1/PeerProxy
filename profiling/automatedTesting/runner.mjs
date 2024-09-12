@@ -21,6 +21,9 @@ async function run() {
 
     const page = await browser.newPage();
 
+    // log current time
+
+
     const client = await page.target().createCDPSession();
     await client.send('Page.setDownloadBehavior', {
         behavior: 'allow',
