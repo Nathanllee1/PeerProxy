@@ -183,7 +183,20 @@ async function doTest(table, size) {
     console.log(`fetching ${size} bytes`);
 
     const start = performance.now()
-    const res = await fetchBuffer(size)
+
+    // error handling with backoff
+    let res;
+    let backoff = 50;
+    while (true) {
+        try {
+            res = await fetchBuffer(size)
+            break
+        } catch (e) {
+            console.error(e)
+            await sleep(backoff)
+            backoff *= 2
+        }
+    }    
 
     // read buffer until end
     const reader = res.body.getReader()
