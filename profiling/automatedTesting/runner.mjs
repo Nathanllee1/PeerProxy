@@ -29,7 +29,7 @@ async function run() {
     })
 
     // log current time
-
+    console.log(new Date().toISOString())
 
     const client = await page.target().createCDPSession();
     await client.send('Page.setDownloadBehavior', {

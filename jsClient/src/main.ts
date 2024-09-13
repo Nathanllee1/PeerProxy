@@ -11,7 +11,8 @@ export const waitForSW = async () => {
   return registration
 }
 
-export const debug = false
+// gets the queryparameter "peerproxydebug" and returns true if it is "true"
+export const debug = new URLSearchParams(window.location.search).get("peerproxydebug") === "true"
 export const enableIframe = true
 
 async function initializeSW() {
@@ -86,6 +87,9 @@ async function main() {
   const connectionManager = new ConnectionManager(id)
   const { dc, stats, pc } = await connectionManager.connect()
 
+  console.log("Connecting took", timers.end("connecting"))
+
+
   logSelectedCandidatePair(pc)
 
 
@@ -110,7 +114,7 @@ async function main() {
         break
 
       default:
-        console.log("Unknown message", message.data)
+        // console.log("Unknown message", message.data)
         break
     }
   })
