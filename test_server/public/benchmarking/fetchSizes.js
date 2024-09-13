@@ -311,13 +311,15 @@ async function runTrials(trials, table) {
 
 document.getElementById("loadtest")?.addEventListener("click", async () => {
 
-
+    console.log("Starting load test", new Date().toISOString())
     const bigTable = new DynamicTable('container', ['Trials', 'Size Response (bytes)', 'Time', 'Average Latency (ms)', 'Num Packets Transferred'], `Load Test Benchmark`);
 
-    for (let i = 100; i <= 1000; i+=100) {
+    for (let i = 100; i <= 400; i+=100) {
         await runTrials(i, bigTable)
 
     }
+
+    console.log("Finished load test", new Date().toISOString())
 
     if (autoDownload) {
         bigTable.downloadCsv('latency.csv');
