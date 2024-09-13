@@ -23,6 +23,8 @@ async function run() {
     
     page.on('console', msg => {
 
+        console.log(msg.text())
+
 	    if (msg.type() === 'error') {
 		    console.error('Page Error:', msg.text())
 	    }
