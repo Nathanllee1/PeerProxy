@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/pion/webrtc/v4"
 )
@@ -98,7 +97,7 @@ func makePackets(stream io.ReadCloser, dc *webrtc.DataChannel, streamIdentifier 
 
 			packetNum++
 
-			time.Sleep(10 * time.Millisecond)
+			// time.Sleep(10 * time.Millisecond)
 		}
 	}
 
