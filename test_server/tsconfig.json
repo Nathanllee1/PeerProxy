@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    /* Your existing compilerOptions */
+    "target": "es2016",
+    "module": "commonjs",
+    "rootDir": "./lib",
+    "outDir": "./build",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "include": ["lib/**/*"],
+  "exclude": ["public", "node_modules"]
+}

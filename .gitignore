@@ -27,3 +27,5 @@ uploads
 *.mp4
 
 **/*videos/*
+
+build
