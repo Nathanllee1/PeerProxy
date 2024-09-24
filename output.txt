@@ -1,0 +1,3967 @@
+===== goclient/test/test.go =====
+package main
+
+===== goclient/src/index.go =====
+package main
+
+import (
+	"fmt"
+	"log"
+	"math/rand"
+	"net/http"
+	_ "net/http/pprof"
+
+	"github.com/alecthomas/kong"
+)
+
+type CLI struct {
+	Port          int    `arg:"" name:"port" help:"Port number to listen on."`
+	ID            string `optional:"" name:"id" help:"Identifier for the peer."`
+	FullProxy     bool   `optional:"" name:"fullProxy" help:"Enable or disable full proxy mode."`
+	RecordRequest bool   `optional:"" name:"recordRequest" help:"Enable or disable debug mode."`
+}
+
+var ProxyPort string = "3000"
+var ServerId string = "foo"
+var FullProxy bool = false
+var RecordRequest bool = false
+
+// Generate random 6 char string
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
+
+func RandStringRunes(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
+}
+
+func main() {
+	var cli CLI
+	ctx := kong.Parse(&cli,
+		kong.UsageOnError(),
+	)
+
+	// Validate and use the parsed flags
+	if cli.Port == 0 {
+		fmt.Println("Usage: peerproxy <port> --id <id>")
+		ctx.Exit(1)
+	}
+
+	RecordRequest = cli.RecordRequest
+
+	if cli.RecordRequest {
+		InitializeLog()
+
+		go func() {
+			log.Println(http.ListenAndServe("localhost:6060", nil))
+		}()
+	}
+
+	ProxyPort = fmt.Sprintf("%d", cli.Port)
+	ServerId = cli.ID
+
+	if cli.ID == "" {
+		ServerId = RandStringRunes(6)
+	}
+
+	FullProxy = cli.FullProxy
+
+	Signal()
+
+	// Prevent the main function from exiting
+	select {}
+}
+
+===== goclient/src/requestManager.go =====
+package main
+
+import (
+	"errors"
+	"sync"
+)
+
+type clientRequest struct {
+	clientMu *sync.RWMutex
+	requests map[uint32]*PacketStream
+}
+
+func MakeNewClientRequest() clientRequest {
+	return clientRequest{
+		requests: make(map[uint32]*PacketStream),
+		clientMu: &sync.RWMutex{},
+	}
+}
+
+type requests map[string]clientRequest
+
+var (
+	Requests  = make(requests)
+	RequestMu sync.RWMutex
+)
+
+func MakeNewPacketStream() *PacketStream {
+	return &PacketStream{
+		dataChannel:       make(chan Packet, 10),
+		nextSequence:      0,
+		outOfOrderPackets: make(map[int][]byte),
+		packetsIngested:   0,
+		lastPacketNum:     0,
+		lastPacketFound:   false,
+	}
+}
+
+func (r *requests) GetClient(clientId string) (*clientRequest, bool) {
+	RequestMu.RLock()
+	defer RequestMu.RUnlock()
+
+	clientReq, clientExists := (*r)[clientId]
+
+	if !clientExists {
+		return nil, false
+	}
+
+	return &clientReq, true
+}
+
+func (r *requests) NewClient(clientId string) {
+	RequestMu.Lock()
+	defer RequestMu.Unlock()
+
+	(*r)[clientId] = MakeNewClientRequest()
+}
+
+// returns a specific request from a client
+func (r *requests) GetStream(clientId string, requestId uint32) (*PacketStream, bool) {
+
+	client, clientExists := r.GetClient(clientId)
+
+	if !clientExists {
+		return nil, false
+	}
+
+	client.clientMu.RLock()
+	defer client.clientMu.RUnlock()
+
+	request, requestExists := client.requests[requestId]
+
+	if !requestExists {
+		return nil, false
+	}
+
+	return request, true
+}
+
+func (r *requests) AddStream(clientId string, requestId uint32) error {
+	client, clientExists := r.GetClient(clientId)
+
+	if !clientExists {
+		return errors.New("client does not exist")
+	}
+
+	client.clientMu.Lock()
+	defer client.clientMu.Unlock()
+
+	client.requests[requestId] = MakeNewPacketStream()
+
+	return nil
+}
+
+func (r *requests) RemoveStream(clientId string, requestId uint32) error {
+	client, clientExists := r.GetClient(clientId)
+
+	if !clientExists {
+		return errors.New("client does not exist")
+	}
+
+	client.clientMu.Lock()
+	defer client.clientMu.Unlock()
+
+	delete(client.requests, requestId)
+
+	return nil
+}
+
+===== goclient/src/proxyToHttp.go =====
+package main
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"strconv"
+
+	"github.com/pion/webrtc/v4"
+)
+
+type PacketStream struct {
+	dataChannel       chan Packet
+	buffer            []byte
+	done              bool
+	nextSequence      int
+	outOfOrderPackets map[int][]byte
+	lastPacketNum     uint32
+	lastPacketFound   bool
+	packetsIngested   int
+	cancel            context.CancelFunc
+}
+
+func sendPacket(dc *webrtc.DataChannel, packet *Packet) error {
+
+	err := dc.Send(packet.Serialize())
+
+	if err != nil {
+		fmt.Println("Error sending packet", err)
+
+		return err
+	}
+
+	return nil
+
+}
+
+func makePackets(stream io.ReadCloser, dc *webrtc.DataChannel, streamIdentifier uint32, ctx context.Context, cancel context.CancelFunc) {
+	// const payloadSize = 16*1024 - 11
+	const payloadSize = 65535 - 11
+
+	buffer := make([]byte, payloadSize)
+
+	packetNum := 0
+
+	var payload []byte
+
+	for {
+		select {
+		case <-ctx.Done():
+			fmt.Println("Context done")
+			return
+		default:
+			n, err := io.ReadFull(stream, buffer)
+			// fmt.Println("Read", n, err, buffer[:n])
+			payload = buffer
+			if err != nil {
+				if err == io.EOF {
+					// End of file reached
+					finalPacket := Packet{
+						StreamIdentifier: streamIdentifier,
+						PacketNum:        uint32(packetNum),
+						PayloadLength:    uint16(0),
+						IsHeader:         false,
+						IsFinalMessage:   true,
+						Payload:          make([]byte, 0),
+					}
+
+					dc.Send(finalPacket.Serialize())
+					return
+				}
+				if err == io.ErrUnexpectedEOF {
+					// Last chunk might be less than chunk size, process what was read
+					payload = buffer[:n]
+				}
+			}
+
+			bodyPacket := Packet{
+				StreamIdentifier: streamIdentifier,
+				PacketNum:        uint32(packetNum),
+				PayloadLength:    uint16(len(payload)),
+				IsHeader:         false,
+				IsFinalMessage:   false,
+				Payload:          payload,
+			}
+
+			err = sendPacket(dc, &bodyPacket)
+
+			if err != nil {
+				// close ctx
+				cancel()
+
+			}
+
+			packetNum++
+
+			// time.Sleep(10 * time.Millisecond)
+		}
+	}
+
+}
+
+func (r *PacketStream) Read(p []byte) (int, error) {
+	// fmt.Println("Reading")
+	if r.done && len(r.buffer) == 0 && len(r.outOfOrderPackets) == 0 {
+		// fmt.Println("Done reading")
+		return 0, io.EOF
+	}
+
+	for len(r.buffer) == 0 && !r.done {
+		// fmt.Println("Waiting for packet")
+		packet, ok := <-r.dataChannel
+
+		// fmt.Println(packet, ok)
+
+		r.packetsIngested++
+
+		if !ok {
+			r.done = true
+			break
+		}
+
+		// fmt.Println(packet, hex.EncodeToString(packet.Payload))
+		if packet.IsFinalMessage {
+			// fmt.Println("Final message is", packet.PacketNum)
+			r.lastPacketFound = true
+			r.lastPacketNum = packet.PacketNum
+		}
+
+		if r.packetsIngested == int(r.lastPacketNum)+1 && r.lastPacketFound {
+			// fmt.Println("packets ingested", r.packetsIngested, r.lastPacketNum+1)
+
+			close(r.dataChannel)
+		}
+
+		// If the packet is next in order
+		if packet.PacketNum == uint32(r.nextSequence) {
+			// fmt.Println("Adding packet", r.nextSequence)
+			r.buffer = append(r.buffer, packet.Payload...)
+			r.nextSequence++
+		} else if packet.PacketNum > uint32(r.nextSequence) { // otherwise add it to be conumed later
+			r.outOfOrderPackets[int(packet.PacketNum)] = packet.Payload
+			// fmt.Println("Adding out of order", packet.PacketNum)
+
+		}
+
+		// Consume any potential items in the out of order map
+		for {
+			// If the next packet is in the out of order map
+
+			data, exists := r.outOfOrderPackets[r.nextSequence]
+
+			if !exists {
+				break
+			}
+
+			r.buffer = append(r.buffer, data...)
+			delete(r.outOfOrderPackets, r.nextSequence)
+			r.nextSequence++
+		}
+	}
+
+	n := copy(p, r.buffer)
+	r.buffer = r.buffer[n:]
+
+	return n, nil
+
+}
+
+type Headers map[string]string
+
+func parseHeaders(rawHeaders []byte) Headers {
+	var headers Headers
+	json.Unmarshal(rawHeaders, &headers)
+
+	return headers
+
+}
+
+func makeResponseHeaders(resp *http.Response, streamIdentifier uint32) *Packet {
+
+	resp.Header["status"] = []string{resp.Status}
+	resp.Header["status_code"] = []string{strconv.Itoa(resp.StatusCode)}
+
+	respHeaders, err := json.Marshal(resp.Header)
+
+	if err != nil {
+		fmt.Println("Error parsing response headers:", err)
+	}
+
+	// fmt.Println(respHeaders)
+
+	packet := Packet{
+		PacketNum:        0,
+		PayloadLength:    uint16(len(respHeaders)),
+		IsFinalMessage:   true,
+		IsHeader:         true,
+		StreamIdentifier: streamIdentifier,
+		Payload:          respHeaders,
+	}
+
+	return &packet
+}
+
+func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *webrtc.DataChannel) {
+	// fmt.Println(requests)
+	reader := bytes.NewReader(rawData.Data)
+
+	packet, err := ParsePacket(reader)
+
+	if packet.IsHeartbeat {
+		return
+	}
+
+	if packet.IsCancel {
+		fmt.Println("Canceling request", packet.StreamIdentifier)
+
+		if stream, exists := Requests.GetStream(clientId, packet.StreamIdentifier); exists {
+
+			stream.cancel()
+		}
+		return
+	}
+
+	if err != nil {
+		fmt.Println("Error parsing packet: ", err)
+	}
+
+	// If the client doesn't exist, create it
+	if _, exists := Requests.GetClient(clientId); !exists {
+		Requests.NewClient(clientId)
+	}
+
+	// If the stream doesn't exist, create it
+	if _, exists := Requests.GetStream(clientId, packet.StreamIdentifier); !exists {
+		err := Requests.AddStream(clientId, packet.StreamIdentifier)
+
+		if err != nil {
+			fmt.Println("Error adding stream", err)
+			return
+		}
+	}
+
+	stream, _ := Requests.GetStream(clientId, packet.StreamIdentifier)
+
+	// Handle a body packet
+	if !packet.IsHeader {
+		// fmt.Println("Body", packet)
+
+		// check if data channel is closed
+		if stream.dataChannel == nil {
+			fmt.Println("Data channel closed")
+			return
+		}
+
+		stream.dataChannel <- *packet
+		return
+	}
+
+	// Handle a header packet and start an http request
+	ctx, cancel := context.WithCancel(context.Background())
+	stream.cancel = cancel
+
+	headers := parseHeaders(packet.Payload)
+
+	// Construct and make http request
+	serverUrl := fmt.Sprintf("http://localhost:%s%s", ProxyPort, headers["url"])
+	// fmt.Println(headers["method"], serverUrl)
+	req, err := http.NewRequest(headers["method"], serverUrl, stream)
+
+	req = req.WithContext(ctx)
+
+	if err != nil {
+		fmt.Println("Error creating request", err)
+	}
+
+	// Add headers
+	for headerName, headerVal := range headers {
+		// fmt.Println("Adding header", headerName, headerVal)
+		req.Header.Add(headerName, headerVal)
+	}
+
+	client := &http.Client{CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		fmt.Println("Redirecting")
+		return http.ErrUseLastResponse
+	}}
+
+	resp, err := client.Do(req)
+
+	if err != nil {
+		fmt.Println("Error sending request", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	fmt.Println(headers["method"], resp.StatusCode, serverUrl)
+
+	// clean up request
+
+	headerPacket := makeResponseHeaders(resp, packet.StreamIdentifier)
+	dc.Send(headerPacket.Serialize())
+
+	makePackets(resp.Body, dc, packet.StreamIdentifier, ctx, cancel)
+
+	Requests.RemoveStream(clientId, packet.StreamIdentifier)
+
+	if RecordRequest {
+		go Writer.LogRequest()
+
+	}
+
+}
+
+===== goclient/src/logger.go =====
+package main
+
+import (
+	"os"
+	"strconv"
+	"sync"
+	"time"
+)
+
+type JSONWriter struct {
+	file *os.File
+	mu   sync.Mutex
+}
+
+var Writer *JSONWriter
+
+// initialize a new file to store logs that is named the time and date
+func InitializeLog() {
+	// make a new file with the current time and date
+	filename := "logs/" + time.Now().Format("2006-01-02T15-04-05") + ".json"
+	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+
+	if err != nil {
+		panic(err)
+	}
+
+	Writer = &JSONWriter{file: file}
+}
+
+func (w *JSONWriter) LogRequest() {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	currentTime := time.Now().Unix()
+
+	w.file.Write([]byte(`{"time": ` + strconv.FormatInt(currentTime, 10) + `}` + "\n"))
+}
+
+===== goclient/src/packetParser.go =====
+package main
+
+import (
+	"bytes"
+	"encoding/binary"
+	"io"
+)
+
+type Header struct {
+	StreamIdentifier uint32
+	PacketNum        uint32
+	PayloadLength    uint16
+	Flags            uint8
+}
+
+type Packet struct {
+	StreamIdentifier uint32
+	PacketNum        uint32
+	PayloadLength    uint16
+	IsHeader         bool
+	IsFinalMessage   bool
+	Payload          []byte
+	IsHeartbeat      bool
+	IsCancel         bool
+}
+
+func (p *Packet) Serialize() []byte {
+
+	headerSize := 11
+	buffer := make([]byte, headerSize+int(p.PayloadLength))
+
+	buf := bytes.NewBuffer((buffer[:0]))
+
+	binary.Write(buf, binary.BigEndian, p.StreamIdentifier)
+	binary.Write(buf, binary.BigEndian, p.PacketNum)
+	binary.Write(buf, binary.BigEndian, p.PayloadLength)
+
+	flags := Flags{
+		IsFinalMessage: p.IsFinalMessage,
+		IsHeader:       p.IsHeader,
+	}.MakeFlags()
+
+	buf.WriteByte(flags)
+	buf.Write(p.Payload)
+
+	return buf.Bytes()
+
+}
+
+type Flags struct {
+	IsFinalMessage bool
+	IsHeader       bool
+	IsHeartbeat    bool
+	IsCancel       bool
+}
+
+func (flags Flags) MakeFlags() uint8 {
+	var result byte
+	if flags.IsHeader {
+		result = 1
+	} else {
+		result = 0
+	}
+	if flags.IsFinalMessage {
+		result |= 1 << 1 // Shift 1 left by 1 bit and OR it with result
+	}
+	return result
+}
+
+func ParsePacket(rawData io.Reader) (*Packet, error) {
+
+	var header Header
+	binary.Read(rawData, binary.BigEndian, &header)
+
+	payload := make([]byte, header.PayloadLength)
+	_, err := io.ReadFull(rawData, payload)
+
+	if err != nil {
+		return nil, err
+	}
+
+	flags := parseFlags(header.Flags)
+
+	return &Packet{
+		StreamIdentifier: header.StreamIdentifier,
+		PacketNum:        header.PacketNum,
+		PayloadLength:    header.PayloadLength,
+		IsHeader:         flags.IsHeader,
+		IsFinalMessage:   flags.IsFinalMessage,
+		IsHeartbeat:      flags.IsHeartbeat,
+		Payload:          payload,
+		IsCancel:         flags.IsCancel,
+	}, nil
+}
+
+func parseFlags(rawFlags uint8) Flags {
+
+	var flags Flags
+	messageType := rawFlags & 0x01
+	flags.IsHeader = messageType == 0
+
+	finalMessageFlag := (rawFlags >> 1) & 0x01
+	flags.IsFinalMessage = finalMessageFlag == 1
+
+	heartbeatFlag := (rawFlags >> 2) * 0x01
+	flags.IsHeartbeat = heartbeatFlag == 1
+
+	cancelFlag := (rawFlags >> 3) * 0x01
+	flags.IsCancel = cancelFlag == 1
+
+	return flags
+}
+
+===== goclient/src/getconfig.go =====
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+
+	"github.com/pion/webrtc/v4"
+)
+
+// ICEConfig represents the structure of the ICE server response
+type ICEServerConfig struct {
+	URLs       []string `json:"urls"` // Use "urls" to match the JSON structure, accommodating both single and multiple URLs.
+	Username   string   `json:"username,omitempty"`
+	Credential string   `json:"credential,omitempty"`
+}
+
+func (config *ICEServerConfig) UnmarshalJSON(data []byte) error {
+	// Define a shadow struct to avoid infinite recursion during unmarshaling.
+	var raw struct {
+		URLs       interface{} `json:"urls"`
+		Username   string      `json:"username,omitempty"`
+		Credential string      `json:"credential,omitempty"`
+	}
+
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+
+	config.Username = raw.Username
+	config.Credential = raw.Credential
+
+	switch v := raw.URLs.(type) {
+	case string:
+		config.URLs = []string{v}
+	case []interface{}:
+		for _, u := range v {
+			if url, ok := u.(string); ok {
+				config.URLs = append(config.URLs, url)
+			}
+		}
+	default:
+		return fmt.Errorf("unexpected type for URLs field")
+	}
+
+	return nil
+}
+
+// FetchICE fetches the ICE server configurations from the specified URL
+func FetchICE(url string) ([]webrtc.ICEServer, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var iceConfig []ICEServerConfig
+	err = json.Unmarshal(body, &iceConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	var iceServers []webrtc.ICEServer
+	for _, server := range iceConfig {
+		iceServers = append(iceServers, webrtc.ICEServer{
+			URLs:       server.URLs,
+			Username:   server.Username,
+			Credential: server.Credential,
+		})
+	}
+
+	return iceServers, nil
+}
+
+===== goclient/src/webrtcClient.go =====
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"log"
+	"time"
+
+	"github.com/pion/webrtc/v4"
+	"nhooyr.io/websocket"
+	"nhooyr.io/websocket/wsjson"
+)
+
+type BaseMessage struct {
+	MType string `json:"mtype"`
+}
+
+type IdAssignment struct {
+	MType string `json:"mtype"`
+	Id    string `json:"id"`
+}
+
+type Candidate struct {
+	MType     string                  `json:"mtype"`
+	Candidate webrtc.ICECandidateInit `json:"candidate"`
+	ClientId  string                  `json:"clientId"`
+}
+
+type Offer struct {
+	MTtype   string                    `json:"mtype"`
+	Offer    webrtc.SessionDescription `json:"offer"`
+	ClientId string                    `json:"clientId"`
+}
+
+type Answer struct {
+	MTtype   string                    `json:"mtype"`
+	Answer   webrtc.SessionDescription `json:"answer"`
+	ClientId string                    `json:"clientId"`
+}
+
+func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServer, ctx context.Context, clients Clients, clientId string) *webrtc.PeerConnection {
+	peerConnection, err := webrtc.NewPeerConnection(webrtc.Configuration{
+		ICEServers: *iceServers,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	peerConnection.OnICECandidate(func(c *webrtc.ICECandidate) {
+		if c == nil {
+			return
+		}
+
+		candidate := Candidate{
+			MType:     "candidate",
+			Candidate: c.ToJSON(),
+			ClientId:  offer.ClientId,
+		}
+
+		//fmt.Println(candidate)
+
+		outbound, marshalErr := json.Marshal(candidate)
+		if marshalErr != nil {
+			panic(marshalErr)
+		}
+
+		if err = ws.Write(ctx, websocket.MessageText, outbound); err != nil {
+			panic(err)
+		}
+	})
+
+	peerConnection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
+		fmt.Printf("ICE Connection State has changed: %s\n", connectionState.String())
+
+		if connectionState == webrtc.ICEConnectionStateClosed {
+			delete(clients, clientId)
+		}
+	})
+	/*
+		var id uint16 = 0
+		var ordered bool = false
+		var negotiated bool = false
+		d, err := peerConnection.CreateDataChannel("data", &webrtc.DataChannelInit{
+			ID:         &id,
+			Ordered:    &ordered,
+			Negotiated: &negotiated,
+		})
+
+		d.OnOpen(func() {
+			fmt.Println("Data channel opened")
+
+		})
+
+		d.OnMessage(func(message webrtc.DataChannelMessage) {
+			// fmt.Printf("Message from DataChannel '%s': '%s'\n", d.Label(), string(message.Data))
+			fmt.Println(message.Data)
+			go ProxyDCMessage(message, clientId, d)
+
+		})
+
+		defer d.Close()
+	*/
+
+	// Send the current time via a DataChannel to the remote peer every 3 seconds
+	peerConnection.OnDataChannel(func(d *webrtc.DataChannel) {
+		d.OnOpen(func() {
+			fmt.Println("Data channel opened")
+
+		})
+
+		d.OnMessage(func(message webrtc.DataChannelMessage) {
+			// fmt.Printf("Message from DataChannel '%s': '%s'\n", d.Label(), string(message.Data))
+
+			go ProxyDCMessage(message, clientId, d)
+
+		})
+
+		defer d.Close()
+	})
+
+	if err = peerConnection.SetRemoteDescription(offer.Offer); err != nil {
+		panic(err)
+	}
+
+	answer, answerErr := peerConnection.CreateAnswer(nil)
+	if answerErr != nil {
+		panic(answerErr)
+	}
+
+	if err = peerConnection.SetLocalDescription(answer); err != nil {
+		panic(err)
+	}
+
+	answerRet := Answer{
+		MTtype:   "answer",
+		Answer:   answer,
+		ClientId: offer.ClientId,
+	}
+
+	outbound, marshalErr := json.Marshal(answerRet)
+	if marshalErr != nil {
+		panic(marshalErr)
+	}
+
+	if err = ws.Write(ctx, websocket.MessageText, outbound); err != nil {
+		panic(err)
+	}
+
+	return peerConnection
+
+}
+
+func readWSMessages(clients Clients, iceServers *[]webrtc.ICEServer, connection *websocket.Conn, ctx context.Context) {
+
+	candidates := make(map[string][]webrtc.ICECandidateInit)
+
+	// Set the connection to receive messages
+	for {
+		// Create a variable to store the received message
+		var rawMsg json.RawMessage
+
+		// Read message using wsjson
+		err := wsjson.Read(ctx, connection, &rawMsg)
+		if err != nil {
+			fmt.Println("error reading message:", err)
+			return
+		}
+
+		// Print the received message
+		// fmt.Printf("Received: %v\n", rawMsg)
+
+		var baseMsg BaseMessage
+		json.Unmarshal(rawMsg, &baseMsg)
+
+		switch baseMsg.MType {
+		case "idAssgn":
+
+			var idAsgn IdAssignment
+			json.Unmarshal(rawMsg, &idAsgn)
+
+			// log.Printf("Id: %s", idAsgn.Id)
+
+		case "offer":
+
+			var offer Offer
+			json.Unmarshal(rawMsg, &offer)
+
+			clients[offer.ClientId] = createNewPeer(offer, connection, iceServers, ctx, clients, offer.ClientId)
+
+			for candidate := range candidates[offer.ClientId] {
+				clients[offer.ClientId].AddICECandidate(candidates[offer.ClientId][candidate])
+			}
+
+		case "candidate":
+			var candidate Candidate
+			if err := json.Unmarshal(rawMsg, &candidate); err != nil {
+				log.Fatal(err)
+			}
+
+			// fmt.Println("Received candidate", candidate)
+			client, ok := clients[candidate.ClientId]
+
+			if !ok {
+				candidates[candidate.ClientId] = append(candidates[candidate.ClientId], candidate.Candidate)
+				break
+			}
+
+			err := client.AddICECandidate(candidate.Candidate)
+
+			if err != nil {
+				fmt.Println("Could not add ice candidate", err)
+			}
+
+		case "heartbeat":
+
+		default:
+			log.Printf("unknown message type: %s", baseMsg.MType)
+		}
+
+	}
+
+}
+
+func retryWS(clients Clients, iceServers *[]webrtc.ICEServer) {
+	// keeps trying to reconnect to the websocket server with an exponential backoff
+	// Specify the WebSocket server URL
+	// url := "ws://localhost:8080/?role=server"
+	// url := "wss://d1syxz7xf05rvd.cloudfront.net/?role=server"
+	// url := "wss://nathanlee.ngrok.io/?role=server"
+	url := "wss://peepsignal.fly.dev/?role=server&id=" + ServerId
+
+	// Create a context with a timeout for the connection
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Add logic to retry connection on disconnect with exponential backoff
+	fmt.Println("View page at https://" + ServerId + ".peerproxy.dev")
+
+	// Connect to the WebSocket server
+	for {
+		connection, _, err := websocket.Dial(ctx, url, nil)
+		if err == nil {
+			readWSMessages(clients, iceServers, connection, ctx)
+			connection.Close(websocket.StatusInternalError, "the client crashed")
+
+		}
+
+		log.Print("error connecting to WebSocket server:", err)
+
+		time.Sleep(2 * time.Second)
+		fmt.Println("Retrying")
+	}
+
+}
+
+type Clients map[string]*webrtc.PeerConnection
+
+func Signal() {
+	iceUrl := "https://important-eel-61.deno.dev/"
+	iceServers, err := FetchICE(iceUrl)
+	if err != nil {
+		panic(err)
+	}
+	// log.Println(iceServers)
+
+	clients := make(Clients)
+	retryWS(clients, &iceServers)
+	fmt.Println("Post ws")
+}
+
+===== jsClient/vite.config.ts =====
+import { defineConfig } from 'vite'
+import { run } from 'vite-plugin-run'
+
+export default defineConfig({
+  plugins: [
+    /*run([
+      {
+        name: "build sw",
+        run: "npx esbuild serviceWorker/sw.ts --bundle --outfile=public/sw.js".split(" "),
+        pattern: ["./src"]
+      }
+    ])*/
+
+  ],
+  
+})
+
+===== jsClient/public/iframe2.html =====
+<script>
+    setInterval(() => {
+        // console.log("fetching")
+        // fetch("/")
+    }, 1000)
+</script>
+<img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" alt="Google Logo" />
+===== jsClient/public/iframe-sw.js =====
+
+
+self.addEventListener('install', (event) => {
+    console.log('Service Worker installing.', self);
+
+    self.skipWaiting()
+});
+
+self.addEventListener('activate', function (e) {
+    //  self.registration.unregister()
+    console.log("Activating")
+
+    self.clients.claim()
+});
+
+self.addEventListener("fetch", async (untypedEvent) => {
+
+    const event = untypedEvent
+    console.log(new URL(event.request.url).hostname)
+
+});
+===== jsClient/public/iframeScript-peerproxy.js =====
+
+async function registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) {
+        console.error("Browser not supported")
+        return
+    }
+
+    let registration = await navigator.serviceWorker.getRegistration()
+
+    // console.log(registration ? 'Service Worker registered in iframe' : 'Service Worker not registered in iframe')
+
+    if (registration) {
+        return registration
+    }
+
+    registration = await navigator.serviceWorker.register('/sw.js')
+        .catch(error => {
+            console.error('Service Worker registration failed in iframe:', error);
+            throw error
+        })
+
+    return registration
+}
+
+registerServiceWorker();
+
+// hiiiiiiiiiiiii nathan :)
+===== jsClient/public/iframe-peerproxy.html =====
+<html>
+
+<head>
+    <script src="./iframeScript-peerproxy.js"></script>
+</head>
+
+</html>
+===== jsClient/public/sw.js =====
+"use strict";
+(() => {
+  var __create = Object.create;
+  var __defProp = Object.defineProperty;
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+  var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __getProtoOf = Object.getPrototypeOf;
+  var __hasOwnProp = Object.prototype.hasOwnProperty;
+  var __commonJS = (cb, mod) => function __require() {
+    return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+  };
+  var __copyProps = (to, from, except, desc) => {
+    if (from && typeof from === "object" || typeof from === "function") {
+      for (let key of __getOwnPropNames(from))
+        if (!__hasOwnProp.call(to, key) && key !== except)
+          __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+    }
+    return to;
+  };
+  var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+    // If the importer is in node compatibility mode or this is not an ESM
+    // file that has been converted to a CommonJS file using a Babel-
+    // compatible transform (i.e. "__esModule" has not been set), then set
+    // "default" to the CommonJS "module.exports" for node compatibility.
+    isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+    mod
+  ));
+
+  // node_modules/cookie/index.js
+  var require_cookie = __commonJS({
+    "node_modules/cookie/index.js"(exports) {
+      "use strict";
+      exports.parse = parse;
+      exports.serialize = serialize;
+      var __toString = Object.prototype.toString;
+      var fieldContentRegExp = /^[\u0009\u0020-\u007e\u0080-\u00ff]+$/;
+      function parse(str, options) {
+        if (typeof str !== "string") {
+          throw new TypeError("argument str must be a string");
+        }
+        var obj = {};
+        var opt = options || {};
+        var dec = opt.decode || decode;
+        var index = 0;
+        while (index < str.length) {
+          var eqIdx = str.indexOf("=", index);
+          if (eqIdx === -1) {
+            break;
+          }
+          var endIdx = str.indexOf(";", index);
+          if (endIdx === -1) {
+            endIdx = str.length;
+          } else if (endIdx < eqIdx) {
+            index = str.lastIndexOf(";", eqIdx - 1) + 1;
+            continue;
+          }
+          var key = str.slice(index, eqIdx).trim();
+          if (void 0 === obj[key]) {
+            var val = str.slice(eqIdx + 1, endIdx).trim();
+            if (val.charCodeAt(0) === 34) {
+              val = val.slice(1, -1);
+            }
+            obj[key] = tryDecode(val, dec);
+          }
+          index = endIdx + 1;
+        }
+        return obj;
+      }
+      function serialize(name, val, options) {
+        var opt = options || {};
+        var enc = opt.encode || encode;
+        if (typeof enc !== "function") {
+          throw new TypeError("option encode is invalid");
+        }
+        if (!fieldContentRegExp.test(name)) {
+          throw new TypeError("argument name is invalid");
+        }
+        var value = enc(val);
+        if (value && !fieldContentRegExp.test(value)) {
+          throw new TypeError("argument val is invalid");
+        }
+        var str = name + "=" + value;
+        if (null != opt.maxAge) {
+          var maxAge = opt.maxAge - 0;
+          if (isNaN(maxAge) || !isFinite(maxAge)) {
+            throw new TypeError("option maxAge is invalid");
+          }
+          str += "; Max-Age=" + Math.floor(maxAge);
+        }
+        if (opt.domain) {
+          if (!fieldContentRegExp.test(opt.domain)) {
+            throw new TypeError("option domain is invalid");
+          }
+          str += "; Domain=" + opt.domain;
+        }
+        if (opt.path) {
+          if (!fieldContentRegExp.test(opt.path)) {
+            throw new TypeError("option path is invalid");
+          }
+          str += "; Path=" + opt.path;
+        }
+        if (opt.expires) {
+          var expires = opt.expires;
+          if (!isDate(expires) || isNaN(expires.valueOf())) {
+            throw new TypeError("option expires is invalid");
+          }
+          str += "; Expires=" + expires.toUTCString();
+        }
+        if (opt.httpOnly) {
+          str += "; HttpOnly";
+        }
+        if (opt.secure) {
+          str += "; Secure";
+        }
+        if (opt.partitioned) {
+          str += "; Partitioned";
+        }
+        if (opt.priority) {
+          var priority = typeof opt.priority === "string" ? opt.priority.toLowerCase() : opt.priority;
+          switch (priority) {
+            case "low":
+              str += "; Priority=Low";
+              break;
+            case "medium":
+              str += "; Priority=Medium";
+              break;
+            case "high":
+              str += "; Priority=High";
+              break;
+            default:
+              throw new TypeError("option priority is invalid");
+          }
+        }
+        if (opt.sameSite) {
+          var sameSite = typeof opt.sameSite === "string" ? opt.sameSite.toLowerCase() : opt.sameSite;
+          switch (sameSite) {
+            case true:
+              str += "; SameSite=Strict";
+              break;
+            case "lax":
+              str += "; SameSite=Lax";
+              break;
+            case "strict":
+              str += "; SameSite=Strict";
+              break;
+            case "none":
+              str += "; SameSite=None";
+              break;
+            default:
+              throw new TypeError("option sameSite is invalid");
+          }
+        }
+        return str;
+      }
+      function decode(str) {
+        return str.indexOf("%") !== -1 ? decodeURIComponent(str) : str;
+      }
+      function encode(val) {
+        return encodeURIComponent(val);
+      }
+      function isDate(val) {
+        return __toString.call(val) === "[object Date]" || val instanceof Date;
+      }
+      function tryDecode(str, decode2) {
+        try {
+          return decode2(str);
+        } catch (e) {
+          return str;
+        }
+      }
+    }
+  });
+
+  // serviceWorker/cookieManager.ts
+  var import_cookie = __toESM(require_cookie(), 1);
+  var Cookies = class {
+    cookies = {};
+    reservedHeaders = ["domain", "encode", "expires", "httponly", "maxage", "partitioned", "path"];
+    setCookie(cookieString) {
+      const parsedCookie = import_cookie.default.parse(cookieString);
+      for (const key in parsedCookie) {
+        if (this.reservedHeaders.includes(key.toLowerCase())) {
+          continue;
+        }
+        this.cookies[key] = parsedCookie;
+      }
+    }
+    getCookies(domain) {
+      return Object.keys(this.cookies).map((name) => import_cookie.default.serialize(name, this.cookies[name][name])).reduce((acc, storedCookie) => `${acc} ${storedCookie};`, "");
+    }
+    resetCookies() {
+      this.cookies = {};
+    }
+  };
+  var cookieManager = new Cookies();
+
+  // serviceWorker/createPacket.ts
+  var IDENTIFIER_LENGTH = 32;
+  var TYPE_LEGNTH = 1;
+  var CONTENT_LENGTH = 16;
+  var FLAGS = 8;
+  var HEADER_LENGTH = IDENTIFIER_LENGTH + TYPE_LEGNTH + CONTENT_LENGTH + FLAGS;
+  function createFrame(identifier, messageType, payload, finalMessage, sequenceNum, heartbeat = false, cancel = false) {
+    const headerSize = 11;
+    let buffer = new ArrayBuffer(headerSize + payload.byteLength);
+    let view = new DataView(buffer);
+    view.setUint32(0, identifier);
+    view.setUint32(4, sequenceNum);
+    view.setUint16(8, payload.byteLength & 65535);
+    let flags = (messageType === "HEADER" ? 0 : 1) | (finalMessage ? 1 : 0) << 1 | (heartbeat ? 1 : 0) << 2 | (cancel ? 1 : 0) << 3;
+    view.setUint8(10, flags);
+    let payloadView = new Uint8Array(buffer, headerSize);
+    payloadView.set(new Uint8Array(payload));
+    return buffer;
+  }
+  function createHeaderPacket(request, currentIdentifier) {
+    let formattedHeaders = {};
+    for (const header of request.headers.keys()) {
+      formattedHeaders[header] = request.headers.get(header);
+    }
+    if (request.credentials === "include" || request.credentials === "same-origin") {
+      const cookies = cookieManager.getCookies(new URL(request.url).hostname);
+      formattedHeaders["Cookie"] = cookies;
+    }
+    formattedHeaders["method"] = request.method;
+    formattedHeaders["url"] = new URL(request.url).pathname + new URL(request.url).search + new URL(request.url).hash;
+    const encodedHeader = new TextEncoder().encode(JSON.stringify(formattedHeaders));
+    const frame = createFrame(currentIdentifier, "HEADER", encodedHeader, true, 0);
+    return frame;
+  }
+  var packetSizeBytes = 16 * 1024;
+  var payloadSize = packetSizeBytes - 7;
+  async function createPackets(request, currentIdentifier, cb) {
+    cb(createHeaderPacket(request, currentIdentifier));
+    if (!request.body) {
+      const endFrame = createFrame(currentIdentifier, "BODY", new Uint8Array(), true, 0);
+      cb(endFrame);
+      return;
+    }
+    const reader = request.body?.getReader();
+    if (!reader) {
+      console.log(request);
+      throw Error("Readable stream does not exist on reader");
+    }
+    let frameNum = 0;
+    while (true) {
+      const { done, value } = await reader?.read();
+      if (done) {
+        const frame = createFrame(currentIdentifier, "BODY", new Uint8Array(), true, frameNum);
+        cb(frame);
+        break;
+      }
+      if (!value) {
+        break;
+      }
+      let readerPosition = 0;
+      while (readerPosition < value.byteLength) {
+        const slicedArray = value.slice(readerPosition, readerPosition + payloadSize);
+        let lastFrame = false;
+        const frame = createFrame(currentIdentifier, "BODY", slicedArray, lastFrame, frameNum);
+        frameNum++;
+        cb(frame);
+        readerPosition += payloadSize;
+      }
+    }
+    return;
+  }
+  function parsePacket(buffer) {
+    const headerSize = 11;
+    let view = new DataView(buffer);
+    let identifier = view.getUint32(0);
+    let sequenceNum = view.getUint32(4);
+    let payloadLength = view.getUint16(8);
+    const flagCodes = {
+      0: [false, false],
+      1: [false, true],
+      2: [true, false],
+      3: [true, true]
+    };
+    let flags = view.getUint8(10);
+    const [finalMessage, messageType] = flagCodes[flags];
+    let payload = new Uint8Array(buffer, headerSize, payloadLength);
+    return {
+      identifier,
+      sequenceNum,
+      payload,
+      messageType: messageType ? "HEADER" : "BODY",
+      finalMessage
+    };
+  }
+
+  // serviceWorker/streamHandler.ts
+  var CustomStream = class {
+    controller;
+    stream;
+    lastPacketFound = false;
+    lastPacketNum = 0;
+    packetsIngested = 0;
+    outOfOrderPackets = {};
+    currentPacketNum = 0;
+    cancelled = false;
+    constructor() {
+      this.stream = new ReadableStream({
+        start: (controller) => {
+          this.controller = controller;
+        },
+        pull: (controller) => {
+        },
+        cancel: (reason) => {
+          if (!this.stream.locked && this.controller) {
+            this.controller.close();
+          }
+          this.outOfOrderPackets = {};
+          this.cancelled = true;
+        }
+      });
+    }
+    // Method to add items to the stream
+    addItem(item) {
+      if (!this.controller) {
+        console.error("Stream controller is not initialized.");
+      }
+      if (this.cancelled) {
+        return;
+      }
+      this.packetsIngested++;
+      if (item.finalMessage) {
+        this.lastPacketFound = true;
+        this.lastPacketNum = item.sequenceNum;
+      }
+      if (item.sequenceNum == this.currentPacketNum) {
+        this.controller.enqueue(item.payload);
+        this.currentPacketNum++;
+      } else if (item.sequenceNum > this.currentPacketNum) {
+        this.outOfOrderPackets[item.sequenceNum] = item.payload;
+      }
+      while (true) {
+        if (!(this.currentPacketNum in this.outOfOrderPackets)) {
+          break;
+        }
+        this.controller.enqueue(this.outOfOrderPackets[this.currentPacketNum]);
+        delete this.outOfOrderPackets[this.currentPacketNum];
+        this.currentPacketNum++;
+      }
+      if (this.packetsIngested === this.lastPacketNum + 1 && this.lastPacketFound && this.currentPacketNum === this.lastPacketNum + 1) {
+        this.closeStream();
+      }
+      return;
+    }
+    // Method to close the stream
+    closeStream() {
+      this.outOfOrderPackets = {};
+      if (this.controller) {
+        this.controller.close();
+      }
+    }
+  };
+
+  // serviceWorker/requestHandler.ts
+  var Deferred = class {
+    promise;
+    resolve = () => {
+    };
+    reject = () => {
+    };
+    constructor() {
+      this.promise = new Promise((resolve, reject) => {
+        this.resolve = resolve;
+        this.reject = reject;
+      });
+    }
+  };
+  var HTTPProxy = class {
+    // a list of requests
+    // { id: request }
+    requests = {};
+    responses = {};
+    currentIdentifier = 1;
+    client;
+    reset() {
+      this.requests = {};
+      this.responses = {};
+    }
+    async makeRequest(request, client) {
+      this.client = client;
+      await createPackets(request, this.currentIdentifier, (frame) => {
+        client.postMessage({ payload: frame, type: "data" });
+      });
+      const prom = new Deferred();
+      this.requests[this.currentIdentifier] = prom;
+      this.currentIdentifier += 1;
+      return prom.promise;
+    }
+    cancelAllRequests() {
+      for (const id in this.requests) {
+        this.requests[id].reject("Request cancelled");
+        const cancelFrame = createFrame(parseInt(id), "BODY", new Uint8Array(), true, 0, false, true);
+        this.client.postMessage({
+          type: "data",
+          payload: cancelFrame
+        });
+      }
+      this.reset();
+    }
+    handleRequest(reqObj) {
+      const packet = parsePacket(reqObj);
+      if (packet.messageType === "BODY") {
+        if (!this.responses[packet.identifier]) {
+          console.error("No response found for", packet.identifier);
+          return;
+        }
+        this.responses[packet.identifier].addItem(packet);
+        return;
+      }
+      const parsedHeaders = JSON.parse(new TextDecoder().decode(packet.payload));
+      const headers = new Headers();
+      let statusText = "200 OK";
+      let status = 200;
+      for (const headerKey in parsedHeaders) {
+        if (headerKey === "status_code") {
+          status = parseInt(parsedHeaders[headerKey][0]);
+          continue;
+        }
+        if (headerKey === "status") {
+          statusText = parsedHeaders[headerKey][0];
+          continue;
+        }
+        if (headerKey === "Set-Cookie") {
+          console.log("Setting cookies", parsedHeaders[headerKey]);
+          for (const cookie2 of parsedHeaders[headerKey]) {
+            console.log("Setting cookie", cookie2);
+            cookieManager.setCookie(cookie2);
+            this.client.postMessage({
+              type: "set-cookie",
+              payload: cookie2
+            });
+          }
+          continue;
+        }
+        headers.append(headerKey, parsedHeaders[headerKey].join(","));
+      }
+      const body = new CustomStream();
+      this.responses[packet.identifier] = body;
+      const response = new Response(body.stream, {
+        headers,
+        status,
+        statusText
+      });
+      this.requests[packet.identifier].resolve(response);
+    }
+  };
+
+  // serviceWorker/sw.ts
+  var proxy = new HTTPProxy();
+  self.addEventListener("install", (event) => {
+    console.log("Service Worker installing.", self);
+    console.log(event);
+    self.skipWaiting();
+  });
+  self.addEventListener("activate", function(e) {
+    console.log("Activating");
+    self.clients.claim();
+  });
+  var pageClient;
+  async function handleIframeRequest(event, client) {
+    if (!client) {
+      return fetch(event.request);
+    }
+    const clientHostname = new URL(client.url).hostname;
+    if (new URL(event.request.url).hostname !== clientHostname) {
+      return fetch(event.request);
+    }
+    const isRootPage = event.request.headers.get("x-root-page") ? true : false;
+    if (isRootPage) {
+      pageClient = client;
+      return proxy.makeRequest(event.request, client);
+    }
+    if (client.frameType === "top-level") {
+      return fetch(event.request);
+    }
+    const url = new URL(event.request.url);
+    if (url.pathname === "/iframe-peerproxy.html" || url.pathname === "/iframeScript-peerproxy.js") {
+      return fetch(event.request);
+    }
+    return proxy.makeRequest(event.request, pageClient);
+  }
+  self.addEventListener("fetch", async (untypedEvent) => {
+    const event = untypedEvent;
+    event.respondWith(
+      (async () => {
+        const client = await self.clients.get(event.clientId);
+        return handleIframeRequest(event, client);
+      })()
+    );
+  });
+  var peerConnected = false;
+  self.addEventListener("message", async (event) => {
+    const clientObj = event.source;
+    const client = await self.clients.get(clientObj.id);
+    switch (event.data.type) {
+      case "disconnected":
+        peerConnected = false;
+        proxy.reset();
+        break;
+      case "ready":
+        peerConnected = true;
+        client.postMessage({
+          type: "ready"
+        });
+        break;
+      case "cancelRequests":
+        console.log("Cancelling requests");
+        proxy.cancelAllRequests();
+        break;
+      case "data":
+        proxy.handleRequest(event.data.payload);
+        break;
+    }
+  });
+})();
+/*! Bundled license information:
+
+cookie/index.js:
+  (*!
+   * cookie
+   * Copyright(c) 2012-2014 Roman Shtylman
+   * Copyright(c) 2015 Douglas Christopher Wilson
+   * MIT Licensed
+   *)
+*/
+//# sourceMappingURL=sw.js.map
+
+===== jsClient/src/style.css =====
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  /*color: rgba(255, 255, 255, 0.87);*/
+  /*background-color: #242424;*/
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+#app {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.vanilla:hover {
+  filter: drop-shadow(0 0 2em #3178c6aa);
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+button:hover {
+  border-color: #646cff;
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+  a:hover {
+    color: #747bff;
+  }
+  button {
+    background-color: #f9f9f9;
+  }
+}
+
+
+#log {
+  max-height: 30vh;
+  overflow-y: scroll
+}
+===== jsClient/src/sst-env.d.ts =====
+/// <reference types="vite/client" />
+interface ImportMetaEnv {
+
+}
+interface ImportMeta {
+  readonly env: ImportMetaEnv
+}
+===== jsClient/src/wrtcBenchmarks.ts =====
+import { DataSet, Graph2d, Timeline } from "vis-timeline/standalone";
+import { connect } from "./peer";
+import { connectSW } from "./peer2";
+import { getCandidatePair, getFormattedDateTime, log, sleep } from "./utils";
+import { getId } from "./main";
+
+import { createFrame } from "../serviceWorker/createPacket"
+
+async function testSW(trials: number, id: string) {
+    // do the same for connectSW
+    const sw = new DynamicTable('results', ['Trial', 'Total Time (ms)', 'WS connection time', 'Candidate Type'], "Service Worker Connection");
+    const registration = await navigator.serviceWorker.ready;
+
+    for (let i = 0; i < trials; i++) {
+        const start = performance.now();
+        const { pc, stats } = await connectSW(id, registration);
+        const end = performance.now();
+        const pair = await getCandidatePair(pc);
+        pc.close()
+
+        sw.addRow([i.toString(), (end - start).toFixed(2), stats.wsTime.toFixed(2), pair?.local?.candidateType || 'Unknown']);
+    }
+
+    sw.addAverageRow(1)
+}
+
+async function testNormal(trials: number, id: string) {
+    const original = new DynamicTable('results', ['Trial', 'Total Time (ms)', 'WS connection time', 'Candidate Type'], "Original Connection");
+
+    for (let i = 0; i < trials; i++) {
+        const start = performance.now();
+        const { pc, stats } = await connect(id)
+
+        const end = performance.now();
+
+        // Get connection type of pc eg. srflx, relay, prflx
+        const pair = await getCandidatePair(pc);
+
+        original.addRow([i.toString(), (end - start).toFixed(2), stats.wsTime.toFixed(2), pair?.local?.candidateType || 'Unknown']);
+    }
+
+    original.addAverageRow(1);
+}
+
+async function testCached(trials: number, id: string) {
+    const swCached = new DynamicTable('results', ['Trial', 'Total Time (ms)', 'WS connection time', 'Candidate Type'], "Service Worker Connection (cached)");
+    const registrationCached = await navigator.serviceWorker.ready;
+
+    for (let i = 0; i < trials; i++) {
+        const start = performance.now();
+        const { pc, stats } = await connectSW(id, registrationCached, true);
+        const end = performance.now();
+
+        const pair = await getCandidatePair(pc);
+        pc.close()
+        swCached.addRow([i.toString(), (end - start).toFixed(2), stats.wsTime.toFixed(2), pair?.local?.candidateType || 'Unknown']);
+    }
+
+    swCached.addAverageRow(1)
+
+}
+
+export async function test_connection(id: string) {
+
+    const trials = 5;
+    await testSW(trials, id)
+
+    await testCached(trials, id)
+
+}
+
+
+class DynamicTable {
+    private table: HTMLTableElement;
+    private titleElement: HTMLElement;
+    private numRows: number = 0;
+
+    constructor(containerId: string, headers: string[], title: string) {
+        // Create and style the title for the table
+        this.titleElement = document.createElement('h2');
+        this.titleElement.textContent = title;
+        this.titleElement.style.textAlign = 'center';
+
+        // Create the table and apply basic styles
+        this.table = document.createElement('table');
+        this.table.style.width = '80%';
+        this.table.style.margin = '20px auto';
+        this.table.style.borderCollapse = 'collapse';
+        this.table.setAttribute('border', '1');
+
+        // Styling for headers
+        const headerRow: HTMLTableRowElement = this.table.insertRow(-1);
+        headers.forEach((headerText: string) => {
+            let headerCell = document.createElement('th');
+            headerCell.textContent = headerText;
+            headerCell.style.padding = '8px';
+            headerCell.style.border = '1px solid #ddd';
+            headerCell.style.backgroundColor = '#f2f2f2';
+            headerRow.appendChild(headerCell);
+        });
+
+        // Find the container and append the title and table to it
+        const container: HTMLElement | null = document.getElementById(containerId);
+        if (!container) {
+            throw new Error('Container ID not found in the DOM');
+        }
+        container.appendChild(this.titleElement);
+        container.appendChild(this.table);
+    }
+
+    addRow(data: string[]): void {
+        this.numRows++;
+        const row: HTMLTableRowElement = this.table.insertRow(-1);
+        data.forEach((cellData: string) => {
+            let cell = row.insertCell(-1);
+            cell.textContent = cellData;
+            cell.style.padding = '8px';
+            cell.style.border = '1px solid #ddd';
+        });
+    }
+
+    addAverageRow(columnIndex: number): void {
+        if (this.numRows === 0 || this.table.rows[1].cells[columnIndex].textContent === undefined) {
+            console.error('Invalid column index or no rows to calculate averages from.');
+            return;
+        }
+
+        // Calculate average
+        let sum = 0;
+        for (let i = 1; i < this.table.rows.length; i++) {
+            sum += parseFloat(this.table.rows[i].cells[columnIndex].textContent || '0');
+        }
+        let average = sum / this.numRows;
+
+        // Create average row
+        const row = this.table.insertRow(-1);
+        row.insertCell(-1).textContent = 'Average'; // Label cell
+        for (let i = 0; i < columnIndex; i++) {
+            row.insertCell(-1); // Empty cells
+        }
+        let avgCell = row.insertCell(-1);
+        avgCell.textContent = average.toFixed(2);
+        avgCell.style.fontWeight = 'bold';
+        avgCell.style.backgroundColor = '#e8e8e8';
+    }
+}
+
+
+export async function createTimeline(stats: DataSet<any>) {
+
+    const groups = new DataSet([
+        { content: "Connection", id: "Connection", style: "color: #1a237e; background-color: #e8eaf6;" },
+        { content: "Client Ice Candidate", id: "Client Ice Candidate", style: "color: #2e7d32; background-color: #e8f5e9;" },
+        { content: "Server Ice Candidate", id: "Server Ice Candidate", style: "color: #bf360c; background-color: #fbe9e7;" },
+        { content: "SDP Exchange", id: "SDP Exchange", style: "color: #6a1b9a; background-color: #ede7f6;" },
+        { content: "Signaling", id: "Signaling", style: "color: #006064; background-color: #e0f7fa;" }
+    ])
+
+    stats.forEach((item) => {
+        switch (item.group) {
+            case 'Connection':
+                item.style = 'background-color: #c5cae9; color: #1a237e;';
+                break;
+            case 'Client Ice Candidate':
+                item.style = 'background-color: #c8e6c9; color: #2e7d32;';
+                break;
+            case 'Server Ice Candidate':
+                item.style = 'background-color: #ffccbc; color: #bf360c;';
+                break;
+            case 'SDP Exchange':
+                item.style = 'background-color: #d1c4e9; color: #6a1b9a;';
+                break;
+            case 'Signaling':
+                item.style = 'background-color: #b2ebf2; color: #006064;';
+                break;
+            default:
+                item.style = 'background-color: #ffffff; color: #000000;'; // Default style for any undefined groups
+        }
+    });
+
+    const timelineContainer = document.getElementById("timeline")
+    const timeline = new Timeline(timelineContainer!, stats)
+
+    timeline.setGroups(groups)
+}
+
+document.getElementById("connectionTest")?.addEventListener("click", async () => {
+
+    await test_connection(getId())
+})
+
+
+
+
+
+export async function testConnectionSpeed() {
+
+    const { pc, dc } = await connect(getId());
+    const TEST_LENGTH = 5000
+
+    const speeds = new DataSet();
+
+    // make new speedGraph element
+    const speedGraph = document.createElement("div")
+    document.body.appendChild(speedGraph)
+
+    new Graph2d(speedGraph, speeds, {
+        start: new Date().getTime() - 2000,
+        end: new Date().getTime() + TEST_LENGTH + 2000
+    })
+
+    const testPacket = createFrame(0, 'HEADER', new Uint8Array(1024 * 15), true, 0, true)
+
+    let previousBytesSent = 0
+    const MONITORING_RATE = 150
+    const monitoringInvl = setInterval(async () => {
+        const stats = await pc.getStats()
+
+        stats.forEach(report => {
+            if (report.type !== 'data-channel') {
+                return
+            }
+            const bytesSent = report.bytesSent;
+            const throughput = (bytesSent - previousBytesSent) * 8 / MONITORING_RATE / 1000;
+            previousBytesSent = bytesSent;
+
+            speeds.add({
+                x: new Date(),
+                y: throughput
+            })
+        })
+    }, MONITORING_RATE)
+
+    await sleep(500)
+
+    dc.onbufferedamountlow = () => {
+        dc.send(testPacket)
+    }
+
+    const sendInvl = setInterval(() => {
+        dc.send(testPacket)
+    })
+
+
+    setTimeout(async () => {
+        clearInterval(sendInvl)
+
+        await sleep(1000)
+        clearInterval(monitoringInvl)
+    }, TEST_LENGTH)
+}
+
+function datasetToCSV(data: DataSet<any>) {
+
+    const items = data.get();
+
+    if (items.length === 0) {
+        return '';
+    }
+
+    // Extract the headers (keys) from the first item
+    const headers = Object.keys(items[0]);
+
+    // Map the headers to CSV format
+    const csvRows = [
+        headers.join(','), // header row
+        ...items.map(item =>
+            headers.map(header => JSON.stringify(item[header] || '')).join(',')
+        )
+    ];
+
+    // Join all rows into a single string with new line breaks
+    return csvRows.join('\n');
+}
+
+async function writeToFile(filename: string, filedata: string) {
+
+    const blob = new Blob([filedata], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+
+    return url
+
+}
+
+export function monitorConnectionSpeed(pc: RTCPeerConnection) {
+    return async () => {
+        const TEST_LENGTH = 5000
+
+        const speeds = new DataSet()
+    
+        let previousBytesSent = 0
+        const MONITORING_RATE = 150
+        const monitoringInvl = setInterval(async () => {
+            const stats = await pc.getStats()
+    
+            stats.forEach(report => {
+                if (report.type !== 'data-channel') {
+                    return
+                }
+                const bytesSent = report.bytesSent;
+                const throughput = (bytesSent - previousBytesSent) * 8 / MONITORING_RATE / 1000;
+                previousBytesSent = bytesSent;
+    
+                speeds.add({
+                    x: new Date(),
+                    y: throughput
+                })
+            })
+        }, MONITORING_RATE)
+    
+        setTimeout(() => {
+            clearInterval(monitoringInvl)
+        }, TEST_LENGTH)
+    
+    
+        const csv = datasetToCSV(speeds)
+        const url = await writeToFile(`speeds-${getFormattedDateTime()}.csv`, csv)
+    
+        // open a new tab to the csv
+        window.open(url)
+    }
+    
+
+}
+
+
+async function getLatency() {
+    const res = await fetch("/latency", {
+        body: new Date().getTime().toString(),
+        method: "POST"
+    })
+
+    const time = parseInt(await res.text());
+
+    const latency = new Date().getTime() - time
+
+    return latency
+}
+
+
+document.getElementById("latency")?.addEventListener("click", async () => {
+
+    const trials = 1000;
+
+    const latencies = new DataSet();
+
+    new Graph2d(document.getElementById("latencyGraph")!, latencies, {
+        start: new Date().getTime() - 2000,
+        end: new Date().getTime() + 20000
+    })
+
+    for (let i = 0; i < trials; i++) {
+        const latency = await getLatency();
+        latencies.add({
+            x: new Date(),
+            y: latency
+        })
+
+    }
+
+})
+===== jsClient/src/createDom.ts =====
+import { debug, registration } from "./main";
+import { sleep } from "./utils";
+
+export function setupIframe() {
+
+  // Remove iframe if it exists
+  const existingIframe = document.getElementById("webFrame");
+  if (existingIframe) {
+    existingIframe.remove();
+  }
+
+  return new Promise<HTMLIFrameElement>(async (resolve, reject) => {
+    const iframe = document.createElement("iframe");
+    iframe.onload = () => resolve(iframe);
+    iframe.id = "webFrame";
+
+    if (debug) {
+      iframe.id = "testFrame"
+    }
+    iframe.width = "100%";
+    iframe.height = "900";
+    iframe.src = '/iframe-peerproxy.html';
+
+
+
+    document.body.appendChild(iframe);
+  });
+}
+
+function getIframe() {
+  const iframe = document.getElementById("webFrame") as HTMLIFrameElement;
+
+  if (!iframe) {
+    throw new Error("No iframe")
+  }
+
+  return iframe;
+}
+
+function getBaseURL(pagePath: string) {
+  // if a file i.e index.html
+  if (pagePath.includes(".")) {
+    return pagePath.split("/").slice(0, -1).join("/") + "/"; 
+  }
+
+  return pagePath;
+}
+
+export async function createDom(pagePath: string, iframe: HTMLIFrameElement) {
+  // set cursor style to loading
+  document.body.style.cursor = "wait";
+
+  // cancel requests
+  /*
+  registration.active?.postMessage({
+    type: "cancelRequests"
+  });
+  */
+
+  const contentDocument = iframe.contentDocument;
+
+  if (!contentDocument) {
+    throw new Error("No content document")
+  }
+
+
+  const fetchedPage = await fetch(pagePath, {
+    // headers that set x-root-page
+    headers: {
+      "x-root-page": "true"
+    }
+  })
+
+  // set cursor style to default
+  document.body.style.cursor = "default";
+
+  const content = await fetchedPage.text();
+
+  contentDocument.open();
+  contentDocument.write(content);
+  contentDocument.close();
+
+  /*
+
+  const parser = new DOMParser();
+  const fullDom = parser.parseFromString(content, "text/html");
+
+  const baseEl = fullDom.createElement("base")
+  const baseURL = getBaseURL(pagePath);
+  baseEl.href = baseURL;
+
+  // put at top of head
+  fullDom.head.insertBefore(baseEl, fullDom.head.firstChild)
+
+
+  // convert the head into a string
+  const headContent = fullDom.querySelector('head')!.innerHTML;
+  const bodyContent = fullDom.querySelector('body')!.innerHTML;
+
+  // Replace iframe content with doc
+  if (!contentDocument?.documentElement) {
+    throw new Error("No document element")
+  }
+
+  // create contextual fragment
+  const headRange = contentDocument!.createRange()
+  headRange.selectNode(contentDocument!.head)
+  const headFragment = headRange.createContextualFragment(headContent)
+
+  const bodyRange = contentDocument!.createRange()
+  bodyRange.selectNode(contentDocument!.body)
+  const bodyFragment = bodyRange.createContextualFragment(bodyContent)
+
+
+  contentDocument.head.appendChild(headFragment)
+  contentDocument.body.appendChild(bodyFragment)
+  */
+
+  enableClientSideRouting(contentDocument)
+}
+
+async function createNewDom(path: string) {
+
+  const newIframe = await setupIframe()
+  await createDom(path, newIframe);
+
+}
+
+export function enableClientSideRouting(document: Document = window.document) {
+
+  document.body.addEventListener('click', async function (event) {
+    let target = event.target as HTMLElement;
+
+    while (target && target.tagName !== 'A') {
+      target = target.parentElement as HTMLElement;
+    }
+
+    if (!target ) {
+      return;
+    }
+
+    if (!target.href) {
+      return;
+    }
+
+    console.log(target.href)
+
+    const origin = new URL(target.href).origin;
+
+    if (origin !== window.location.origin) {
+      return;
+    }
+
+    event.preventDefault(); // Prevent the link from triggering a page load
+
+
+    var url = target.href;
+    window.parent.history.pushState({ path: url }, '', url);
+
+    await createNewDom(url); // Load content dynamically
+    console.log("going to ", url);
+
+    // Update the URL in the browser address bar
+    try {
+      console.log("Updated parent history to ", url);
+    } catch (error) {
+      console.error("Failed to update parent history:", error);
+    }
+    console.log("going to ", url);
+  });
+
+
+  window.parent.addEventListener('popstate', async function (event) {
+    console.log("going back!", event.state, event.state?.path, window.location.pathname);
+    // Handle browser navigation (forward/back)
+    if (event.state && event.state.path) {
+      await createNewDom(event.state.path);
+      return;
+    }
+
+    await createNewDom(window.location.pathname);
+  });
+
+}
+
+===== jsClient/src/peer2.ts =====
+import { fetchICE } from "./peer"
+import { log, logSelectedCandidatePair, timers } from "./utils"
+import { DataSet } from 'vis-timeline/standalone'
+
+// Waits for the service worker ws to be ready
+async function waitForWS(serverId: string, registration: ServiceWorkerRegistration) {
+
+    return new Promise<void>(async (resolve, reject) => {
+
+        const reqId = crypto.randomUUID()
+
+        navigator.serviceWorker.addEventListener("message", (message) => {
+            if (message.data.type !== "createWs") {
+                return
+            }
+
+            const msg = message.data.payload
+
+            if (msg.reqId !== reqId) {
+                return
+            }
+            resolve()
+        })
+
+        registration.active?.postMessage({
+            type: "createWs",
+            payload: { serverId, reqId }
+        })
+
+    })
+
+}
+
+async function waitForId(registration: ServiceWorkerRegistration) {
+    return new Promise<string>((resolve, reject) => {
+        registration.active?.postMessage(
+            {
+                type: "signalingMessage",
+                payload: JSON.stringify({
+                    mtype: "idReq",
+
+                })
+            }
+        )
+        navigator.serviceWorker.addEventListener("message", (message) => {
+
+            if (message.data.type !== "signalingMessage") {
+                return
+            }
+
+            const msg = JSON.parse(message.data.payload)
+
+            if (msg.mtype === "idAssgn") {
+                resolve(msg.id)
+
+            }
+
+        })
+
+    })
+}
+
+function generateRandomCode() {
+
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const codeLength = 5;
+    let randomCode = '';
+
+    for (var i = 0; i < codeLength; i++) {
+        var randomIndex = Math.floor(Math.random() * characters.length);
+        randomCode += characters[randomIndex];
+    }
+
+    return randomCode;
+}
+
+type cachedConnection = {
+    time: number,
+    candidates: RTCIceCandidate[],
+    answer: RTCSessionDescription,
+    offer: RTCSessionDescriptionInit
+
+}
+
+type cachedCandidate = {
+    time: number,
+    peerCandidates: RTCIceCandidate[],
+    selfCandidates: RTCIceCandidate[]
+}
+
+
+
+const CACHE_LIFE = 5000
+function loadCachedCandidates(pc: RTCPeerConnection, forwardIceCandidate: (candidate: RTCIceCandidate) => void) {
+
+    const cachedCandidate = sessionStorage.getItem("candidates")
+    if (!cachedCandidate) {
+        return
+    }
+
+    const candidates: cachedCandidate = JSON.parse(cachedCandidate)
+    console.log(Date.now(), candidates.time)
+    /*
+    if (Date.now() - candidates.time > CACHE_LIFE) {
+        return
+    }
+    */
+
+    console.log("Using cached candidates")
+
+    candidates.selfCandidates.forEach(candidate => {
+        pc.addIceCandidate(candidate)
+    })
+
+    candidates.peerCandidates.forEach(forwardIceCandidate)
+
+}
+
+
+async function getCachedConnection() {
+    const { pc, dc } = await createPCDC()
+    // attempt to load and use cached candidates
+    const cached = sessionStorage.getItem("candidates")
+
+    if (!cached) {
+        return
+    }
+
+    const { time, candidates, answer, offer } = JSON.parse(cached) as cachedConnection
+
+    if (Date.now() - time > 5000) {
+        return
+    }
+
+    return new Promise<{ pc: RTCPeerConnection, dc: RTCDataChannel }>((resolve, reject) => {
+        console.log(candidates)
+        console.log("Using cached candidates")
+
+        pc.setLocalDescription(offer)
+        pc.setRemoteDescription(answer)
+
+        candidates.forEach((c) => {
+            pc.addIceCandidate(c)
+        })
+
+        dc.onopen = () => {
+            resolve({ pc, dc })
+        }
+    })
+
+
+}
+
+async function createPCDC() {
+    const iceServers = await fetchICE()
+    let pc = new RTCPeerConnection(
+        {
+            iceServers: iceServers
+        }
+    )
+
+    let dc = pc.createDataChannel('data', {
+        ordered: false,
+        // negotiated: true,
+        id: 0
+    })
+    dc.bufferedAmountLowThreshold = 10240
+    dc.binaryType = "arraybuffer"
+
+    return { pc, dc }
+}
+
+async function connectToWs(events: DataSet<any>, serverId: string, registration: ServiceWorkerRegistration) {
+    timers.start("Websocket connection")
+    await waitForWS(serverId, registration)
+    const wsTime = timers.end("Websocket connection")
+    events.add({ id: 5, content: "WS Connecting", start: new Date().getTime() - wsTime, end: new Date(), group: "Signaling" })
+
+    console.log("Waiting for ID")
+    timers.start("id assigned in")
+    const clientId = await waitForId(registration)
+    const idAssigned = timers.end("id assigned in")
+    events.add({ id: 6, content: "ID Assigned", start: new Date().getTime() - idAssigned, end: new Date(), group: "Signaling" })
+
+    return {clientId, wsTime}
+}
+
+export async function connectSW(serverId: string, registration: ServiceWorkerRegistration, useCachedCandidates = false) {
+    /*
+    const cachedConnection = await getCachedCandidates()
+
+    if (cachedConnection) {
+        return cachedConnection
+    }
+    */
+
+    const events = new DataSet()
+    events.add({ id: 0, content: "Connection Started", start: new Date(), group: "Connection" })
+
+    return new Promise<{ dc: RTCDataChannel, pc: RTCPeerConnection, stats: { wsTime: number, events: DataSet<any> } }>(async (resolve, reject) => {
+        timers.start("iceservers")
+        const [{ pc, dc }, {wsTime, clientId}] = await Promise.all([createPCDC(), connectToWs(events, serverId, registration)])
+
+        const iceTime = timers.end("iceservers")
+        events.add({ content: "Fetching ICE Servers", start: new Date().getTime() - iceTime, end: new Date(), group: "Connection" })
+
+
+        pc.oniceconnectionstatechange = () => {
+            log("State: " + pc.connectionState)
+
+            if (pc.iceConnectionState === "connected" || pc.iceConnectionState === "completed") {
+                logSelectedCandidatePair(pc);
+            }
+        }
+
+
+        const cachedCandidates: cachedCandidate = {
+            time: Date.now(),
+            peerCandidates: [],
+            selfCandidates: []
+        }
+
+        dc.onopen = () => {
+
+            events.add({ id: 1, content: "Data Channel Opened", start: new Date(), group: "Connection" })
+
+            resolve({ dc, pc, stats: { wsTime, events } })
+
+            sessionStorage.setItem("candidates", JSON.stringify(cachedCandidates))
+            console.timeEnd("answer to connection")
+        }
+
+
+        pc.addEventListener("icecandidate", (e) => {
+            if (!e.candidate || e.candidate.candidate === "") {
+                return
+            }
+
+            events.add({ content: "ICE Candidate", start: new Date(), group: "Client Ice Candidate" })
+
+            cachedCandidates.selfCandidates.push(e.candidate)
+
+            registration.active?.postMessage(
+                {
+                    type: "signalingMessage",
+                    payload: JSON.stringify({
+                        mtype: "candidate",
+                        id: serverId,
+                        candidate: e.candidate,
+                        clientId
+                    })
+                }
+            )
+        })
+
+        navigator.serviceWorker.addEventListener("message", (message) => {
+            if (message.data.type !== "signalingMessage") {
+                return
+            }
+
+            const msg = JSON.parse(message.data.payload)
+
+            if (clientId && msg.clientId !== clientId) {
+                return
+            }
+
+            switch (msg.mtype) {
+                case "idAssgn":
+                    // clientId = msg.id
+                    // log(clientId)
+                    break
+
+                case "candidate":
+                    cachedCandidates.peerCandidates.push(msg.candidate)
+                    pc.addIceCandidate(msg.candidate)
+
+                    events.add({ content: "ICE Candidate", start: new Date(), group: "Server Ice Candidate" })
+
+                    break
+
+                case "answer":
+                    console.time("answer to connection")
+                    pc.setRemoteDescription(msg.answer)
+
+                    events.add({ content: "Answer Received", start: new Date(), group: "SDP Exchange" })
+
+                    if (useCachedCandidates) {
+                        loadCachedCandidates(pc, (candidate) => {
+                            registration.active?.postMessage(
+                                {
+                                    type: "signalingMessage",
+                                    payload: JSON.stringify({
+                                        mtype: "candidate",
+                                        id: serverId,
+                                        candidate: candidate,
+                                        clientId
+                                    })
+                                }
+                            )
+                        });
+                    }
+
+                    break
+
+                case "heartbeat":
+
+                    break
+
+                case "Error":
+                    console.error(msg)
+                    break
+
+                default:
+                    console.log("Unknown path: ", msg.mtype)
+            }
+        })
+
+
+
+        const offer = await pc.createOffer()
+
+
+        pc.setLocalDescription(offer)
+        events.add({ id: 7, content: "Offer Created", start: new Date(), group: "SDP Exchange" })
+
+        registration.active?.postMessage(
+            {
+                type: "signalingMessage",
+                payload: JSON.stringify({ mtype: "offer", id: serverId, offer: offer, clientId })
+            }
+        )
+
+        console.log("Offer sent")
+
+
+    })
+
+
+}
+===== jsClient/src/protocolHandler.ts =====
+
+
+export function registerProtocolHandler() {
+
+  // check if base url is *.peerproxy.dev
+  const baseUrl = window.location.hostname
+  if (!baseUrl.endsWith("peerproxy.dev")) {
+    return
+  }
+
+  navigator.registerProtocolHandler('web+wrtc', 'http://peerproxy.dev/?peerproxyid=%s')
+}
+===== jsClient/src/benchmarking.ts =====
+import { createFrame } from "../serviceWorker/createPacket";
+import { HTTPProxy } from "../serviceWorker/requestHandler";
+import { monitorConnectionSpeed, testConnectionSpeed } from "./wrtcBenchmarks";
+
+
+async function testPackets() {
+    console.log("Testing packets")
+
+    const proxy = new HTTPProxy()
+
+    const res = await proxy.makeRequest(new Request("https://www.google.com"), null)
+
+
+}
+
+async function testSerialization() {
+
+    const n = 100000
+
+    // 16kb
+    const dataSize = 1024 * 16
+
+    const data = new Uint8Array(dataSize)
+    const start = performance.now()
+    for (let i = 0; i < n; i++) {
+        createFrame(0, "BODY", data, false, 0, false)
+    }
+
+    const end = performance.now()
+
+    console.log(`Took ${end - start}ms to serialize ${n} frames`)
+
+    // ops per second
+    console.log((n / ((end - start) / 1000)).toFixed(2), "ops/s")
+
+}
+
+function makeBenchmarkButton(text: string, callback: (...args: any[]) => any, id: string | undefined = undefined) {
+    const button = document.createElement("button")
+    button.innerText = text
+
+    if (id) button.id = id
+
+    button.addEventListener("click", callback)
+
+    document.body.appendChild(button)
+}
+
+export function setupBenchamrking(pc: RTCPeerConnection) {
+    makeBenchmarkButton("Test packets", testPackets)
+    makeBenchmarkButton("Test Serialization", testSerialization)
+    makeBenchmarkButton("Test Connection Speed", testConnectionSpeed)
+    makeBenchmarkButton("Monitor Connection Speed", monitorConnectionSpeed(pc))
+}
+
+===== jsClient/src/main.ts =====
+import { setupBenchamrking } from './benchmarking';
+import { createDom, setupIframe } from './createDom';
+import { ConnectionManager } from './peer'
+import './style.css'
+import { log, logSelectedCandidatePair, timers } from './utils'
+import { createTimeline } from './wrtcBenchmarks';
+
+export const waitForSW = async () => {
+  const registration = await navigator.serviceWorker.ready;
+
+  return registration
+}
+
+// gets the queryparameter "peerproxydebug" and returns true if it is "true"
+export const debug = new URLSearchParams(window.location.search).get("peerproxydebug") === "true"
+export const enableIframe = true
+
+async function initializeSW() {
+
+  const registration = await waitForSW()
+
+  registration.active?.postMessage({
+    type: "disconnected"
+  })
+
+  return registration
+
+}
+
+export function getId() {
+  const searchParams = new URLSearchParams(window.location.search);
+
+  // Extract subdomain as serverId
+  const hostname = window.location.hostname;
+  const parts = hostname.split('.');
+  let serverId = "foo";
+
+  if (parts.length > 2) {
+    serverId = parts.slice(0, parts.length - 2).join('.');
+    return serverId
+  }
+
+  if (searchParams.has("peerproxyid")) {
+    // redirect to subdomain with peerproxyid
+    window.location.href = `https://${searchParams.get("peerproxyid")}.${hostname}${window.location.pathname}`
+  }
+
+  return serverId;
+}
+
+
+function waitForSWReady(registration: ServiceWorkerRegistration) {
+
+  return new Promise<void>((resolve, reject) => {
+
+    registration.active?.postMessage({
+      type: "ready",
+    })
+
+    navigator.serviceWorker.addEventListener("message", (message) => {
+      //console.log(message.data)
+      if (message.data.type === "ready") {
+        resolve()
+      }
+    })
+
+  });
+
+}
+
+
+
+export let registration: ServiceWorkerRegistration
+
+async function main() {
+  timers.start("connecting")
+
+  const id = getId()
+  console.log("ID", id)
+
+
+  let iframe: HTMLIFrameElement
+  iframe = await setupIframe()
+
+  registration = await initializeSW()
+
+  const connectionManager = new ConnectionManager(id)
+  const { dc, stats, pc } = await connectionManager.connect()
+
+  console.log("Connecting took", timers.end("connecting"))
+
+
+  logSelectedCandidatePair(pc)
+
+
+  if (debug) {
+    setupBenchamrking(pc)
+    createTimeline(stats.events)
+  }
+
+  // registerProtocolHandler()
+
+  navigator.serviceWorker.addEventListener("message", (message) => {
+    switch (message.data.type) {
+      case "data":
+        // dc.send(message.data.payload)
+        // console.log("Sending data", message.data.payload)
+        connectionManager.send(message.data.payload)
+        break
+
+      case "set-cookie":
+        iframe.contentDocument!.cookie = message.data.payload
+
+        break
+
+      default:
+        // console.log("Unknown message", message.data)
+        break
+    }
+  })
+
+  connectionManager.addEventListener("message", event => {
+    registration.active?.postMessage({ type: "data", payload: event.detail }, [event.detail])
+  })
+
+  await waitForSWReady(registration)
+
+  log("Connected")
+
+
+  await createDom(window.location.pathname, iframe)
+
+
+}
+
+main()
+===== jsClient/src/debugPanel.ts =====
+import { setupBenchamrking } from "./benchmarking"
+import { debug, debugPanel } from "./main"
+import { testConnectionSpeed } from "./wrtcBenchmarks"
+
+
+
+document.getElementById("connectionSpeed")!.addEventListener("click", async () => {
+    console.log("Clicked")
+    await testConnectionSpeed()
+})
+
+
+
+
+export const enableDebugPanel = () => {
+
+    const panel = document.getElementById("debugPanel")!
+
+    panel.style.display = "block"
+}
+
+===== jsClient/src/dataChannelQueue.ts =====
+export class DataChannelSendQueue {
+    private dataChannel: RTCDataChannel;
+    private queue: Array<ArrayBuffer>;
+    private sending: boolean;
+    private maxBufferedAmount: number;
+
+    constructor(dataChannel: RTCDataChannel, maxBufferedAmount: number = 160 * 1024) {
+        this.dataChannel = dataChannel;
+        this.queue = [];
+        this.sending = false;
+        this.maxBufferedAmount = maxBufferedAmount;
+
+        this.dataChannel.addEventListener('bufferedamountlow', () => {
+            this.processQueue()
+        });
+    }
+
+    async send(data: ArrayBuffer): Promise<void> {
+        if (!this.canSendImmediately(data)) {
+            console.log("Queuing ", data.byteLength, "bytes");
+            this.queue.push(data);
+            this.processQueue();
+            return;
+        }
+
+        try {
+            this.dataChannel.send(data);
+        } catch (error) {
+            if (error instanceof DOMException && error.name === "OperationError") {
+                this.queue.push(data);
+                this.processQueue();
+            } else {
+                throw error;
+            }
+        }
+    }
+
+    setDataChannel(dc: RTCDataChannel): void {
+        this.dataChannel = dc;
+    }
+
+    private canSendImmediately(data: ArrayBuffer): boolean {
+        const canSend = this.dataChannel.bufferedAmount + this.getDataSize(data) <= this.maxBufferedAmount;
+        // console.log(canSend, this.dataChannel.readyState, this.dataChannel.bufferedAmount, this.getDataSize(data), this.maxBufferedAmount);
+
+        return canSend && this.dataChannel.readyState === "open";
+    }
+
+    private processQueue(): void {
+        if (this.dataChannel.readyState !== "open") return;
+
+        // console.log("Processing queue", this.queue.length, "items");
+
+        this.sending = true;
+
+        while (this.queue.length > 0) {
+            const data = this.queue[0];
+
+            if (!this.canSendImmediately(data)) break;
+
+            this.dataChannel.send(data);
+            this.queue.shift();
+        }
+
+        this.sending = false;
+    }
+
+    private getDataSize(data: ArrayBuffer): number {
+        return data.byteLength;
+    }
+}
+
+===== jsClient/src/utils.ts =====
+import { debug } from "./main"
+
+export function log(text: string, ...args: any[]) {
+
+    text = text + " " + args.join(" ")
+
+    const root = document.getElementById("log")
+    const newElement = document.createElement("div")
+
+    if (debug) {
+        console.log(text)
+
+    }
+
+    newElement.textContent = text
+
+    root?.append(
+        newElement
+    )
+
+}
+
+export function displayError(text: string) {
+    const root = document.getElementById("error")
+    root!.textContent = text
+}
+
+export async function getCandidatePair(pc: RTCPeerConnection) {
+    const stats = await pc.getStats();
+    let selectedCandidatePair;
+
+    stats.forEach(report => {
+        if (report.type === 'transport') {
+            // Find ID of selected candidate pair
+            selectedCandidatePair = report.selectedCandidatePairId;
+        }
+    });
+
+    if (selectedCandidatePair) {
+        const candidatePair = stats.get(selectedCandidatePair);
+        if (candidatePair) {
+            return {
+                local: stats.get(candidatePair.localCandidateId),
+                remote: stats.get(candidatePair.remoteCandidateId)
+            }
+        }
+    }
+
+}
+
+
+export async function logSelectedCandidatePair(pc: RTCPeerConnection) {
+    const pair = await getCandidatePair(pc)
+    if (pair) {
+        log(`Local candidate: ${pair.local?.ip} Remote candidate: ${pair.remote?.ip}`)
+    } 
+}
+
+export function sleep(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+
+export class timer {
+
+    timers: Record<string, number> = {}
+
+    constructor() {
+    }
+
+    start(name: string) {
+        this.timers[name] = performance.now()
+    }
+
+    end(name: string) {
+        const start = this.timers[name]
+        const end = performance.now()
+        log(`${name} took ${end - start}ms`)
+
+        return end - start
+    }
+}
+
+export const timers = new timer()
+
+export function getFormattedDateTime() {
+    const now = new Date();
+
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+    const day = String(now.getDate()).padStart(2, '0');
+
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+
+    // Combine date and time parts into a single string, replacing ':' with '-'
+    const formattedDateTime = `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
+
+    return formattedDateTime;
+}
+===== jsClient/src/peer.ts =====
+import { DataSet } from "vis-timeline/standalone";
+import { displayError, log, logSelectedCandidatePair, timers, timers } from "./utils";
+import { DataChannelSendQueue } from "./dataChannelQueue";
+import { createFrame } from "../serviceWorker/createPacket";
+
+export async function fetchICE() {
+
+  const res = await fetch("https://important-eel-61.deno.dev/")
+
+  return (await res.json())
+
+}
+
+
+
+export async function connect(serverId: string) {
+
+  const events = new DataSet()
+  events.add({ id: 0, content: "Connection Started", start: new Date(), group: "Connection" })
+
+  return new Promise<{ pc: RTCPeerConnection, dc: RTCDataChannel, stats: { events: DataSet<any>, wsTime: number } }>(async (resolve, reject) => {
+
+    // const signalingServer = "ws://localhost:8080"
+    // const signalingServer = "wss://d1syxz7xf05rvd.cloudfront.net"
+    // const signalingServer = "wss://nathanlee.ngrok.io"
+    const signalingServer = "wss://peepsignal.fly.dev"
+
+    let clientId: string = ""
+    timers.start("iceservers")
+    const iceServers = await fetchICE()
+    const iceTime = timers.end("iceservers")
+    events.add({ content: "Fetching ICE Servers", start: new Date().getTime() - iceTime, end: new Date(), group: "Connection" })
+
+    let pc = new RTCPeerConnection(
+      {
+        iceServers: iceServers
+      }
+    )
+
+    let wsTime: number;
+
+    timers.start("Websocket connection")
+    const socket = new WebSocket(`${signalingServer}/?role=client&id=${serverId}`)
+    socket.addEventListener("open", () => {
+      wsTime = timers.end("Websocket connection")
+    })
+
+    socket.onmessage = e => {
+      let msg = JSON.parse(e.data)
+      if (!msg) {
+        return console.log('failed to parse msg')
+      }
+      switch (msg.mtype) {
+        case "idAssgn":
+          clientId = msg.id
+          log(clientId)
+          break
+
+        case "candidate":
+          events.add({ content: "ICE Candidate", start: new Date(), group: "Server Ice Candidate" })
+
+          pc.addIceCandidate(msg.candidate)
+          break
+
+        case "answer":
+          events.add({ content: "Answer Received", start: new Date(), group: "SDP Exchange" })
+
+          pc.setRemoteDescription(msg.answer)
+          break
+
+        case "heartbeat":
+
+          break
+
+        case "Error":
+          console.error(msg)
+          displayError(msg.error)
+          break
+
+        default:
+          console.log("Unknown path: ", msg.mtype)
+      }
+    }
+
+    socket.onerror = e => {
+      reject(e)
+    }
+
+    let dc = pc.createDataChannel('data', {
+      ordered: false,
+    })
+
+    dc.onclose = () => {
+      console.log("Datachannel Closed")
+      connect(serverId)
+    }
+    
+    dc.bufferedAmountLowThreshold = 102400
+    dc.onbufferedamountlow = () => {
+      console.log("buffered amount low")
+    };
+    
+
+    dc.binaryType = "arraybuffer"
+
+    dc.onopen = () => {
+      events.add({ id: 1, content: "Data Channel Opened", start: new Date(), group: "Connection" })
+
+      resolve({ pc, dc, stats: { wsTime, events } })
+    }
+
+    pc.onicecandidate = e => {
+      if (e.candidate && e.candidate.candidate !== "") {
+        events.add({ content: "ICE Candidate", start: new Date(), group: "Client Ice Candidate" })
+
+        socket.send(JSON.stringify({ mtype: "candidate", id: serverId, candidate: e.candidate, clientId }))
+      }
+    }
+
+    pc.oniceconnectionstatechange = () => {
+      log("State: " + pc.connectionState)
+
+      if (pc.iceConnectionState === "connected" || pc.iceConnectionState === "completed") {
+        logSelectedCandidatePair(pc);
+      }
+    }
+
+    socket.onopen = async () => {
+
+      const wsTime = timers.end("Websocket connection")
+      events.add({ content: "Websocket Connection Opened", start: new Date().getTime() - wsTime, end: new Date(), group: "Signaling" })
+
+      const offer = await pc.createOffer()
+      events.add({ id: 7, content: "Offer Created", start: new Date(), group: "SDP Exchange" })
+
+      pc.setLocalDescription(offer)
+      socket.send(JSON.stringify({ mtype: "offer", id: serverId, offer: offer, clientId }))
+
+    }
+  })
+}
+
+function sendHeartbeat(dc: RTCDataChannel) {
+  return setInterval(() => {
+    const testPacket = createFrame(0, 'HEADER', new Uint8Array(), true, 0, true)
+    dc.send(testPacket)
+  }, 1000)
+}
+
+export class ConnectionManager extends EventTarget {
+
+  pc: RTCPeerConnection
+  dc: RTCDataChannel
+
+  queue: DataChannelSendQueue
+  reconnectAttempts: number = 0
+  maxReconnectAttempts: number = 5
+  serverId: string
+  heartbeat: NodeJS.Timeout
+
+  constructor(serverId: string) {
+    super()
+    this.serverId = serverId
+  }
+
+  async connect() {
+    const { pc, dc, stats } = await connect(this.serverId)
+
+    this.pc = pc
+    this.dc = dc
+
+    if (!this.queue) {
+      this.queue = new DataChannelSendQueue(dc)
+    }
+
+    this.queue.setDataChannel(dc)
+
+    this.setupConnectionListeners()
+
+    this.reconnectAttempts = 0
+
+    clearInterval(this.heartbeat)
+    this.heartbeat = sendHeartbeat(dc)
+
+    dc.onmessage = (e) => {
+      this.emitMessage(e.data)
+    }
+
+    return { pc, stats, dc }
+  }
+
+  setupConnectionListeners() {
+    this.pc.oniceconnectionstatechange = async () => {
+      if (this.pc.iceConnectionState === 'disconnected' || this.pc.iceConnectionState === 'failed') {
+        await this.handleReconnection()
+      }
+    }
+
+    this.dc.onclose = async () => {
+      if (this.pc.iceConnectionState !== 'disconnected' && this.pc.iceConnectionState !== 'failed') {
+        await this.handleReconnection()
+      }
+    }
+  }
+
+  async handleReconnection() {
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      console.error("Max reconnection attempts reached")
+      return
+    }
+
+    console.log("Attempting to reconnect...")
+
+    this.reconnectAttempts++
+    await this.connect()
+
+    // Optionally wait a bit before next reconnection attempt
+    await new Promise(resolve => setTimeout(resolve, 2000))
+  }
+
+
+  async send(data: ArrayBuffer) {
+    // console.log("Sending data")
+    await this.queue.send(data)
+  }
+
+  emitMessage(data: ArrayBuffer) {
+    this.dispatchEvent(new CustomEvent("message", { detail: data }))
+  }
+
+
+
+
+}
+
+===== jsClient/eslint.config.js =====
+import globals from "globals";
+import pluginJs from "@eslint/js";
+import tseslint from "typescript-eslint";
+import compat from "eslint-plugin-compat";
+
+
+export default [
+  compat.configs["flat/recommended"],
+  {files: ["**/*.{js,mjs,cjs,ts}"]},
+  {languageOptions: { globals: globals.browser }},
+  pluginJs.configs.recommended,
+  ...tseslint.configs.recommended,
+  
+];
+===== jsClient/serviceWorker/streamHandler.ts =====
+import { Packet } from "./createPacket"
+
+export class CustomStream {
+
+    controller: ReadableStreamDefaultController
+    stream: ReadableStream
+
+    lastPacketFound = false
+    lastPacketNum = 0
+    packetsIngested = 0
+
+    outOfOrderPackets = {}
+    currentPacketNum = 0
+
+    cancelled = false
+
+    constructor() {
+        // Keeping a reference to the stream controller
+
+        // Creating a readable stream with an underlying source object
+        this.stream = new ReadableStream({
+            start: (controller) => {
+                this.controller = controller;
+            },
+            pull: (controller) => {
+                // This is called when the consumer wants to read data
+                // You might not need to implement anything here if you're only pushing data manually
+                
+            },
+            cancel: (reason) => {
+                if (!this.stream.locked && this.controller) {
+                    this.controller.close();
+                }
+                // console.log(`Stream cancelled, reason: ${reason}`);
+                this.outOfOrderPackets = {}
+
+                this.cancelled = true
+            }
+        });
+    }
+
+    // Method to add items to the stream
+    addItem(item: Packet) {
+        if (!this.controller) {
+            console.error("Stream controller is not initialized.");
+        }
+
+        // ignore if stream is cancelled
+        if (this.cancelled) {
+            return
+        }
+
+        this.packetsIngested++;
+
+        if (item.finalMessage) {
+            this.lastPacketFound = true
+            this.lastPacketNum = item.sequenceNum
+
+        }
+
+        if (item.sequenceNum == this.currentPacketNum) {
+            this.controller.enqueue(item.payload);
+            this.currentPacketNum ++
+
+        } else if (item.sequenceNum > this.currentPacketNum) {
+            this.outOfOrderPackets[item.sequenceNum] = item.payload
+        }
+
+        while (true) {
+
+            if (! (this.currentPacketNum in this.outOfOrderPackets)) {
+                break
+            }
+
+
+            this.controller.enqueue(this.outOfOrderPackets[this.currentPacketNum])
+            delete this.outOfOrderPackets[this.currentPacketNum]
+
+            this.currentPacketNum++
+
+        }
+
+        
+        if (this.packetsIngested === this.lastPacketNum + 1 && this.lastPacketFound && this.currentPacketNum === this.lastPacketNum + 1) {
+            // console.log("Closing stream", item)
+
+            this.closeStream()
+            
+        }
+
+        return
+
+
+    }
+
+    // Method to close the stream
+    closeStream() {
+        this.outOfOrderPackets = {}
+
+        if (this.controller) {
+            this.controller.close();
+        }
+    }
+}
+
+===== jsClient/serviceWorker/cookieManager.ts =====
+import cookie from "cookie"
+
+class Cookies {
+
+    cookies: Record<string, Record<string, string>> = {}
+
+    reservedHeaders = ["domain", "encode", "expires", "httponly", "maxage", "partitioned", "path"]
+
+    setCookie(cookieString: string) {
+        const parsedCookie = cookie.parse(cookieString)
+
+        for (const key in parsedCookie) {
+            if (this.reservedHeaders.includes(key.toLowerCase())) {
+                continue
+            }
+
+            this.cookies[key] = parsedCookie
+        }
+    }
+
+    getCookies(domain: string | undefined) {
+        return Object.keys(this.cookies)
+            
+        .map(name => cookie.serialize(name, this.cookies[name][name]))
+        .reduce((acc, storedCookie) => `${acc} ${storedCookie};`, "")
+    }
+
+    resetCookies() {
+        this.cookies = {}
+    }
+
+}
+
+export const cookieManager = new Cookies()
+===== jsClient/serviceWorker/createPacket.ts =====
+/// <reference lib="WebWorker" />
+
+import { cookieManager } from "./cookieManager"
+
+const IDENTIFIER_LENGTH = 32
+const TYPE_LEGNTH = 1
+const CONTENT_LENGTH = 16
+const FLAGS = 8
+const HEADER_LENGTH = IDENTIFIER_LENGTH + TYPE_LEGNTH + CONTENT_LENGTH + FLAGS
+
+type MessageType = "HEADER" | "BODY"
+
+/*
+    | stream identifier (32 bits) | payload length (16 bits) | 
+    | flags ( message type (1 bit)) (final message (1 bit))  | 
+    | payload                                                |
+*/
+export function createFrame(identifier: number, messageType: MessageType, payload: Uint8Array, 
+    finalMessage: boolean, sequenceNum: number, heartbeat: boolean = false, cancel: boolean = false) {
+
+    const headerSize = 11
+
+    let buffer = new ArrayBuffer(headerSize + payload.byteLength)
+    let view = new DataView(buffer);
+
+    view.setUint32(0, identifier)
+    view.setUint32(4, sequenceNum)
+    view.setUint16(8, payload.byteLength & 0xFFFF);
+
+
+    let flags = (messageType === "HEADER" ? 0 : 1) | 
+        ((finalMessage ? 1 : 0) << 1) | 
+        ((heartbeat ? 1 : 0) << 2) |
+        ((cancel ? 1 : 0) << 3)
+
+    view.setUint8(10, flags)
+
+    let payloadView = new Uint8Array(buffer, headerSize);
+    payloadView.set(new Uint8Array(payload));
+
+    return buffer;
+}
+
+
+function createHeaderPacket(request: Request, currentIdentifier: number): ArrayBuffer {
+    // Create header packet
+    let formattedHeaders: Record<string, string> = {}
+
+    for (const header of request.headers.keys()) {
+        formattedHeaders[header] = request.headers.get(header)!
+    }
+
+    if (request.credentials === "include" || request.credentials === "same-origin") {
+        const cookies = cookieManager.getCookies(new URL(request.url).hostname)
+
+        formattedHeaders["Cookie"] = cookies
+    }
+
+
+    formattedHeaders["method"] = request.method
+    formattedHeaders["url"] = new URL(request.url).pathname + new URL(request.url).search + new URL(request.url).hash
+
+    // console.log(formattedHeaders)
+
+    // TODO: come up with a more efficient header representation
+    const encodedHeader = new TextEncoder().encode(JSON.stringify(formattedHeaders))
+    const frame = createFrame(currentIdentifier, "HEADER", encodedHeader, true, 0);
+
+    return frame
+
+}
+
+const packetSizeBytes = 16 * 1024
+const payloadSize = packetSizeBytes - 7
+
+export async function createPackets(request: Request, currentIdentifier: number, cb: (buf: ArrayBuffer) => void) {
+    cb(createHeaderPacket(request, currentIdentifier))
+
+    // Make body packets
+    if (!request.body) {
+        const endFrame = createFrame(currentIdentifier, "BODY", new Uint8Array(), true, 0);
+        // console.log(endFrame)
+        cb(endFrame)
+        return
+    }
+
+    const reader = request.body?.getReader()
+    // console.log(reader)
+    if (!reader) {
+        console.log(request)
+
+        throw Error("Readable stream does not exist on reader")
+    }
+
+    let frameNum = 0;
+
+    while (true) {
+        // Stream the body
+        const { done, value } = await reader?.read()
+        // console.log(done)
+        if (done) {
+            // console.log("Last frame")
+            const frame = createFrame(currentIdentifier, "BODY", new Uint8Array(), true, frameNum);
+            cb(frame); // Assuming cb is a callback function for handling each frame
+            break
+        }
+
+        if (!value) {
+            break
+        }
+
+        let readerPosition = 0
+        while (readerPosition < value.byteLength) {
+
+            const slicedArray = value.slice(readerPosition, readerPosition + payloadSize)
+
+            // check if last frame
+            let lastFrame = false;
+
+
+            const frame = createFrame(currentIdentifier, "BODY", slicedArray, lastFrame, frameNum);
+            frameNum++
+            cb(frame)
+
+            readerPosition += payloadSize
+        }
+    }
+
+
+    return
+}
+
+export type Packet = {
+    identifier: number
+    sequenceNum: number
+    payload: Uint8Array
+    messageType: "HEADER" | "BODY",
+    finalMessage: boolean
+};
+
+export function parsePacket(buffer: ArrayBuffer): Packet {
+    // console.log(buffer)
+    const headerSize = 11;
+    let view = new DataView(buffer);
+
+    // Read the values from the buffer
+    let identifier = view.getUint32(0);
+    let sequenceNum = view.getUint32(4);
+    let payloadLength = view.getUint16(8);
+
+    const flagCodes = {
+        0: [false, false],
+        1: [false, true],
+        2: [true, false],
+        3: [true, true]
+    }
+    let flags = view.getUint8(10) as keyof typeof flagCodes;
+
+    const [finalMessage, messageType] = flagCodes[flags]
+
+    // Extract the payload
+    let payload = new Uint8Array(buffer, headerSize, payloadLength);
+
+    // Construct the JSON object
+    return {
+        identifier,
+        sequenceNum,
+        payload,
+        messageType: messageType ? "HEADER" : "BODY",
+        finalMessage,
+    };
+}
+===== jsClient/serviceWorker/wsProxy.ts =====
+export class WsHandler {
+    ws: WebSocket
+    serverId: string
+    client: Client
+    open = false
+
+    wsClosed = true
+
+    needsRestart = false
+
+    constructor(serverId: string, client: Client) {
+        const signalingServer = "wss://peepsignal.fly.dev"
+        this.serverId = serverId
+        this.ws = new WebSocket(`${signalingServer}/?role=client&id=${serverId}`)
+        
+        this.setNewClient(client)
+        this.ws.addEventListener("open", () => {
+            this.open = true
+        })
+
+        this.ws.addEventListener("close", () => {
+            this.needsRestart = true
+        })
+    }
+
+    // Returns when websocket is open
+    async ready() {
+
+        if (this.open) {
+            return
+        }
+
+        return new Promise<void>((resolve, reject) => {
+            this.ws.addEventListener("open", () => {
+                resolve()
+            })
+        })
+    }
+
+    setNewClient(client: Client) {
+        this.client = client
+
+        this.ws.addEventListener("message", (event) => {
+            client.postMessage({ type: "signalingMessage", payload: event.data })
+        })
+    }
+
+}
+===== jsClient/serviceWorker/requestHandler.ts =====
+import { cookieManager } from "./cookieManager";
+import { createFrame, createPackets, parsePacket } from "./createPacket";
+import { CustomStream } from "./streamHandler";
+
+class Deferred<T> {
+    promise: Promise<T>;
+    resolve: (value: T | PromiseLike<T>) => void = () => { };
+    reject: (reason?: any) => void = () => { };
+
+    constructor() {
+        this.promise = new Promise<T>((resolve, reject) => {
+            this.resolve = resolve;
+            this.reject = reject;
+        });
+    }
+}
+
+export class HTTPProxy {
+
+    // a list of requests
+    // { id: request }
+    requests: Record<number, Deferred<Response>> = {}
+
+    responses: Record<number, CustomStream> = {}
+
+    currentIdentifier = 1
+
+    client: Client
+
+    reset() {
+        this.requests = {}
+        this.responses = {}
+        // this.currentIdentifier = 1
+    }
+
+    async makeRequest(request: Request, client: Client): Promise<Response> {
+        // console.log("Requesting", request.url, client.id)
+        this.client = client
+        
+        await createPackets(request, this.currentIdentifier, (frame) => {
+            client.postMessage({payload: frame, type: "data"})
+        })
+
+        const prom = new Deferred<Response>()
+
+        this.requests[this.currentIdentifier] = prom
+        this.currentIdentifier += 1
+
+        return prom.promise
+    }
+
+    cancelAllRequests() {
+        for (const id in this.requests) {
+            
+            this.requests[id].reject("Request cancelled")
+
+            const cancelFrame = createFrame(parseInt(id), "BODY", new Uint8Array(), true, 0, false, true)
+
+            this.client.postMessage({
+                type: "data",
+                payload: cancelFrame
+            })
+
+        }
+        this.reset()
+    }
+
+    handleRequest(reqObj: ArrayBuffer) {
+        const packet = parsePacket(reqObj)
+
+        if (packet.messageType === "BODY") {
+
+            if (!this.responses[packet.identifier]) {
+                console.error("No response found for", packet.identifier)
+                return
+            }
+
+            this.responses[packet.identifier].addItem(packet)
+
+            return
+        }
+
+        const parsedHeaders: Record<string, string[]> = JSON.parse(new TextDecoder().decode(packet.payload))
+        const headers = new Headers()
+
+        let statusText: string = "200 OK"
+        let status: number = 200
+
+        for (const headerKey in parsedHeaders) {
+
+            if (headerKey === "status_code") {
+                status = parseInt(parsedHeaders[headerKey][0])
+                continue
+            }
+
+            if (headerKey === "status") {
+                statusText = parsedHeaders[headerKey][0]
+                continue
+            }
+
+            if (headerKey === "Set-Cookie") {
+                console.log("Setting cookies", parsedHeaders[headerKey])
+                for (const cookie of parsedHeaders[headerKey]) {
+
+                    console.log("Setting cookie", cookie)
+                    
+                    cookieManager.setCookie(cookie) // This is the line that is causing the error;
+
+                    this.client.postMessage({
+                        type: "set-cookie",
+                        payload: cookie
+                    })
+
+                    // document.cookie = cookie
+
+                }
+                continue
+            }
+
+            headers.append(headerKey, parsedHeaders[headerKey].join(","))
+        }
+
+        const body = new CustomStream()
+        this.responses[packet.identifier] = body
+
+        const response = new Response(body.stream, {
+            headers,
+            status,
+            statusText,
+            
+        })
+
+        this.requests[packet.identifier].resolve(response)
+    }
+
+}
+===== jsClient/serviceWorker/sw.ts =====
+/// <reference lib="WebWorker" />
+
+import { HTTPProxy } from "./requestHandler";
+import { WsHandler } from "./wsProxy";
+
+const proxy = new HTTPProxy()
+
+let ws: WsHandler
+
+self.addEventListener('install', (event) => {
+    console.log('Service Worker installing.', self);
+
+    console.log(event)
+
+    self.skipWaiting()
+});
+
+self.addEventListener('activate', function (e) {
+    //  self.registration.unregister()
+    console.log("Activating")
+
+    self.clients.claim()
+
+});
+
+let lastClient: string = ""
+
+const iframeMode = true
+
+async function timeout(ms: number, event: FetchEvent, client: Client) {
+    const timeout = new Promise((resolve, reject) => {
+        setTimeout(() => {
+            resolve(fetch(event.request))
+        }, ms)
+    })
+
+    return Promise.race([proxy.makeRequest(event.request, client)])
+}
+
+
+let pageClient: Client
+async function handleIframeRequest(event: FetchEvent, client: Client) {
+    // console.log({peerConnected})
+
+    if (!client) {
+        return fetch(event.request)
+    }
+
+    // console.log(peerConnected, client.frameType, event.request.url, event)
+
+
+    const clientHostname = new URL(client.url).hostname
+    if (new URL(event.request.url).hostname !== clientHostname) {
+        return fetch(event.request)
+    }
+
+    const isRootPage = event.request.headers.get("x-root-page") ? true : false
+    // console.log("Rootpage?!!", isRootPage)
+    if (isRootPage) {
+        pageClient = client
+
+        return proxy.makeRequest(event.request, client)
+    }
+
+    if (client.frameType === "top-level") {
+        return fetch(event.request)
+    }
+
+    const url = new URL(event.request.url)
+
+    if (url.pathname === "/iframe-peerproxy.html" || url.pathname === "/iframeScript-peerproxy.js") {
+        return fetch(event.request)
+    }
+
+    return proxy.makeRequest(event.request, pageClient)
+
+}
+
+self.addEventListener("fetch", async (untypedEvent) => {
+
+    const event = untypedEvent as FetchEvent
+    // console.log(new URL(event.request.url).hostname)
+    event.respondWith(
+        (async (): Promise<Response> => {
+            const client = await self.clients.get(event.clientId)
+
+            return handleIframeRequest(event, client)
+
+
+        })(),
+    );
+});
+
+
+
+var peerConnected = false
+
+self.addEventListener("message", async (event) => {
+    const clientObj = event.source as unknown as Client
+    const client = await self.clients.get(clientObj.id)
+    // console.log(event, self.clients)
+    switch (event.data.type) {
+        case "disconnected":
+            // console.log("Disconnected, resetting")
+            peerConnected = false
+            proxy.reset()
+            break;
+        case "ready":
+            peerConnected = true;
+
+            client.postMessage({
+                type: "ready"
+            })
+
+            break;
+
+        case "cancelRequests":
+            console.log("Cancelling requests")
+            proxy.cancelAllRequests()
+            break;
+
+        case "data":
+            proxy.handleRequest(event.data.payload);
+            break;
+    }
+
+});
+
+===== jsClient/index.html =====
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vite + TS</title>
+  <script type="module" src="/src/main.ts"></script>
+
+</head>
+
+<body>
+  <!--
+  <div id="displayedImage"></div>
+  <button id="makeDom">Create DOM</button>
+  <button id="connectionTest">Benchmark Connection Types</button>
+  <button id="connectionSpeed">Test Data Channel Speed</button>
+  <button id="latency">Test HTTP Latency</button>
+
+  <div id="latencyGraph"></div>
+
+  <div id="speedGraph"></div>
+  -->
+  <div id="error"></div>
+  <div id="timeline"></div>
+  <div id="results"></div>
+  
+  
+  <!--
+  <h1>Benchmarking</h1>
+
+  <button id="testPacketProcessing">Benchmark Packet Processing Speed</button>
+  -->
+
+  <div id="debugPanel" style="visibility: hidden;">
+    <div>Debug Panel</div>
+    <button id="connectionSpeed">Test Data Channel Speed</button>
+  </div>
+
+
+</body>
+
+</html>
+
+<style>
+
+  #debugPanel {
+    z-index: 150;
+    background-color: white;
+    position:fixed;
+    padding: 10px;
+    
+  }
+
+  #webFrame {
+    position: fixed;
+    top: 0px;
+    bottom: 0px;
+    right: 0px;
+    width: 100%;
+    border: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    z-index: 10;
+    height: 100%;
+  }
+</style>

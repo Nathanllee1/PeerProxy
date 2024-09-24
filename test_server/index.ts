@@ -2,8 +2,12 @@ import express from "express"
 import multer from 'multer';
 import compression from "compression"
 
+// add dotenv
+import dotenv from "dotenv"
+dotenv.config();
+
 const app = express()
-const port = 3000
+const port = process.env.PORT || 3000;
 
 import cookieParser from "cookie-parser"
 
@@ -94,6 +98,18 @@ app.get('/buffer', (req, res) => {
   res.set('Content-Length', size.toString());
   res.send(buffer);
 });
+
+
+app.post('/submit', (req, res) => {
+  req.on('data', () => {
+    // Intentionally empty: discard data chunks
+  });
+
+  req.on('end', () => {
+    // Send a response after fully consuming the request
+    res.sendStatus(200); // You can change the status code or message as needed
+  });
+})
 
 app.get("/streaming", (req, res) => {
   const total = 1024 * 1024

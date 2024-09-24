@@ -1,7 +1,29 @@
+let fetching = true;
+
 
 async function fetchBuffer(sizeBytes) {
     return fetch(`/buffer?size=${sizeBytes}`, { cache: 'no-store'})
 }
+
+async function submitBuffer(sizeBytes) {
+
+    const buffer = new Uint8Array(sizeBytes);
+    buffer.fill(65); // ASCII value of 'A'    
+
+    return fetch(`/submit`, {
+        method: "POST",
+        body: buffer
+    })
+}
+
+async function transferBuffer(sizeBytes) {
+    if (fetching) {
+        return fetchBuffer(sizeBytes);
+    } else {
+        return submitBuffer(sizeBytes);
+    }
+}
+
 
 let autoDownload = true;
 
@@ -189,7 +211,7 @@ async function doTest(table, size) {
     let backoff = 50;
     while (true) {
         try {
-            res = await fetchBuffer(size)
+            res = await transferBuffer(size)
             break
         } catch (e) {
             console.error(e)
@@ -277,13 +299,43 @@ document.getElementById("latency")?.addEventListener("click", async () => {
 
 document.getElementById("fetchSizes")?.addEventListener("click", testThroughput)
 
+document.getElementById("sequentialLatency")?.addEventListener("click", sequentialLatency)
+async function sequentialLatency() {
+
+    const table = new DynamicTable('container', ['Trials', 'Size Response (bytes)', 'Time', 'Average Latency (ms)'], `Sequential Latency Benchmark`);
+
+    const sizes = makeExponentialSizes(10, 6)
+
+    for (let i = 100; i <= 400; i += 100) {
+        for (const size of sizes) {
+
+            const start = performance.now()
+
+            for (let j = 0; j < i; j++) {
+                await transferBuffer(size)
+            }
+
+            const end = performance.now()
+
+            const time = end - start
+
+            table.addRow([i, size, time, time / i])
+
+        }
+
+    }
+
+    
+}
+
+
 async function loadTest(trials, size, table) {
     // calculates request per second
 
 
     const start = performance.now()
 
-    await Promise.all(Array(trials).fill(0).map(() => fetchBuffer(size)))
+    await Promise.all(Array(trials).fill(0).map(() => transferBuffer(size)))
 
     const end = performance.now()
     const time = end - start
@@ -296,6 +348,8 @@ async function loadTest(trials, size, table) {
 
     table.addRow([trials, size, time, latency, numPackets])
 }
+
+
 
 async function runTrials(trials, table) {
     // const sizes = [1, 10, 100, 1000, 10000, 100000]
@@ -335,6 +389,12 @@ function automaticTest() {
     const urlParams = new URLSearchParams(window.location.search);
     const test = urlParams.get('test');
 
+    const upload = urlParams.get('upload');
+
+    fetching = upload === null
+
+
+
     console.log(test)
 
     if (!test) {
@@ -342,11 +402,11 @@ function automaticTest() {
         return
     }
     
-    if (test === "latency") {
+    if (test === "single_latency") {
         document.getElementById("latency").click()
     } else if (test === "throughput") {
         testThroughput()
-    } else if (test === "loadtest") {
+    } else if (test === "latency") {
         document.getElementById("loadtest").click()
     }
 
@@ -355,3 +415,11 @@ function automaticTest() {
 // fetchSizes();
 
 automaticTest()
+
+
+// add a checkbox that lets you select fetching or uploading
+document.getElementById("fetching").addEventListener("change", (e) => {
+
+    fetching = e.target.checked
+
+})
