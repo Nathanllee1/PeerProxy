@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/pion/webrtc/v4"
 )
@@ -296,7 +297,7 @@ func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *webr
 	}
 	defer resp.Body.Close()
 
-	fmt.Println(headers["method"], resp.StatusCode, serverUrl)
+	fmt.Println(time.Now().Format("15:04:05"), headers["method"], resp.StatusCode, serverUrl)
 
 	// clean up request
 
