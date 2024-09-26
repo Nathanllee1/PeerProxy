@@ -10,29 +10,38 @@ export class DataChannelSendQueue {
         this.sending = false;
         this.maxBufferedAmount = maxBufferedAmount;
 
+        // Set the threshold to half of maxBufferedAmount
+        this.dataChannel.bufferedAmountLowThreshold = maxBufferedAmount / 2;
+
         this.dataChannel.addEventListener('bufferedamountlow', () => {
-            this.processQueue()
+            console.log("Processing more stuff")
+            this.processQueue();
         });
+
+
     }
 
-    async send(data: ArrayBuffer): Promise<void> {
-        if (!this.canSendImmediately(data)) {
-            console.log("Queuing ", data.byteLength, "bytes");
-            this.queue.push(data);
-            this.processQueue();
-            return;
-        }
+    send(data: ArrayBuffer): void {
 
-        try {
-            this.dataChannel.send(data);
-        } catch (error) {
-            if (error instanceof DOMException && error.name === "OperationError") {
-                this.queue.push(data);
-                this.processQueue();
-            } else {
-                throw error;
+        this.dataChannel.send(data);
+        return
+
+        if (this.canSendImmediately(data)) {
+            try {
+                this.dataChannel.send(data);
+                return;
+            } catch (error) {
+                if (error instanceof DOMException && error.name === "OperationError") {
+                    // Can't send now, will queue the data
+                } else {
+                    throw error;
+                }
             }
         }
+
+        // Queue the data and attempt to process the queue
+        this.queue.push(data);
+        this.processQueue();
     }
 
     setDataChannel(dc: RTCDataChannel): void {
@@ -40,32 +49,40 @@ export class DataChannelSendQueue {
     }
 
     private canSendImmediately(data: ArrayBuffer): boolean {
-        const canSend = this.dataChannel.bufferedAmount + this.getDataSize(data) <= this.maxBufferedAmount;
-        // console.log(canSend, this.dataChannel.readyState, this.dataChannel.bufferedAmount, this.getDataSize(data), this.maxBufferedAmount);
-
+        const canSend = this.dataChannel.bufferedAmount + data.byteLength <= this.maxBufferedAmount;
         return canSend && this.dataChannel.readyState === "open";
     }
 
     private processQueue(): void {
-        if (this.dataChannel.readyState !== "open") return;
-
-        // console.log("Processing queue", this.queue.length, "items");
-
+        console.log("Queue length", this.queue.length);
+        if (this.sending) return;
         this.sending = true;
+
+        if (this.dataChannel.readyState !== "open") {
+            this.sending = false;
+            return;
+        }
 
         while (this.queue.length > 0) {
             const data = this.queue[0];
 
-            if (!this.canSendImmediately(data)) break;
+            if (!this.canSendImmediately(data)) {
+                break;
+            }
 
-            this.dataChannel.send(data);
-            this.queue.shift();
+            try {
+                this.dataChannel.send(data);
+                this.queue.shift();
+            } catch (error) {
+                if (error instanceof DOMException && error.name === "OperationError") {
+                    // Can't send now, will try again when bufferedamountlow event fires
+                    break;
+                } else {
+                    throw error;
+                }
+            }
         }
 
         this.sending = false;
-    }
-
-    private getDataSize(data: ArrayBuffer): number {
-        return data.byteLength;
     }
 }

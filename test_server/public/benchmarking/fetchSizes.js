@@ -2,18 +2,22 @@ let fetching = true;
 
 
 async function fetchBuffer(sizeBytes) {
-    return fetch(`/buffer?size=${sizeBytes}`, { cache: 'no-store'})
+    return fetch(`/buffer?size=${sizeBytes}`, { cache: 'no-store' })
 }
 
+
+let submitId = 0
 async function submitBuffer(sizeBytes) {
 
     const buffer = new Uint8Array(sizeBytes);
     buffer.fill(65); // ASCII value of 'A'    
+    submitId += 1
 
-    return fetch(`/submit`, {
+    return fetchWithTimeout(`/submit?id=${submitId}`, {
         method: "POST",
         body: buffer
     })
+
 }
 
 async function transferBuffer(sizeBytes) {
@@ -148,7 +152,7 @@ class DynamicTable {
     }
 
     downloadCsv(filename) {
-        
+
         console.log("Downloading csv", filename)
         const csv = this.toCsv();
         const blob = new Blob([csv], { type: 'text/csv' });
@@ -168,8 +172,8 @@ function makeExponentialSizes(numSizes, maxPower = 8) {
     let sizes = []
 
     for (let i = 0; i < numSizes; i++) {
-        
-        sizes.push( (10 ** (i * increment)).toFixed(0))
+
+        sizes.push((10 ** (i * increment)).toFixed(0))
 
     }
 
@@ -184,8 +188,8 @@ function makeLinearSizes(numSizes, maxBytes = 10 ** 7) {
     let sizes = []
 
     for (let i = 0; i < numSizes; i++) {
-        
-        sizes.push( (i * increment).toFixed(0))
+
+        sizes.push((i * increment).toFixed(0))
 
     }
 
@@ -218,7 +222,7 @@ async function doTest(table, size) {
             await sleep(backoff)
             backoff *= 2
         }
-    }    
+    }
 
     // read buffer until end
     const reader = res.body.getReader()
@@ -247,7 +251,7 @@ async function testThroughput() {
     const trials = 5;
 
     for (const size of sizes) {
-        
+
         for (let i = 0; i < trials; i++) {
 
             await doTest(table, size)
@@ -304,16 +308,17 @@ async function sequentialLatency() {
 
     const table = new DynamicTable('container', ['Trials', 'Size Response (bytes)', 'Time', 'Average Latency (ms)'], `Sequential Latency Benchmark`);
 
-    const sizes = makeExponentialSizes(10, 6)
+    const sizes = makeExponentialSizes(10, 6).slice(1)
 
     for (let i = 100; i <= 400; i += 100) {
         for (const size of sizes) {
 
             const start = performance.now()
-
+            
             for (let j = 0; j < i; j++) {
                 await transferBuffer(size)
             }
+
 
             const end = performance.now()
 
@@ -325,7 +330,7 @@ async function sequentialLatency() {
 
     }
 
-    
+
 }
 
 
@@ -355,7 +360,7 @@ async function runTrials(trials, table) {
     // const sizes = [1, 10, 100, 1000, 10000, 100000]
 
     // const sizes = Array(5).fill(0).map((_, i) => ((10 ** 6) / 10) * i)
-    const sizes = makeExponentialSizes(10, 6)
+    const sizes = makeExponentialSizes(10, 6).slice(3)
     // onst table = new DynamicTable('container', ['Size Response (bytes)', 'Time', 'RPS', 'Average Latency (ms)'], `Load Test Benchmark ${trials} trials`);
 
     for (const size of sizes) {
@@ -368,7 +373,7 @@ document.getElementById("loadtest")?.addEventListener("click", async () => {
     console.log("Starting load test", new Date().toISOString())
     const bigTable = new DynamicTable('container', ['Trials', 'Size Response (bytes)', 'Time', 'Average Latency (ms)', 'Num Packets Transferred'], `Load Test Benchmark`);
 
-    for (let i = 100; i <= 400; i+=100) {
+    for (let i = 100; i <= 400; i += 100) {
         await runTrials(i, bigTable)
 
     }
@@ -378,7 +383,7 @@ document.getElementById("loadtest")?.addEventListener("click", async () => {
     if (autoDownload) {
         bigTable.downloadCsv('latency.csv');
     }
-   
+
 
 })
 
@@ -401,7 +406,7 @@ function automaticTest() {
         autoDownload = false;
         return
     }
-    
+
     if (test === "single_latency") {
         document.getElementById("latency").click()
     } else if (test === "throughput") {
@@ -422,4 +427,103 @@ document.getElementById("fetching").addEventListener("change", (e) => {
 
     fetching = e.target.checked
 
+})
+
+
+
+// submit with timeout
+function fetchWithTimeout(url, options, timeout = 1000) {
+    const fetchPromise = fetch(url, options).then(res => {
+        if (res.ok) {
+            return res;
+        } else {
+            return Promise.reject(new Error(`HTTP error: ${res.status}`));
+        }
+    });
+
+    const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('timeout')), timeout)
+    );
+
+    return Promise.race([fetchPromise, timeoutPromise]);
+}
+
+
+
+
+document.getElementById("unique100")?.addEventListener("click", async () => {
+
+    const ids = Array(100).fill(0).map((_, i) => i)
+
+    const result = await Promise.allSettled(ids.map((id) => {
+
+        return fetchWithTimeout(`/submit?id=${id}`, {
+            method: "POST",
+
+        })
+
+    }))
+
+    console.log(result)
+
+})
+
+
+async function sequentialPosts(numPosts, size) {
+
+    const ids = Array(numPosts).fill(0).map((_, i) => i)
+
+    for (const id of ids) {
+        try {
+            await fetch(`/submit?id=${id}`, {
+                method: "POST",
+                body: new Uint8Array(size).fill(65)
+    
+            })
+
+
+        } catch (e) {
+            console.error(e)
+            throw (e)
+        }
+
+    }
+
+    console.log("Done")
+}
+
+document.getElementById("unique100sequential")?.addEventListener("click", async () => {
+
+    const ids = Array(100).fill(0).map((_, i) => i)
+
+    for (const id of ids) {
+        try {
+            await fetch(`/submit?id=${id}`, {
+                method: "POST",
+                body: new Uint8Array(10 ** 6).fill(65)
+    
+            })
+
+
+        } catch (e) {
+            console.error(e)
+            throw (e)
+        }
+
+    }
+
+    console.log("Done")
+})
+
+
+let id = 0
+
+document.getElementById('submit')?.addEventListener('click', async () => {
+
+    id += 1
+
+    await fetch(`/submit?id=${id}`, {
+        method: "POST",
+        body: new Uint8Array(10 ** 6).fill(65)
+    })
 })

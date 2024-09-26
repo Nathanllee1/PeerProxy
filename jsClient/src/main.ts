@@ -106,6 +106,8 @@ async function main() {
         // dc.send(message.data.payload)
         // console.log("Sending data", message.data.payload)
         connectionManager.send(message.data.payload)
+        // dc.send(message.data.payload)
+
         break
 
       case "set-cookie":

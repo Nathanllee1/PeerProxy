@@ -101,15 +101,28 @@ app.get('/buffer', (req, res) => {
 
 
 app.post('/submit', (req, res) => {
-  req.on('data', () => {
-    // Intentionally empty: discard data chunks
+
+  // Get id query param
+  const id = req.query.id;
+
+  console.log("Processing", id)
+
+  // Initialize a variable to keep track of the total size
+  let totalSize = 0;
+
+  req.on('data', (chunk) => {
+    // Accumulate the size of each chunk
+    totalSize += chunk.length;
   });
 
   req.on('end', () => {
+    // Log the total size of the data received
+    console.log(`Received ${totalSize} bytes for id ${id}`);
     // Send a response after fully consuming the request
-    res.sendStatus(200); // You can change the status code or message as needed
+    res.sendStatus(200);
   });
-})
+});
+
 
 app.get("/streaming", (req, res) => {
   const total = 1024 * 1024

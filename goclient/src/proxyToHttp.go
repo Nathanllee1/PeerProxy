@@ -8,13 +8,36 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/pion/webrtc/v4"
 )
 
+type Stream struct {
+	dataChannel chan Packet
+	mu          sync.Mutex
+	closed      bool
+	once        sync.Once
+}
+
+func (s *Stream) Close() {
+	s.once.Do(func() {
+		close(s.dataChannel)
+		s.closed = true
+		fmt.Println("Stream closed")
+	})
+}
+
+func (s *Stream) IsClosed() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.closed
+}
+
 type PacketStream struct {
-	dataChannel       chan Packet
+	stream            Stream
 	buffer            []byte
 	done              bool
 	nextSequence      int
@@ -106,16 +129,19 @@ func makePackets(stream io.ReadCloser, dc *webrtc.DataChannel, streamIdentifier 
 
 func (r *PacketStream) Read(p []byte) (int, error) {
 	// fmt.Println("Reading")
+	//fmt.Printf("Read called: len(buffer)=%d, done=%v\n", len(r.buffer), r.done)
+	fmt.Printf("Stream address in Read: %p\n", r)
+
 	if r.done && len(r.buffer) == 0 && len(r.outOfOrderPackets) == 0 {
-		// fmt.Println("Done reading")
+		fmt.Println("Done reading")
 		return 0, io.EOF
 	}
 
 	for len(r.buffer) == 0 && !r.done {
-		// fmt.Println("Waiting for packet")
-		packet, ok := <-r.dataChannel
+		//fmt.Println("Waiting for packet")
+		packet, ok := <-r.stream.dataChannel
 
-		// fmt.Println(packet, ok)
+		//fmt.Println(packet, ok)
 
 		r.packetsIngested++
 
@@ -126,7 +152,7 @@ func (r *PacketStream) Read(p []byte) (int, error) {
 
 		// fmt.Println(packet, hex.EncodeToString(packet.Payload))
 		if packet.IsFinalMessage {
-			// fmt.Println("Final message is", packet.PacketNum)
+			//fmt.Println("Final message is", packet.PacketNum)
 			r.lastPacketFound = true
 			r.lastPacketNum = packet.PacketNum
 		}
@@ -134,7 +160,7 @@ func (r *PacketStream) Read(p []byte) (int, error) {
 		if r.packetsIngested == int(r.lastPacketNum)+1 && r.lastPacketFound {
 			// fmt.Println("packets ingested", r.packetsIngested, r.lastPacketNum+1)
 
-			close(r.dataChannel)
+			r.stream.Close()
 		}
 
 		// If the packet is next in order
@@ -208,6 +234,11 @@ func makeResponseHeaders(resp *http.Response, streamIdentifier uint32) *Packet {
 
 func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *webrtc.DataChannel) {
 	// fmt.Println(requests)
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered from panic:", r)
+		}
+	}()
 	reader := bytes.NewReader(rawData.Data)
 
 	packet, err := ParsePacket(reader)
@@ -249,15 +280,18 @@ func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *webr
 
 	// Handle a body packet
 	if !packet.IsHeader {
-		// fmt.Println("Body", packet)
+		//fmt.Println("Body", packet.StreamIdentifier, packet.IsFinalMessage, stream)
 
 		// check if data channel is closed
-		if stream.dataChannel == nil {
-			fmt.Println("Data channel closed")
+		if stream.stream.IsClosed() {
+			//fmt.Println("Send channel closed")
 			return
 		}
+		fmt.Printf("Stream address in ProxyDCMessage: %p\n", stream)
 
-		stream.dataChannel <- *packet
+		stream.stream.dataChannel <- *packet
+
+		//fmt.Println("Sent packet", packet.StreamIdentifier)
 		return
 	}
 
@@ -289,6 +323,8 @@ func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *webr
 		return http.ErrUseLastResponse
 	}}
 
+	//fmt.Println("REQUEST", time.Now().Format("15:04:05"), headers["method"], serverUrl, packet.StreamIdentifier)
+
 	resp, err := client.Do(req)
 
 	if err != nil {
@@ -297,7 +333,7 @@ func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *webr
 	}
 	defer resp.Body.Close()
 
-	fmt.Println(time.Now().Format("15:04:05"), headers["method"], resp.StatusCode, serverUrl)
+	fmt.Println(time.Now().Format("15:04:05"), headers["method"], resp.StatusCode, serverUrl, '\n')
 
 	// clean up request
 

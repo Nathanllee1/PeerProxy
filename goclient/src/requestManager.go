@@ -10,14 +10,14 @@ type clientRequest struct {
 	requests map[uint32]*PacketStream
 }
 
-func MakeNewClientRequest() clientRequest {
-	return clientRequest{
+func MakeNewClientRequest() *clientRequest {
+	return &clientRequest{
 		requests: make(map[uint32]*PacketStream),
 		clientMu: &sync.RWMutex{},
 	}
 }
 
-type requests map[string]clientRequest
+type requests map[string]*clientRequest
 
 var (
 	Requests  = make(requests)
@@ -26,7 +26,7 @@ var (
 
 func MakeNewPacketStream() *PacketStream {
 	return &PacketStream{
-		dataChannel:       make(chan Packet, 10),
+		stream:            Stream{dataChannel: make(chan Packet), mu: sync.Mutex{}, closed: false},
 		nextSequence:      0,
 		outOfOrderPackets: make(map[int][]byte),
 		packetsIngested:   0,
@@ -45,7 +45,7 @@ func (r *requests) GetClient(clientId string) (*clientRequest, bool) {
 		return nil, false
 	}
 
-	return &clientReq, true
+	return clientReq, true
 }
 
 func (r *requests) NewClient(clientId string) {
@@ -57,7 +57,6 @@ func (r *requests) NewClient(clientId string) {
 
 // returns a specific request from a client
 func (r *requests) GetStream(clientId string, requestId uint32) (*PacketStream, bool) {
-
 	client, clientExists := r.GetClient(clientId)
 
 	if !clientExists {
