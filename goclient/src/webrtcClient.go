@@ -40,7 +40,16 @@ type Answer struct {
 }
 
 func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServer, ctx context.Context, clients Clients, clientId string) *webrtc.PeerConnection {
-	peerConnection, err := webrtc.NewPeerConnection(webrtc.Configuration{
+
+	settingEngine := webrtc.SettingEngine{}
+
+	// 8 mb
+	settingEngine.SetSCTPMaxReceiveBufferSize(8 * 1024 * 1024)
+
+	api := webrtc.NewAPI(webrtc.WithSettingEngine(settingEngine))
+
+	peerConnection, err := api.NewPeerConnection(webrtc.Configuration{
+
 		ICEServers: *iceServers,
 	})
 	if err != nil {
