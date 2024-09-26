@@ -1,6 +1,6 @@
 import { setupBenchamrking } from './benchmarking';
 import { createDom, setupIframe } from './createDom';
-import { ConnectionManager } from './peer'
+import { ConnectionManager, MultiConnectionManager } from './peer'
 import './style.css'
 import { log, logSelectedCandidatePair, timers } from './utils'
 import { createTimeline } from './wrtcBenchmarks';
@@ -84,19 +84,20 @@ async function main() {
 
   registration = await initializeSW()
 
-  const connectionManager = new ConnectionManager(id)
-  const { dc, stats, pc } = await connectionManager.connect()
+  const connectionManager = new MultiConnectionManager(id, 2)
+  await connectionManager.connect()
 
   console.log("Connecting took", timers.end("connecting"))
 
 
-  logSelectedCandidatePair(pc)
+  // logSelectedCandidatePair(pc)
 
-
+  /*
   if (debug) {
     setupBenchamrking(pc)
     createTimeline(stats.events)
   }
+    */
 
   // registerProtocolHandler()
 

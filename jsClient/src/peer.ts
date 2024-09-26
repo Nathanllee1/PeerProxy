@@ -1,7 +1,7 @@
 import { DataSet } from "vis-timeline/standalone";
 import { displayError, log, logSelectedCandidatePair, timers, timers } from "./utils";
 import { DataChannelSendQueue } from "./dataChannelQueue";
-import { createFrame } from "../serviceWorker/createPacket";
+import { createFrame, parsePacket } from "../serviceWorker/createPacket";
 
 export async function fetchICE() {
 
@@ -219,9 +219,9 @@ export class ConnectionManager extends EventTarget {
   }
 
 
-  async send(data: ArrayBuffer) {
+  send(data: ArrayBuffer) {
     // console.log("Sending data")
-    await this.queue.send(data)
+    this.queue.send(data)
   }
 
   emitMessage(data: ArrayBuffer) {
@@ -229,6 +229,55 @@ export class ConnectionManager extends EventTarget {
   }
 
 
+
+
+}
+
+
+// makes multiple connections to the server
+export class MultiConnectionManager  extends EventTarget{
+
+  serverId: string
+  numConnections: number = 2
+
+  connections: ConnectionManager[] = []
+
+  constructor(serverId: string, numConnections: number = 2) {
+    super()
+    this.serverId = serverId
+    this.numConnections = numConnections
+  }
+
+  async connect() {
+
+    const connections = Array.from({ length: this.numConnections }, (_, i) => new ConnectionManager(this.serverId))
+
+    await Promise.all(connections.map(c => c.connect()))
+
+    this.connections = connections
+
+    this.connections.forEach(c => {
+      c.addEventListener("message", (e) => {
+        this.dispatchEvent(new CustomEvent("message", { detail: e.detail }))
+      })
+    })
+
+  }
+
+  async send(data: ArrayBuffer) {
+
+    const packet = parsePacket(data)
+
+    // hash to connection based on identifier
+    const connectionIndex = packet.identifier % this.numConnections
+
+    console.log("Sending through connection", connectionIndex)
+
+    const connection = this.connections[connectionIndex]
+    
+    connection.send(data)
+
+  }
 
 
 }
