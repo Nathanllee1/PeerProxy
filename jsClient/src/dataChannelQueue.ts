@@ -14,7 +14,6 @@ export class DataChannelSendQueue {
         this.dataChannel.bufferedAmountLowThreshold = maxBufferedAmount / 2;
 
         this.dataChannel.addEventListener('bufferedamountlow', () => {
-            console.log("Processing more stuff")
             this.processQueue();
         });
 
@@ -54,7 +53,6 @@ export class DataChannelSendQueue {
     }
 
     private processQueue(): void {
-        console.log("Queue length", this.queue.length);
         if (this.sending) return;
         this.sending = true;
 

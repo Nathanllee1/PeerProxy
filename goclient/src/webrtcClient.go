@@ -43,7 +43,6 @@ func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServ
 
 	settingEngine := webrtc.SettingEngine{}
 
-	// 8 mb
 	settingEngine.SetSCTPMaxReceiveBufferSize(8 * 1024 * 1024)
 
 	api := webrtc.NewAPI(webrtc.WithSettingEngine(settingEngine))
@@ -52,6 +51,7 @@ func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServ
 
 		ICEServers: *iceServers,
 	})
+
 	if err != nil {
 		panic(err)
 	}

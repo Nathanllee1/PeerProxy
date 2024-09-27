@@ -25,7 +25,6 @@ func (s *Stream) Close() {
 	s.once.Do(func() {
 		close(s.dataChannel)
 		s.closed = true
-		fmt.Println("Stream closed")
 	})
 }
 
@@ -130,10 +129,9 @@ func makePackets(stream io.ReadCloser, dc *webrtc.DataChannel, streamIdentifier 
 func (r *PacketStream) Read(p []byte) (int, error) {
 	// fmt.Println("Reading")
 	//fmt.Printf("Read called: len(buffer)=%d, done=%v\n", len(r.buffer), r.done)
-	fmt.Printf("Stream address in Read: %p\n", r)
+	// fmt.Printf("Stream address in Read: %p\n", r)
 
 	if r.done && len(r.buffer) == 0 && len(r.outOfOrderPackets) == 0 {
-		fmt.Println("Done reading")
 		return 0, io.EOF
 	}
 
@@ -287,7 +285,7 @@ func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *webr
 			//fmt.Println("Send channel closed")
 			return
 		}
-		fmt.Printf("Stream address in ProxyDCMessage: %p\n", stream)
+		// fmt.Printf("Stream address in ProxyDCMessage: %p\n", stream)
 
 		stream.stream.dataChannel <- *packet
 

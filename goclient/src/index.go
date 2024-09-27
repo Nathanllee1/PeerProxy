@@ -64,6 +64,8 @@ func main() {
 
 	FullProxy = cli.FullProxy
 
+	// use setting engine
+
 	Signal()
 
 	// Prevent the main function from exiting
