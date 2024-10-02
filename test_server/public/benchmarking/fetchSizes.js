@@ -288,6 +288,8 @@ document.getElementById("latency")?.addEventListener("click", async () => {
         const latency = await getLatency();
         table.addRow([i, latency])
 
+        console.log(latency)
+
     }
 
     console.log(autoDownload)

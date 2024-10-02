@@ -1,9 +1,9 @@
 const puppeteer = require('puppeteer');
 
-const proxyURL = 'https://foo.peerproxy.dev/benchmarking/sizetest.html';
+const proxyURL = 'https://foo.peerproxy.dev/benchmarking/sizetest.html?test=latency';
 const ngrokURL = 'https:/nathanlee.ngrok.io/benchmarking/sizetest.html';
 
-const TEST = 'ngrok'
+const TEST = 'peerproxy'
 const url = TEST === 'ngrok' ? ngrokURL : proxyURL;
 
 (async () => {

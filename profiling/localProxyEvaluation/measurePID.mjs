@@ -46,6 +46,8 @@ async function monitorProcess(command, args, interval = 1000, outputFile = `logs
 // Get command line arguments
 const [, , script, ...scriptArgs] = process.argv;
 
+console.log(script, scriptArgs);
+
 if (!script) {
     console.error('Usage: node test.mjs <script> <args>');
     process.exit(1);
