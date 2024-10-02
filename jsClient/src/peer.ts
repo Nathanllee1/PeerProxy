@@ -97,7 +97,6 @@ export async function connect(serverId: string) {
     
     dc.bufferedAmountLowThreshold = 102400
     dc.onbufferedamountlow = () => {
-      console.log("buffered amount low")
     };
     
 
