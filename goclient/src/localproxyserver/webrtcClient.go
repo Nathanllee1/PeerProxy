@@ -8,9 +8,9 @@ import (
 	"log"
 	"time"
 
+	"github.com/coder/websocket"
+	"github.com/coder/websocket/wsjson"
 	"github.com/pion/webrtc/v4"
-	"nhooyr.io/websocket"
-	"nhooyr.io/websocket/wsjson"
 )
 
 type BaseMessage struct {

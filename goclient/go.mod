@@ -4,6 +4,8 @@ go 1.21.5
 
 require github.com/pion/webrtc/v4 v4.0.0-beta.7
 
+require github.com/coder/websocket v1.8.12 // indirect
+
 require (
 	github.com/alecthomas/kong v0.9.0
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -30,5 +32,4 @@ require (
 	golang.org/x/net v0.20.0 // indirect
 	golang.org/x/sys v0.16.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	nhooyr.io/websocket v1.8.10 // indirect
 )

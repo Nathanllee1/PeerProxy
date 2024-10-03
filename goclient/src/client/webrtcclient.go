@@ -7,9 +7,9 @@ import (
 	"goClient/src/common"
 	"log"
 
+	"github.com/coder/websocket"
+	"github.com/coder/websocket/wsjson"
 	"github.com/pion/webrtc/v4"
-	"nhooyr.io/websocket"
-	"nhooyr.io/websocket/wsjson"
 )
 
 type BaseMessage struct {
@@ -49,7 +49,12 @@ func Signal(serverId string) {
 	}
 
 	// Create a new PeerConnection
-	peerConnection, err := webrtc.NewPeerConnection(webrtc.Configuration{
+	settingEngine := webrtc.SettingEngine{}
+	settingEngine.SetSCTPMaxReceiveBufferSize(8 * 1024 * 1024)
+
+	api := webrtc.NewAPI(webrtc.WithSettingEngine(settingEngine))
+
+	peerConnection, err := api.NewPeerConnection(webrtc.Configuration{
 		ICEServers: iceServers,
 	})
 	if err != nil {
