@@ -207,7 +207,7 @@
     view.setUint32(0, identifier);
     view.setUint32(4, sequenceNum);
     view.setUint16(8, payload.byteLength & 65535);
-    let flags = (messageType === "HEADER" ? 0 : 1) | (finalMessage ? 1 : 0) << 1 | (heartbeat ? 1 : 0) << 2 | (cancel ? 1 : 0) << 3;
+    let flags = (messageType === "HEADER" ? 1 : 0) | (finalMessage ? 1 : 0) << 1 | (heartbeat ? 1 : 0) << 2 | (cancel ? 1 : 0) << 3;
     view.setUint8(10, flags);
     let payloadView = new Uint8Array(buffer, headerSize);
     payloadView.set(new Uint8Array(payload));
