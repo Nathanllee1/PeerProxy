@@ -1,0 +1,1838 @@
+=== goclient/src//client/main.go ===
+package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+)
+
+func main() {
+	// Start WebRTC connection
+	go Signal("foo")
+
+	// Start HTTP server
+	http.HandleFunc("/", handleHTTPRequest)
+
+	fmt.Println("Starting HTTP server on http://localhost:8080")
+	log.Fatal(http.ListenAndServe(":3005", nil))
+}
+
+func handleHTTPRequest(w http.ResponseWriter, r *http.Request) {
+
+	// Handle incoming HTTP requests
+	ProxyHTTPRequest(w, r)
+}
+
+
+=== goclient/src//client/proxyToWebRTC.go ===
+package main
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"goClient/src/common"
+	"io"
+	"net/http"
+	"strconv"
+	"sync"
+	"time"
+
+	"github.com/pion/webrtc/v4"
+)
+
+var (
+	dataChannel      *webrtc.DataChannel // Assume this is set up in webrtcClient.go
+	dataChannelReady = make(chan struct{})
+	streamIDMu       sync.Mutex
+	currentID        uint32 = 1
+)
+
+func generateStreamID() uint32 {
+	streamIDMu.Lock()
+	defer streamIDMu.Unlock()
+	id := currentID
+	currentID++
+	return id
+}
+
+func ProxyHTTPRequest(w http.ResponseWriter, r *http.Request) {
+	<-dataChannelReady
+
+	streamID := generateStreamID()
+	fmt.Println("\nProxying request with StreamIdentifier:", streamID, "URL:", r.URL)
+
+	// Serialize request headers
+	headers := make(map[string]string)
+	headers["method"] = r.Method
+	headers["url"] = r.URL.String()
+
+	for name, values := range r.Header {
+		headers[name] = values[0] // Simplification; handle multiple values if needed
+	}
+
+	fmt.Println(headers)
+
+	headersJSON, err := json.Marshal(headers)
+	if err != nil {
+		fmt.Println("Error marshalling headers:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	// Create header packet
+	headerPacket := common.Packet{
+		StreamIdentifier: streamID,
+		PacketNum:        0,
+		PayloadLength:    uint16(len(headersJSON)),
+		IsHeader:         true,
+		IsFinalMessage:   true,
+		Payload:          headersJSON,
+	}
+
+	// Send header packet over DataChannel
+	err = dataChannel.Send(headerPacket.Serialize())
+	if err != nil {
+		fmt.Println("Error sending header packet:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	// Send request body if exists
+	if r.ContentLength > 0 {
+		sendRequestBody(r.Body, streamID)
+	} else {
+		// Send final packet indicating end of request body
+		finalPacket := common.Packet{
+			StreamIdentifier: streamID,
+			PacketNum:        1,
+			PayloadLength:    0,
+			IsHeader:         false,
+			IsFinalMessage:   true,
+			Payload:          []byte{},
+		}
+		dataChannel.Send(finalPacket.Serialize())
+	}
+
+	// Prepare to receive response
+	packetStream := NewPacketStream(30 * time.Second)
+	RequestManager.AddStream(streamID, packetStream)
+
+	// Read response headers
+	headersData, err := packetStream.ReadNextPacket()
+	if err != nil {
+		fmt.Println("Error reading response headers:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	// fmt.Println("Got response headers:", string(headersData))
+
+	// Parse response headers
+	var respHeaders http.Header
+	err = json.Unmarshal(headersData, &respHeaders)
+	if err != nil {
+		fmt.Println(respHeaders)
+		fmt.Println("Error parsing response headers:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	// Set response headers and status code
+	for name, values := range respHeaders {
+		for _, value := range values {
+			w.Header().Add(name, value)
+		}
+	}
+
+	statusCodeStr := respHeaders.Get("status_code")
+	if statusCodeStr != "" {
+		statusCode, err := strconv.Atoi(statusCodeStr)
+		if err == nil {
+			w.WriteHeader(statusCode)
+		}
+	}
+
+	// Read response body and write to ResponseWriter
+	_, err = io.Copy(w, packetStream)
+	if err != nil {
+		fmt.Println("Error copying response body:", err)
+		return
+	}
+
+	// Remove the stream from the RequestManager
+	RequestManager.RemoveStream(streamID)
+}
+
+func HandleDataChannelMessage(msg webrtc.DataChannelMessage) {
+	reader := bytes.NewReader(msg.Data)
+	packet, err := common.ParsePacket(reader)
+	if err != nil {
+		fmt.Println("Error parsing packet:", err)
+		return
+	}
+
+	/*
+		fmt.Printf("Received packet: StreamIdentifier=%d, PacketNum=%d, IsHeader=%v, IsFinalMessage=%v, PayloadLength=%v\n",
+			packet.StreamIdentifier, packet.PacketNum, packet.IsHeader, packet.IsFinalMessage, packet.PayloadLength)
+	*/
+
+	packetStream, exists := RequestManager.GetStream(packet.StreamIdentifier)
+	if !exists {
+		fmt.Println("Unknown StreamIdentifier:", packet.StreamIdentifier)
+		return
+	}
+
+	// Add packet to PacketStream
+	packetStream.AddPacket(packet)
+}
+
+func sendRequestBody(body io.ReadCloser, streamID uint32) {
+	defer body.Close()
+	const payloadSize = 65535 - 11
+	buffer := make([]byte, payloadSize)
+	packetNum := uint32(1)
+
+	for {
+		n, err := body.Read(buffer)
+		if n > 0 {
+			payload := buffer[:n]
+			bodyPacket := common.Packet{
+				StreamIdentifier: streamID,
+				PacketNum:        packetNum,
+				PayloadLength:    uint16(len(payload)),
+				IsHeader:         false,
+				IsFinalMessage:   false,
+				Payload:          payload,
+			}
+			errSend := dataChannel.Send(bodyPacket.Serialize())
+			if errSend != nil {
+				fmt.Println("Error sending body packet:", errSend)
+				return
+			}
+			packetNum++
+		}
+
+		if err != nil {
+			if err == io.EOF {
+				// Send final packet indicating end of body
+				finalPacket := common.Packet{
+					StreamIdentifier: streamID,
+					PacketNum:        packetNum,
+					PayloadLength:    0,
+					IsHeader:         false,
+					IsFinalMessage:   true,
+					Payload:          []byte{},
+				}
+				errSend := dataChannel.Send(finalPacket.Serialize())
+				if errSend != nil {
+					fmt.Println("Error sending final packet:", errSend)
+				}
+				break
+			} else {
+				fmt.Println("Error reading request body:", err)
+				return
+			}
+		}
+	}
+}
+
+
+=== goclient/src//client/requestManager.go ===
+package main
+
+import (
+	"bytes"
+	"errors"
+	"goClient/src/common"
+	"io"
+	"sync"
+	"time"
+)
+
+// PacketStream manages the packets for a single request/response stream.
+type PacketStream struct {
+	mu             sync.Mutex
+	cond           *sync.Cond
+	headerPacket   *common.Packet
+	bodyPackets    map[uint32]*common.Packet
+	nextBodySeqNum uint32
+	isClosed       bool
+	headerReceived bool
+	bodyBuffer     bytes.Buffer
+	timeout        time.Duration
+}
+
+// NewPacketStream initializes a new PacketStream.
+func NewPacketStream(timeout time.Duration) *PacketStream {
+	ps := &PacketStream{
+		bodyPackets:    make(map[uint32]*common.Packet),
+		nextBodySeqNum: 0, // Start from 0 for body packets
+		timeout:        timeout,
+	}
+	ps.cond = sync.NewCond(&ps.mu)
+	return ps
+}
+
+// AddPacket adds a packet to the PacketStream.
+func (ps *PacketStream) AddPacket(packet *common.Packet) {
+	ps.mu.Lock()
+	defer ps.mu.Unlock()
+
+	if packet.IsHeader {
+		// fmt.Printf("Received header packet: PacketNum=%d\n", packet.PacketNum)
+		ps.headerPacket = packet
+		ps.headerReceived = true
+		ps.cond.Broadcast()
+	} else {
+		// fmt.Printf("Received body packet: PacketNum=%d, IsFinalMessage=%v\n", packet.PacketNum, packet.IsFinalMessage)
+		ps.bodyPackets[packet.PacketNum] = packet
+		ps.cond.Broadcast()
+	}
+
+}
+
+// ReadNextPacket waits for and returns the header packet payload.
+func (ps *PacketStream) ReadNextPacket() ([]byte, error) {
+	ps.mu.Lock()
+	defer ps.mu.Unlock()
+
+	timeoutTimer := time.NewTimer(ps.timeout)
+	defer timeoutTimer.Stop()
+
+	for {
+		if ps.headerReceived {
+			return ps.headerPacket.Payload, nil
+		}
+
+		ps.mu.Unlock()
+		select {
+		case <-timeoutTimer.C:
+			ps.mu.Lock()
+			return nil, errors.New("timeout waiting for header packet")
+		default:
+			ps.mu.Lock()
+			ps.cond.Wait()
+		}
+	}
+}
+
+// Read implements the io.Reader interface to read the response body.
+func (ps *PacketStream) Read(p []byte) (int, error) {
+	ps.mu.Lock()
+	defer ps.mu.Unlock()
+
+	for {
+		// Wait until the header is received.
+		for !ps.headerReceived && !ps.isClosed {
+			ps.cond.Wait()
+		}
+
+		if ps.headerReceived {
+			// Check if there's data in the buffer.
+			if ps.bodyBuffer.Len() > 0 {
+				n, err := ps.bodyBuffer.Read(p)
+				if err != nil {
+					return n, err
+				}
+				return n, nil
+			}
+
+			// Process the next expected body packet.
+			packet, exists := ps.bodyPackets[ps.nextBodySeqNum]
+			if exists {
+				delete(ps.bodyPackets, ps.nextBodySeqNum)
+				ps.nextBodySeqNum++
+
+				// Write packet payload to buffer.
+				ps.bodyBuffer.Write(packet.Payload)
+
+				if packet.IsFinalMessage {
+					ps.isClosed = true
+					ps.cond.Broadcast()
+				}
+
+				// Read from the buffer.
+				n, err := ps.bodyBuffer.Read(p)
+
+				if err != nil {
+
+					return n, err
+				}
+				return n, nil
+			}
+
+			if ps.isClosed {
+				if ps.bodyBuffer.Len() > 0 {
+					n, err := ps.bodyBuffer.Read(p)
+					if err != nil {
+						return n, err
+					}
+					return n, nil
+				}
+				// No more data will be received.
+				return 0, io.EOF
+			}
+
+			// Wait for more packets to arrive.
+			ps.cond.Wait()
+		} else if ps.isClosed {
+			// Stream is closed but header not received.
+			return 0, errors.New("stream closed before header was received")
+		} else {
+			// Wait for header to arrive.
+			ps.cond.Wait()
+		}
+	}
+}
+
+// RequestManagerType manages all active PacketStreams.
+type RequestManagerType struct {
+	mu      sync.RWMutex
+	streams map[uint32]*PacketStream
+}
+
+// RequestManager is a global instance of RequestManagerType.
+var RequestManager = &RequestManagerType{
+	streams: make(map[uint32]*PacketStream),
+}
+
+// AddStream adds a new PacketStream for a given stream ID.
+func (rm *RequestManagerType) AddStream(streamID uint32, stream *PacketStream) {
+	rm.mu.Lock()
+	defer rm.mu.Unlock()
+	rm.streams[streamID] = stream
+}
+
+// GetStream retrieves a PacketStream by stream ID.
+func (rm *RequestManagerType) GetStream(streamID uint32) (*PacketStream, bool) {
+	rm.mu.RLock()
+	defer rm.mu.RUnlock()
+	stream, exists := rm.streams[streamID]
+	return stream, exists
+}
+
+// RemoveStream removes a PacketStream from the manager.
+func (rm *RequestManagerType) RemoveStream(streamID uint32) {
+	rm.mu.Lock()
+	defer rm.mu.Unlock()
+	delete(rm.streams, streamID)
+}
+
+
+=== goclient/src//client/webrtcclient.go ===
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"goClient/src/common"
+	"log"
+
+	"github.com/coder/websocket"
+	"github.com/coder/websocket/wsjson"
+	"github.com/pion/webrtc/v4"
+)
+
+type BaseMessage struct {
+	MType string `json:"mtype"`
+}
+
+type Candidate struct {
+	MType     string                  `json:"mtype"`
+	Candidate webrtc.ICECandidateInit `json:"candidate"`
+	ClientId  string                  `json:"clientId"`
+	Id        string                  `json:"id"` // Receiver's Id (server's Id)
+}
+
+type Offer struct {
+	MType    string                    `json:"mtype"`
+	Offer    webrtc.SessionDescription `json:"offer"`
+	ClientId string                    `json:"clientId"`
+	Id       string                    `json:"id"` // Receiver's Id (server's Id)
+}
+
+type Answer struct {
+	MType    string                    `json:"mtype"`
+	Answer   webrtc.SessionDescription `json:"answer"`
+	ClientId string                    `json:"clientId"`
+}
+
+type IdAssignment struct {
+	MType string `json:"mtype"`
+	Id    string `json:"id"`
+}
+
+func Signal(serverId string) {
+	// Fetch ICE servers
+	iceServers, err := common.FetchICE("https://important-eel-61.deno.dev/")
+	if err != nil {
+		panic(err)
+	}
+
+	// Create a new PeerConnection
+	settingEngine := webrtc.SettingEngine{}
+	settingEngine.SetSCTPMaxReceiveBufferSize(8 * 1024 * 1024)
+
+	api := webrtc.NewAPI(webrtc.WithSettingEngine(settingEngine))
+
+	peerConnection, err := api.NewPeerConnection(webrtc.Configuration{
+		ICEServers: iceServers,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	// Create a DataChannel
+	dataChannel, err = peerConnection.CreateDataChannel("data", nil)
+	if err != nil {
+		panic(err)
+	}
+
+	// Set up handlers for DataChannel events
+	dataChannel.OnOpen(func() {
+		fmt.Println("Data channel opened")
+
+		close(dataChannelReady)
+	})
+
+	dataChannel.OnMessage(func(msg webrtc.DataChannelMessage) {
+		// Handle incoming messages
+		go HandleDataChannelMessage(msg)
+	})
+
+	// Connect to the signaling server
+	url := "wss://peepsignal.fly.dev/?role=client"
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	ws, _, err := websocket.Dial(ctx, url, nil)
+	if err != nil {
+		panic(err)
+	}
+	defer ws.Close(websocket.StatusNormalClosure, "")
+
+	var clientId string
+
+	// Create a channel to wait until we get assigned an ID
+	idAssigned := make(chan struct{})
+
+	// Start reading messages from the signaling server
+	go func() {
+		for {
+			var msg json.RawMessage
+			err := wsjson.Read(ctx, ws, &msg)
+			if err != nil {
+				log.Println("Error reading from signaling server:", err)
+				close(idAssigned)
+				return
+			}
+
+			var baseMsg BaseMessage
+			err = json.Unmarshal(msg, &baseMsg)
+			if err != nil {
+				log.Println("Error unmarshalling base message:", err)
+				continue
+			}
+
+			switch baseMsg.MType {
+			case "idAssgn":
+				var idAsgn IdAssignment
+				err = json.Unmarshal(msg, &idAsgn)
+				if err != nil {
+					log.Println("Error unmarshalling idAssgn message:", err)
+					continue
+				}
+				clientId = idAsgn.Id
+				fmt.Println("Assigned Client ID:", clientId)
+				close(idAssigned) // Signal that we have received the ID
+			case "answer":
+				var answerMessage Answer
+				err = json.Unmarshal(msg, &answerMessage)
+				if err != nil {
+					log.Println("Error unmarshalling answer message:", err)
+					continue
+				}
+				err = peerConnection.SetRemoteDescription(answerMessage.Answer)
+				if err != nil {
+					log.Println("Error setting remote description:", err)
+					continue
+				}
+			case "candidate":
+				var candidateMsg Candidate
+				err = json.Unmarshal(msg, &candidateMsg)
+				if err != nil {
+					log.Println("Error unmarshalling candidate message:", err)
+					continue
+				}
+
+				err = peerConnection.AddICECandidate(candidateMsg.Candidate)
+				if err != nil {
+					log.Println("Error adding ICE candidate:", err)
+				}
+			case "heartbeat":
+				// Handle heartbeat if necessary
+			default:
+				log.Println("Unknown message type:", baseMsg.MType)
+			}
+		}
+	}()
+
+	// Wait until we have received the ClientId
+	<-idAssigned
+
+	// Now that we have the ClientId, create an offer
+	offer, err := peerConnection.CreateOffer(nil)
+	if err != nil {
+		panic(err)
+	}
+
+	// Set local description
+	err = peerConnection.SetLocalDescription(offer)
+	if err != nil {
+		panic(err)
+	}
+
+	// Send the offer to the server via the signaling server
+	offerMessage := Offer{
+		MType:    "offer",
+		Offer:    offer,
+		ClientId: clientId, // Use assigned ClientId (sender's ID)
+		Id:       serverId, // Receiver's Id (server's ID)
+	}
+
+	err = wsjson.Write(ctx, ws, offerMessage)
+	if err != nil {
+		panic(err)
+	}
+
+	// Handle ICE candidates
+	peerConnection.OnICECandidate(func(candidate *webrtc.ICECandidate) {
+		if candidate == nil {
+			return
+		}
+		candidateMsg := Candidate{
+			MType:     "candidate",
+			Candidate: candidate.ToJSON(),
+			ClientId:  clientId, // Sender's ClientId
+			Id:        serverId, // Receiver's Id (server's Id)
+		}
+		// Send candidate to the server via signaling server
+		if err := wsjson.Write(ctx, ws, candidateMsg); err != nil {
+			log.Println("Error sending ICE candidate:", err)
+		}
+	})
+
+	// Keep the main function running
+	select {}
+}
+
+
+=== goclient/src//common/getconfig.go ===
+package common
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+
+	"github.com/pion/webrtc/v4"
+)
+
+// ICEConfig represents the structure of the ICE server response
+type ICEServerConfig struct {
+	URLs       []string `json:"urls"` // Use "urls" to match the JSON structure, accommodating both single and multiple URLs.
+	Username   string   `json:"username,omitempty"`
+	Credential string   `json:"credential,omitempty"`
+}
+
+func (config *ICEServerConfig) UnmarshalJSON(data []byte) error {
+	// Define a shadow struct to avoid infinite recursion during unmarshaling.
+	var raw struct {
+		URLs       interface{} `json:"urls"`
+		Username   string      `json:"username,omitempty"`
+		Credential string      `json:"credential,omitempty"`
+	}
+
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+
+	config.Username = raw.Username
+	config.Credential = raw.Credential
+
+	switch v := raw.URLs.(type) {
+	case string:
+		config.URLs = []string{v}
+	case []interface{}:
+		for _, u := range v {
+			if url, ok := u.(string); ok {
+				config.URLs = append(config.URLs, url)
+			}
+		}
+	default:
+		return fmt.Errorf("unexpected type for URLs field")
+	}
+
+	return nil
+}
+
+// FetchICE fetches the ICE server configurations from the specified URL
+func FetchICE(url string) ([]webrtc.ICEServer, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var iceConfig []ICEServerConfig
+	err = json.Unmarshal(body, &iceConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	var iceServers []webrtc.ICEServer
+	for _, server := range iceConfig {
+		iceServers = append(iceServers, webrtc.ICEServer{
+			URLs:       server.URLs,
+			Username:   server.Username,
+			Credential: server.Credential,
+		})
+	}
+
+	return iceServers, nil
+}
+
+
+=== goclient/src//common/logger.go ===
+package common
+
+import (
+	"os"
+	"strconv"
+	"sync"
+	"time"
+)
+
+type JSONWriter struct {
+	file *os.File
+	mu   sync.Mutex
+}
+
+var Writer *JSONWriter
+
+// initialize a new file to store logs that is named the time and date
+func InitializeLog() {
+	// make a new file with the current time and date
+	filename := "logs/" + time.Now().Format("2006-01-02T15-04-05") + ".json"
+	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+
+	if err != nil {
+		panic(err)
+	}
+
+	Writer = &JSONWriter{file: file}
+}
+
+func (w *JSONWriter) LogRequest() {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	currentTime := time.Now().Unix()
+
+	w.file.Write([]byte(`{"time": ` + strconv.FormatInt(currentTime, 10) + `}` + "\n"))
+}
+
+
+=== goclient/src//common/packet.go ===
+package common
+
+import (
+	"bytes"
+	"encoding/binary"
+	"io"
+)
+
+type Header struct {
+	StreamIdentifier uint32
+	PacketNum        uint32
+	PayloadLength    uint16
+	Flags            uint8
+}
+
+type Packet struct {
+	StreamIdentifier uint32
+	PacketNum        uint32
+	PayloadLength    uint16
+	IsHeader         bool
+	IsFinalMessage   bool
+	Payload          []byte
+	IsHeartbeat      bool
+	IsCancel         bool
+}
+
+func (p *Packet) Serialize() []byte {
+
+	headerSize := 11
+	buffer := make([]byte, headerSize+int(p.PayloadLength))
+
+	buf := bytes.NewBuffer((buffer[:0]))
+
+	binary.Write(buf, binary.BigEndian, p.StreamIdentifier)
+	binary.Write(buf, binary.BigEndian, p.PacketNum)
+	binary.Write(buf, binary.BigEndian, p.PayloadLength)
+
+	flags := Flags{
+		IsFinalMessage: p.IsFinalMessage,
+		IsHeader:       p.IsHeader,
+	}.MakeFlags()
+
+	buf.WriteByte(flags)
+	buf.Write(p.Payload)
+
+	return buf.Bytes()
+
+}
+
+type Flags struct {
+	IsFinalMessage bool
+	IsHeader       bool
+	IsHeartbeat    bool
+	IsCancel       bool
+}
+
+func (flags Flags) MakeFlags() uint8 {
+	var result uint8
+	if flags.IsHeader {
+		result = 1
+	} else {
+		result = 0
+	}
+	if flags.IsFinalMessage {
+		result |= 1 << 1 // Shift 1 left by 1 bit and OR it with result
+	}
+	return result
+}
+
+func ParsePacket(rawData io.Reader) (*Packet, error) {
+
+	var header Header
+	binary.Read(rawData, binary.BigEndian, &header)
+
+	payload := make([]byte, header.PayloadLength)
+	_, err := io.ReadFull(rawData, payload)
+
+	if err != nil {
+		return nil, err
+	}
+
+	flags := parseFlags(header.Flags)
+
+	return &Packet{
+		StreamIdentifier: header.StreamIdentifier,
+		PacketNum:        header.PacketNum,
+		PayloadLength:    header.PayloadLength,
+		IsHeader:         flags.IsHeader,
+		IsFinalMessage:   flags.IsFinalMessage,
+		IsHeartbeat:      flags.IsHeartbeat,
+		Payload:          payload,
+		IsCancel:         flags.IsCancel,
+	}, nil
+}
+
+func parseFlags(rawFlags uint8) Flags {
+
+	var flags Flags
+
+	// Extract the IsHeader flag (bit 0)
+	messageType := rawFlags & 0x01
+	flags.IsHeader = messageType == 1
+
+	// Extract the IsFinalMessage flag (bit 1)
+	finalMessageFlag := (rawFlags >> 1) & 0x01
+	flags.IsFinalMessage = finalMessageFlag == 1
+
+	// Extract the IsHeartbeat flag (bit 2)
+	heartbeatFlag := (rawFlags >> 2) & 0x01
+	flags.IsHeartbeat = heartbeatFlag == 1
+
+	// Extract the IsCancel flag (bit 3)
+	cancelFlag := (rawFlags >> 3) & 0x01
+	flags.IsCancel = cancelFlag == 1
+
+	return flags
+}
+
+
+=== goclient/src//httpBenchmarker/tester.go ===
+package main
+
+import (
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"time"
+)
+
+const (
+	url        = "http://localhost:3000"
+	trials     = 1000
+	mb         = 1024 * 1024
+	numMBs     = 5
+	bufferSize = mb * numMBs
+)
+
+var client = &http.Client{
+	Transport: &http.Transport{
+		MaxIdleConns:        100,
+		MaxIdleConnsPerHost: 100,
+		MaxConnsPerHost:     100, // This limits the maximum number of connections per host
+	},
+}
+
+func main() {
+	for i := 0; i < trials; i++ {
+		start := time.Now()
+
+		resp, err := client.Get(fmt.Sprintf("%s/buffer?size=%d", url, bufferSize))
+		if err != nil {
+			fmt.Println("Error:", err)
+			continue
+		}
+		// Read response body to complete the request
+		_, err = ioutil.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			fmt.Println("Error reading response:", err)
+			continue
+		}
+
+		end := time.Since(start).Seconds()
+
+		fmt.Printf("%.2f MBs\n", float64(numMBs)/end)
+	}
+}
+
+
+=== goclient/src//localproxyserver/dummyData.go ===
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"goClient/src/common"
+
+	"github.com/pion/webrtc/v4"
+)
+
+// returns an array of dummy packets
+func GetDummyData(dummySize int32, streamId uint32) []common.Packet {
+
+	packets := []common.Packet{}
+	emptyJSON, _ := json.Marshal(map[string]interface{}{
+		"status":      []string{"ok"},
+		"status_code": []string{"200"}})
+
+	headerPacket := common.Packet{
+		StreamIdentifier: streamId,
+		PacketNum:        0,
+		PayloadLength:    uint16(len(emptyJSON)),
+		IsHeader:         true,
+		IsFinalMessage:   true,
+		Payload:          emptyJSON,
+	}
+
+	fmt.Println("header packet", headerPacket)
+
+	packets = append(packets, headerPacket)
+
+	packetNum := 0
+	// packets are 64kb, make right numbe rof packet to reach dummySize
+	for i := int32(0); i < dummySize; i += 6000 {
+
+		bodyPacket := common.Packet{
+			StreamIdentifier: (streamId),
+			PacketNum:        uint32(packetNum),
+			PayloadLength:    uint16(6000),
+			IsHeader:         false,
+			IsFinalMessage:   false,
+			Payload:          make([]byte, 6000),
+		}
+		packets = append(packets, bodyPacket)
+
+		packetNum++
+
+	}
+
+	// last packet
+	bodyPacket := common.Packet{
+		StreamIdentifier: (streamId),
+		PacketNum:        uint32(packetNum),
+		PayloadLength:    uint16(0),
+		IsHeader:         false,
+		IsFinalMessage:   true,
+		Payload:          make([]byte, 0),
+	}
+
+	packets = append(packets, bodyPacket)
+
+	return packets
+
+}
+
+func SendDummyData(dummySize int32, streamId uint32, dc *webrtc.DataChannel) {
+	packets := GetDummyData(dummySize, streamId)
+
+	fmt.Println("Sending", len(packets), "packets")
+
+	for _, packet := range packets {
+		dc.Send(packet.Serialize())
+	}
+}
+
+
+=== goclient/src//localproxyserver/main.go ===
+package main
+
+import (
+	"fmt"
+	"goClient/src/common"
+	"log"
+	"math/rand"
+	"net/http"
+	_ "net/http/pprof"
+	"runtime"
+
+	"github.com/alecthomas/kong"
+)
+
+type CLI struct {
+	Port          int    `arg:"" name:"port" help:"Port number to listen on."`
+	ID            string `optional:"" name:"id" help:"Identifier for the peer."`
+	FullProxy     bool   `optional:"" name:"fullProxy" help:"Enable or disable full proxy mode."`
+	RecordRequest bool   `optional:"" name:"recordRequest" help:"Enable or disable debug mode."`
+}
+
+var ProxyPort string = "3000"
+var ServerId string = "foo"
+var FullProxy bool = false
+var RecordRequest bool = false
+
+// Generate random 6 char string
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz")
+
+func RandStringRunes(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
+}
+
+func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	runtime.SetMutexProfileFraction(1)
+
+	var cli CLI
+	ctx := kong.Parse(&cli,
+		kong.UsageOnError(),
+	)
+
+	// Validate and use the parsed flags
+	if cli.Port == 0 {
+		fmt.Println("Usage: peerproxy <port> --id <id>")
+		ctx.Exit(1)
+	}
+
+	RecordRequest = cli.RecordRequest
+
+	if cli.RecordRequest {
+		common.InitializeLog()
+
+	}
+
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
+
+	ProxyPort = fmt.Sprintf("%d", cli.Port)
+	ServerId = cli.ID
+
+	if cli.ID == "" {
+		ServerId = RandStringRunes(6)
+	}
+
+	FullProxy = cli.FullProxy
+
+	// use setting engine
+
+	Signal()
+
+	// Prevent the main function from exiting
+	select {}
+}
+
+
+=== goclient/src//localproxyserver/proxyToHttp.go ===
+package main
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"goClient/src/common"
+	"io"
+	"net/http"
+	"strconv"
+	"sync"
+	"time"
+
+	"github.com/pion/webrtc/v4"
+)
+
+type Stream struct {
+	dataChannel chan common.Packet
+	mu          sync.Mutex
+	closed      bool
+	once        sync.Once
+}
+
+func (s *Stream) Close() {
+	s.once.Do(func() {
+		close(s.dataChannel)
+		s.closed = true
+	})
+}
+
+func (s *Stream) IsClosed() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.closed
+}
+
+type PacketStream struct {
+	stream            Stream
+	buffer            []byte
+	done              bool
+	nextSequence      int
+	outOfOrderPackets map[int][]byte
+	lastPacketNum     uint32
+	lastPacketFound   bool
+	packetsIngested   int
+	cancel            context.CancelFunc
+}
+
+func sendPacket(dc *webrtc.DataChannel, packet *common.Packet) error {
+
+	err := dc.Send(packet.Serialize())
+
+	if err != nil {
+		fmt.Println("Error sending packet", err)
+
+		return err
+	}
+
+	return nil
+
+}
+
+func makePackets(stream io.ReadCloser, dc *webrtc.DataChannel, streamIdentifier uint32, ctx context.Context, cancel context.CancelFunc) {
+	// const payloadSize = 16*1024 - 11
+	const payloadSize = 65535 - 11
+
+	buffer := make([]byte, payloadSize)
+
+	packetNum := 0
+
+	var payload []byte
+
+	for {
+		select {
+		case <-ctx.Done():
+			fmt.Println("Context done")
+			return
+		default:
+			n, err := io.ReadFull(stream, buffer)
+			fmt.Println("Read", n)
+			payload = buffer
+			if err != nil {
+				if err == io.EOF {
+					// End of file reached
+					finalPacket := common.Packet{
+						StreamIdentifier: streamIdentifier,
+						PacketNum:        uint32(packetNum),
+						PayloadLength:    uint16(0),
+						IsHeader:         false,
+						IsFinalMessage:   true,
+						Payload:          make([]byte, 0),
+					}
+
+					dc.Send(finalPacket.Serialize())
+					return
+				}
+				if err == io.ErrUnexpectedEOF {
+					// Last chunk might be less than chunk size, process what was read
+					payload = buffer[:n]
+				}
+			}
+
+			bodyPacket := common.Packet{
+				StreamIdentifier: streamIdentifier,
+				PacketNum:        uint32(packetNum),
+				PayloadLength:    uint16(len(payload)),
+				IsHeader:         false,
+				IsFinalMessage:   false,
+				Payload:          payload,
+			}
+
+			err = sendPacket(dc, &bodyPacket)
+
+			if err != nil {
+				// close ctx
+				cancel()
+
+			}
+
+			packetNum++
+
+			// time.Sleep(10 * time.Millisecond)
+		}
+	}
+
+}
+
+func (r *PacketStream) Read(p []byte) (int, error) {
+	// fmt.Println("Reading")
+	//fmt.Printf("Read called: len(buffer)=%d, done=%v\n", len(r.buffer), r.done)
+	// fmt.Printf("Stream address in Read: %p\n", r)
+
+	if r.done && len(r.buffer) == 0 && len(r.outOfOrderPackets) == 0 {
+		return 0, io.EOF
+	}
+
+	for len(r.buffer) == 0 && !r.done {
+		//fmt.Println("Waiting for packet")
+		packet, ok := <-r.stream.dataChannel
+
+		//fmt.Println(packet, ok)
+
+		r.packetsIngested++
+
+		if !ok {
+			r.done = true
+			break
+		}
+
+		// fmt.Println(packet, hex.EncodeToString(packet.Payload))
+		if packet.IsFinalMessage {
+			//fmt.Println("Final message is", packet.PacketNum)
+			r.lastPacketFound = true
+			r.lastPacketNum = packet.PacketNum
+		}
+
+		if r.packetsIngested == int(r.lastPacketNum)+1 && r.lastPacketFound {
+			// fmt.Println("packets ingested", r.packetsIngested, r.lastPacketNum+1)
+
+			r.stream.Close()
+		}
+
+		// If the packet is next in order
+		if packet.PacketNum == uint32(r.nextSequence) {
+			// fmt.Println("Adding packet", r.nextSequence)
+			r.buffer = append(r.buffer, packet.Payload...)
+			r.nextSequence++
+		} else if packet.PacketNum > uint32(r.nextSequence) { // otherwise add it to be conumed later
+			r.outOfOrderPackets[int(packet.PacketNum)] = packet.Payload
+			// fmt.Println("Adding out of order", packet.PacketNum)
+
+		}
+
+		// Consume any potential items in the out of order map
+		for {
+			// If the next packet is in the out of order map
+
+			data, exists := r.outOfOrderPackets[r.nextSequence]
+
+			if !exists {
+				break
+			}
+
+			r.buffer = append(r.buffer, data...)
+			delete(r.outOfOrderPackets, r.nextSequence)
+			r.nextSequence++
+		}
+	}
+
+	n := copy(p, r.buffer)
+	r.buffer = r.buffer[n:]
+
+	return n, nil
+
+}
+
+type Headers map[string]string
+
+func parseHeaders(rawHeaders []byte) Headers {
+	var headers Headers
+	json.Unmarshal(rawHeaders, &headers)
+
+	return headers
+
+}
+
+func makeResponseHeaders(resp *http.Response, streamIdentifier uint32) *common.Packet {
+
+	resp.Header["status"] = []string{resp.Status}
+	resp.Header["status_code"] = []string{strconv.Itoa(resp.StatusCode)}
+
+	respHeaders, err := json.Marshal(resp.Header)
+
+	if err != nil {
+		fmt.Println("Error parsing response headers:", err)
+	}
+
+	// fmt.Println(respHeaders)
+
+	packet := common.Packet{
+		PacketNum:        0,
+		PayloadLength:    uint16(len(respHeaders)),
+		IsFinalMessage:   true,
+		IsHeader:         true,
+		StreamIdentifier: streamIdentifier,
+		Payload:          respHeaders,
+	}
+
+	return &packet
+}
+
+var transport = &http.Transport{
+	MaxIdleConns:        100,
+	IdleConnTimeout:     90 * time.Second,
+	MaxIdleConnsPerHost: 100,
+	MaxConnsPerHost:     100,
+}
+
+var client = &http.Client{Transport: transport, CheckRedirect: func(req *http.Request, via []*http.Request) error {
+	fmt.Println("Redirecting")
+	return http.ErrUseLastResponse
+}}
+
+func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *webrtc.DataChannel) {
+	// fmt.Println(requests)
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered from panic:", r)
+		}
+	}()
+	reader := bytes.NewReader(rawData.Data)
+
+	packet, err := common.ParsePacket(reader)
+
+	if packet.IsHeartbeat {
+		return
+	}
+
+	if packet.IsCancel {
+		fmt.Println("Canceling request", packet.StreamIdentifier)
+
+		if stream, exists := Requests.GetStream(clientId, packet.StreamIdentifier); exists {
+
+			stream.cancel()
+		}
+		return
+	}
+
+	if err != nil {
+		fmt.Println("Error parsing packet: ", err)
+	}
+
+	// If the client doesn't exist, create it
+	if _, exists := Requests.GetClient(clientId); !exists {
+		Requests.NewClient(clientId)
+	}
+
+	// If the stream doesn't exist, create it
+	if _, exists := Requests.GetStream(clientId, packet.StreamIdentifier); !exists {
+		err := Requests.AddStream(clientId, packet.StreamIdentifier)
+
+		if err != nil {
+			fmt.Println("Error adding stream", err)
+			return
+		}
+	}
+
+	stream, _ := Requests.GetStream(clientId, packet.StreamIdentifier)
+
+	// Handle a body packet
+	if !packet.IsHeader {
+		//fmt.Println("Body", packet.StreamIdentifier, packet.IsFinalMessage, stream)
+
+		// check if data channel is closed
+		if stream.stream.IsClosed() {
+			//fmt.Println("Send channel closed")
+			return
+		}
+		// fmt.Printf("Stream address in ProxyDCMessage: %p\n", stream)
+
+		stream.stream.dataChannel <- *packet
+
+		//fmt.Println("Sent packet", packet.StreamIdentifier)
+		return
+	}
+
+	// Handle a header packet and start an http request
+	ctx, cancel := context.WithCancel(context.Background())
+	stream.cancel = cancel
+
+	headers := parseHeaders(packet.Payload)
+
+	fmt.Println(headers)
+
+	// Construct and make http request
+	serverUrl := fmt.Sprintf("http://localhost:%s%s", ProxyPort, headers["url"])
+	// fmt.Println(headers["method"], serverUrl)
+	req, err := http.NewRequest(headers["method"], serverUrl, stream)
+
+	req = req.WithContext(ctx)
+
+	if err != nil {
+		fmt.Println("Error creating request", err)
+	}
+
+	// Add headers
+	for headerName, headerVal := range headers {
+		// fmt.Println("Adding header", headerName, headerVal)
+		req.Header.Add(headerName, headerVal)
+	}
+
+	//fmt.Println("REQUEST", time.Now().Format("15:04:05"), headers["method"], serverUrl, packet.StreamIdentifier)
+	// clean up request
+
+	resp, err := client.Do(req)
+
+	if err != nil {
+		fmt.Println("Error sending request", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	fmt.Println(time.Now().Format("15:04:05"), headers["method"], resp.StatusCode, serverUrl, '\n')
+
+	headerPacket := makeResponseHeaders(resp, packet.StreamIdentifier)
+	dc.Send(headerPacket.Serialize())
+
+	makePackets(resp.Body, dc, packet.StreamIdentifier, ctx, cancel)
+
+	Requests.RemoveStream(clientId, packet.StreamIdentifier)
+
+	if RecordRequest {
+		go common.Writer.LogRequest()
+
+	}
+
+}
+
+
+=== goclient/src//localproxyserver/requestManager.go ===
+package main
+
+import (
+	"errors"
+	"goClient/src/common"
+	"sync"
+)
+
+type clientRequest struct {
+	clientMu *sync.RWMutex
+	requests map[uint32]*PacketStream
+}
+
+func MakeNewClientRequest() *clientRequest {
+	return &clientRequest{
+		requests: make(map[uint32]*PacketStream),
+		clientMu: &sync.RWMutex{},
+	}
+}
+
+type requests map[string]*clientRequest
+
+var (
+	Requests  = make(requests)
+	RequestMu sync.RWMutex
+)
+
+func MakeNewPacketStream() *PacketStream {
+	return &PacketStream{
+		stream:            Stream{dataChannel: make(chan common.Packet), mu: sync.Mutex{}, closed: false},
+		nextSequence:      0,
+		outOfOrderPackets: make(map[int][]byte),
+		packetsIngested:   0,
+		lastPacketNum:     0,
+		lastPacketFound:   false,
+	}
+}
+
+func (r *requests) GetClient(clientId string) (*clientRequest, bool) {
+	RequestMu.RLock()
+	defer RequestMu.RUnlock()
+
+	clientReq, clientExists := (*r)[clientId]
+
+	if !clientExists {
+		return nil, false
+	}
+
+	return clientReq, true
+}
+
+func (r *requests) NewClient(clientId string) {
+	RequestMu.Lock()
+	defer RequestMu.Unlock()
+
+	(*r)[clientId] = MakeNewClientRequest()
+}
+
+// returns a specific request from a client
+func (r *requests) GetStream(clientId string, requestId uint32) (*PacketStream, bool) {
+	client, clientExists := r.GetClient(clientId)
+
+	if !clientExists {
+		return nil, false
+	}
+
+	client.clientMu.RLock()
+	defer client.clientMu.RUnlock()
+
+	request, requestExists := client.requests[requestId]
+
+	if !requestExists {
+		return nil, false
+	}
+
+	return request, true
+}
+
+func (r *requests) AddStream(clientId string, requestId uint32) error {
+	client, clientExists := r.GetClient(clientId)
+
+	if !clientExists {
+		return errors.New("client does not exist")
+	}
+
+	client.clientMu.Lock()
+	defer client.clientMu.Unlock()
+
+	client.requests[requestId] = MakeNewPacketStream()
+
+	return nil
+}
+
+func (r *requests) RemoveStream(clientId string, requestId uint32) error {
+	client, clientExists := r.GetClient(clientId)
+
+	if !clientExists {
+		return errors.New("client does not exist")
+	}
+
+	client.clientMu.Lock()
+	defer client.clientMu.Unlock()
+
+	delete(client.requests, requestId)
+
+	return nil
+}
+
+
+=== goclient/src//localproxyserver/webrtcClient.go ===
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"goClient/src/common"
+	"log"
+	"time"
+
+	"github.com/coder/websocket"
+	"github.com/coder/websocket/wsjson"
+	"github.com/pion/webrtc/v4"
+)
+
+type BaseMessage struct {
+	MType string `json:"mtype"`
+}
+
+type IdAssignment struct {
+	MType string `json:"mtype"`
+	Id    string `json:"id"`
+}
+
+type Candidate struct {
+	MType     string                  `json:"mtype"`
+	Candidate webrtc.ICECandidateInit `json:"candidate"`
+	ClientId  string                  `json:"clientId"`
+}
+
+type Offer struct {
+	MTtype   string                    `json:"mtype"`
+	Offer    webrtc.SessionDescription `json:"offer"`
+	ClientId string                    `json:"clientId"`
+}
+
+type Answer struct {
+	MTtype   string                    `json:"mtype"`
+	Answer   webrtc.SessionDescription `json:"answer"`
+	ClientId string                    `json:"clientId"`
+}
+
+func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServer, ctx context.Context, clients Clients, clientId string) *webrtc.PeerConnection {
+
+	settingEngine := webrtc.SettingEngine{}
+
+	settingEngine.SetSCTPMaxReceiveBufferSize(8 * 1024 * 1024)
+
+	api := webrtc.NewAPI(webrtc.WithSettingEngine(settingEngine))
+
+	peerConnection, err := api.NewPeerConnection(webrtc.Configuration{
+
+		ICEServers: *iceServers,
+	})
+
+	if err != nil {
+		panic(err)
+	}
+
+	peerConnection.OnICECandidate(func(c *webrtc.ICECandidate) {
+		if c == nil {
+			return
+		}
+
+		candidate := Candidate{
+			MType:     "candidate",
+			Candidate: c.ToJSON(),
+			ClientId:  offer.ClientId,
+		}
+
+		//fmt.Println(candidate)
+
+		outbound, marshalErr := json.Marshal(candidate)
+		if marshalErr != nil {
+			panic(marshalErr)
+		}
+
+		if err = ws.Write(ctx, websocket.MessageText, outbound); err != nil {
+			panic(err)
+		}
+	})
+
+	peerConnection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
+		fmt.Printf("ICE Connection State has changed: %s\n", connectionState.String())
+
+		if connectionState == webrtc.ICEConnectionStateClosed {
+			delete(clients, clientId)
+		}
+	})
+	/*
+		var id uint16 = 0
+		var ordered bool = false
+		var negotiated bool = false
+		d, err := peerConnection.CreateDataChannel("data", &webrtc.DataChannelInit{
+			ID:         &id,
+			Ordered:    &ordered,
+			Negotiated: &negotiated,
+		})
+
+		d.OnOpen(func() {
+			fmt.Println("Data channel opened")
+
+		})
+
+		d.OnMessage(func(message webrtc.DataChannelMessage) {
+			// fmt.Printf("Message from DataChannel '%s': '%s'\n", d.Label(), string(message.Data))
+			fmt.Println(message.Data)
+			go ProxyDCMessage(message, clientId, d)
+
+		})
+
+		defer d.Close()
+	*/
+
+	// Send the current time via a DataChannel to the remote peer every 3 seconds
+	peerConnection.OnDataChannel(func(d *webrtc.DataChannel) {
+		d.OnOpen(func() {
+			fmt.Println("Data channel opened")
+
+		})
+
+		d.OnMessage(func(message webrtc.DataChannelMessage) {
+			// fmt.Printf("Message from DataChannel '%s': '%s'\n", d.Label(), string(message.Data))
+
+			go ProxyDCMessage(message, clientId, d)
+
+		})
+
+		defer d.Close()
+	})
+
+	if err = peerConnection.SetRemoteDescription(offer.Offer); err != nil {
+		panic(err)
+	}
+
+	answer, answerErr := peerConnection.CreateAnswer(nil)
+	if answerErr != nil {
+		panic(answerErr)
+	}
+
+	if err = peerConnection.SetLocalDescription(answer); err != nil {
+		panic(err)
+	}
+
+	answerRet := Answer{
+		MTtype:   "answer",
+		Answer:   answer,
+		ClientId: offer.ClientId,
+	}
+
+	outbound, marshalErr := json.Marshal(answerRet)
+	if marshalErr != nil {
+		panic(marshalErr)
+	}
+
+	if err = ws.Write(ctx, websocket.MessageText, outbound); err != nil {
+		panic(err)
+	}
+
+	return peerConnection
+
+}
+
+func readWSMessages(clients Clients, iceServers *[]webrtc.ICEServer, connection *websocket.Conn, ctx context.Context) {
+
+	candidates := make(map[string][]webrtc.ICECandidateInit)
+
+	// Set the connection to receive messages
+	for {
+		// Create a variable to store the received message
+		var rawMsg json.RawMessage
+
+		// Read message using wsjson
+		err := wsjson.Read(ctx, connection, &rawMsg)
+		if err != nil {
+			fmt.Println("error reading message:", err)
+			return
+		}
+
+		// Print the received message
+		// fmt.Printf("Received: %v\n", rawMsg)
+
+		var baseMsg BaseMessage
+		json.Unmarshal(rawMsg, &baseMsg)
+
+		switch baseMsg.MType {
+		case "idAssgn":
+
+			var idAsgn IdAssignment
+			json.Unmarshal(rawMsg, &idAsgn)
+
+			// log.Printf("Id: %s", idAsgn.Id)
+
+		case "offer":
+
+			var offer Offer
+			json.Unmarshal(rawMsg, &offer)
+
+			clients[offer.ClientId] = createNewPeer(offer, connection, iceServers, ctx, clients, offer.ClientId)
+
+			for candidate := range candidates[offer.ClientId] {
+				clients[offer.ClientId].AddICECandidate(candidates[offer.ClientId][candidate])
+			}
+
+		case "candidate":
+			var candidate Candidate
+			if err := json.Unmarshal(rawMsg, &candidate); err != nil {
+				log.Fatal(err)
+			}
+
+			// fmt.Println("Received candidate", candidate)
+			client, ok := clients[candidate.ClientId]
+
+			if !ok {
+				candidates[candidate.ClientId] = append(candidates[candidate.ClientId], candidate.Candidate)
+				break
+			}
+
+			err := client.AddICECandidate(candidate.Candidate)
+
+			if err != nil {
+				fmt.Println("Could not add ice candidate", err)
+			}
+
+		case "heartbeat":
+
+		default:
+			log.Printf("unknown message type: %s", baseMsg.MType)
+		}
+
+	}
+
+}
+
+func retryWS(clients Clients, iceServers *[]webrtc.ICEServer) {
+	// keeps trying to reconnect to the websocket server with an exponential backoff
+	// Specify the WebSocket server URL
+	// url := "ws://localhost:8080/?role=server"
+	// url := "wss://d1syxz7xf05rvd.cloudfront.net/?role=server"
+	// url := "wss://nathanlee.ngrok.io/?role=server"
+	url := "wss://peepsignal.fly.dev/?role=server&id=" + ServerId
+
+	// Create a context with a timeout for the connection
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Add logic to retry connection on disconnect with exponential backoff
+	fmt.Println("View page at https://" + ServerId + ".peerproxy.dev")
+
+	// Connect to the WebSocket server
+	for {
+		connection, _, err := websocket.Dial(ctx, url, nil)
+		if err == nil {
+			readWSMessages(clients, iceServers, connection, ctx)
+			connection.Close(websocket.StatusInternalError, "the client crashed")
+
+		}
+
+		log.Print("error connecting to WebSocket server:", err)
+
+		time.Sleep(2 * time.Second)
+		fmt.Println("Retrying")
+	}
+
+}
+
+type Clients map[string]*webrtc.PeerConnection
+
+func Signal() {
+	iceUrl := "https://important-eel-61.deno.dev/"
+	iceServers, err := common.FetchICE(iceUrl)
+	if err != nil {
+		panic(err)
+	}
+	// log.Println(iceServers)
+
+	clients := make(Clients)
+	retryWS(clients, &iceServers)
+	fmt.Println("Post ws")
+}
+
+

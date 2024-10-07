@@ -18,6 +18,7 @@ func main() {
 }
 
 func handleHTTPRequest(w http.ResponseWriter, r *http.Request) {
+
 	// Handle incoming HTTP requests
 	ProxyHTTPRequest(w, r)
 }

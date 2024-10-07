@@ -1,0 +1,47 @@
+<div>Current throughput: </div>
+<div id="throughput"></div>
+
+<script>
+    const bufferSize = 1024 * 1024; // 1MB
+    const throughputDiv = document.getElementById('throughput');
+
+    let throughputs = []
+
+    setInterval(() => {
+        const averageThroughput = throughputs.reduce((a, b) => a + b, 0) / throughputs.length;
+        throughputDiv.innerText = averageThroughput.toFixed(2) + ' MB/s';
+        throughputs = [];
+    }, 1000); // Update the UI every 5 seconds
+
+    async function calculateThroughput() {
+        while (true) {
+            const startTime = performance.now(); // Start time for throughput calculation
+
+            const res = await fetch('/buffer?size=' + bufferSize);
+            const reader = res.body.getReader();
+
+            let totalBytes = 0;
+            let done = false;
+
+            // Read the response in chunks
+            while (!done) {
+                const { done: doneReading, value } = await reader.read();
+                if (value) {
+                    totalBytes += value.length; // Add the chunk size to the total
+                }
+                done = doneReading;
+            }
+
+            const endTime = performance.now(); // End time for throughput calculation
+            const timeTaken = (endTime - startTime) / 1000; // Convert time to seconds
+            const throughput = (totalBytes / (1024 * 1024)) / timeTaken; // MB/s
+
+            // throughputDiv.innerText = throughput.toFixed(2) + ' MB/s'; // Update the UI
+
+            throughputs.push(throughput); // Store the throughput value
+
+        }
+    }
+
+    calculateThroughput(); // Start measuring throughput
+</script>

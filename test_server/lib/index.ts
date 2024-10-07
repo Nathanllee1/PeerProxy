@@ -1,6 +1,9 @@
 import express from "express"
 import multer from 'multer';
 import compression from "compression"
+import { Readable } from 'stream';
+
+
 
 // add dotenv
 import dotenv from "dotenv"
@@ -77,6 +80,33 @@ app.get('/cookies', (req, res) => {
   res.end()
 
 })
+
+
+app.get('/stream', (req, res) => {
+  res.set({
+      'Content-Type': 'application/octet-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Transfer-Encoding': 'chunked'
+  });
+
+  const packetSize = 1024; // 1 KB
+
+  const readable = new Readable({
+      read(size) {
+          const data = Buffer.alloc(packetSize);
+          this.push(data);
+      }
+  });
+
+  // Pipe the readable stream to the response
+  readable.pipe(res);
+
+  // Handle client disconnect
+  req.on('close', () => {
+      readable.destroy();
+  });
+});
 
 app.get('/buffer', (req, res) => {
 

@@ -1,67 +1,31 @@
 #!/bin/bash
 
-# Output file
-output_file="output.txt"
+# Usage: ./combine_files.sh /path/to/directory /path/to/output_file
 
-# Empty the output file if it exists
+input_dir=$1
+output_file=$2
+
+# Clear output file if it already exists
 > "$output_file"
 
-# Define the file extensions to include
-extensions="ts|js|go|html|css"
+# Function to recursively process all files
+combine_files() {
+  local dir=$1
+  for file in "$dir"/*; do
+    if [ -d "$file" ]; then
+      # If it's a directory, recurse
+      combine_files "$file"
+    elif [ -f "$file" ]; then
+      # If it's a file, append its path and contents to the output file
+      echo "Processing file: $file"
+      echo "=== $file ===" >> "$output_file"
+      cat "$file" >> "$output_file"
+      echo -e "\n" >> "$output_file"
+    fi
+  done
+}
 
-# Define the patterns to exclude (converted to regex)
-exclude_patterns=(
-    # Logs
-    '/logs/'
-    '\.log$'
-    'npm-debug\.log'
-    'yarn-debug\.log'
-    'yarn-error\.log'
-    'pnpm-debug\.log'
-    'lerna-debug\.log'
-    '\.pem$'
-    '\.local$'
+# Start combining files
+combine_files "$input_dir"
 
-    # Node modules and dist directories
-    '/node_modules/'
-    '/dist/'
-    '/dist-ssr/'
-
-    # Editor directories and files
-    '/\.vscode/'
-    '/\.idea/'
-    '\.DS_Store$'
-    '\.suo$'
-    '\.ntvs'
-    '\.njsproj$'
-    '\.sln$'
-    '\.sw.$'
-
-    # Media and uploads
-    '/uploads/'
-    '\.mp4$'
-    '/videos/'
-    '\.mp4$'
-    '\.local$'
-)
-
-# Build the grep exclude pattern
-exclude_regex=$(printf "|%s" "${exclude_patterns[@]}")
-exclude_regex=${exclude_regex:1}  # Remove leading |
-
-# Find files with the specified extensions and exclude patterns
-find goclient jsClient -type f \( -iname "*.ts" -o -iname "*.js" -o -iname "*.go" -o -iname "*.html" -o -iname "*.css" \) \
-    | grep -Ev "$exclude_regex" \
-    | while read -r file; do
-        # Get the relative path
-        relative_path="${file#./}"
-
-        # Append header with relative path
-        echo "===== $relative_path =====" >> "$output_file"
-
-        # Append file content
-        cat "$file" >> "$output_file"
-
-        # Add a newline for separation
-        echo >> "$output_file"
-    done
+echo "Files combined into $output_file"

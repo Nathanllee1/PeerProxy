@@ -102,6 +102,7 @@ func ProxyHTTPRequest(w http.ResponseWriter, r *http.Request) {
 	var respHeaders http.Header
 	err = json.Unmarshal(headersData, &respHeaders)
 	if err != nil {
+		fmt.Println(respHeaders)
 		fmt.Println("Error parsing response headers:", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
@@ -141,8 +142,10 @@ func HandleDataChannelMessage(msg webrtc.DataChannelMessage) {
 		return
 	}
 
-	fmt.Printf("Received packet: StreamIdentifier=%d, PacketNum=%d, IsHeader=%v, IsFinalMessage=%v, PayloadLength=%v\n",
-		packet.StreamIdentifier, packet.PacketNum, packet.IsHeader, packet.IsFinalMessage, packet.PayloadLength)
+	/*
+		fmt.Printf("Received packet: StreamIdentifier=%d, PacketNum=%d, IsHeader=%v, IsFinalMessage=%v, PayloadLength=%v\n",
+			packet.StreamIdentifier, packet.PacketNum, packet.IsHeader, packet.IsFinalMessage, packet.PayloadLength)
+	*/
 
 	packetStream, exists := RequestManager.GetStream(packet.StreamIdentifier)
 	if !exists {

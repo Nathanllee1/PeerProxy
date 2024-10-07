@@ -52,6 +52,9 @@ func sendPacket(dc *webrtc.DataChannel, packet *common.Packet) error {
 
 	err := dc.Send(packet.Serialize())
 
+	fmt.Println("Sent packet", packet.PacketNum)
+	fmt.Println(dc.BufferedAmount())
+
 	if err != nil {
 		fmt.Println("Error sending packet", err)
 
@@ -231,6 +234,18 @@ func makeResponseHeaders(resp *http.Response, streamIdentifier uint32) *common.P
 	return &packet
 }
 
+var transport = &http.Transport{
+	MaxIdleConns:        100,
+	IdleConnTimeout:     90 * time.Second,
+	MaxIdleConnsPerHost: 100,
+	MaxConnsPerHost:     100,
+}
+
+var client = &http.Client{Transport: transport, CheckRedirect: func(req *http.Request, via []*http.Request) error {
+	fmt.Println("Redirecting")
+	return http.ErrUseLastResponse
+}}
+
 func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *webrtc.DataChannel) {
 	// fmt.Println(requests)
 	defer func() {
@@ -319,12 +334,8 @@ func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *webr
 		req.Header.Add(headerName, headerVal)
 	}
 
-	client := &http.Client{CheckRedirect: func(req *http.Request, via []*http.Request) error {
-		fmt.Println("Redirecting")
-		return http.ErrUseLastResponse
-	}}
-
 	//fmt.Println("REQUEST", time.Now().Format("15:04:05"), headers["method"], serverUrl, packet.StreamIdentifier)
+	// clean up request
 
 	resp, err := client.Do(req)
 
@@ -335,8 +346,6 @@ func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *webr
 	defer resp.Body.Close()
 
 	fmt.Println(time.Now().Format("15:04:05"), headers["method"], resp.StatusCode, serverUrl, '\n')
-
-	// clean up request
 
 	headerPacket := makeResponseHeaders(resp, packet.StreamIdentifier)
 	dc.Send(headerPacket.Serialize())

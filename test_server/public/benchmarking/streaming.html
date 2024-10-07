@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>TCP Throughput Benchmark</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #status { margin-bottom: 20px; }
+        #throughput { font-size: 1.2em; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>TCP Throughput Benchmark</h1>
+    <div id="status">Status: Connecting...</div>
+    <div id="throughput">Throughput: 0 Mbps</div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const throughputDiv = document.getElementById('throughput');
+
+        let receivedData = [];
+        let reader;
+        let startTime;
+
+        function startStreaming() {
+            fetch('/stream')
+                .then(response => {
+                    statusDiv.textContent = 'Status: Receiving Data';
+
+                    const reader = response.body.getReader();
+
+                    function read() {
+                        reader.read().then(({ done, value }) => {
+                            if (done) {
+                                console.log('Stream closed');
+                                return;
+                            }
+
+                            const now = Date.now();
+
+                            // Record the size and timestamp
+                            receivedData.push({ time: now, size: value.byteLength });
+
+                            // Remove data older than 5 seconds
+                            const fiveSecondsAgo = now - 5000;
+                            while (receivedData.length > 0 && receivedData[0].time < fiveSecondsAgo) {
+                                receivedData.shift();
+                            }
+
+                            // Calculate total bytes received in the last 5 seconds
+                            let bytesInLast5Seconds = 0;
+                            for (const dataPoint of receivedData) {
+                                bytesInLast5Seconds += dataPoint.size;
+                            }
+
+                            // Calculate throughput over the last 5 seconds
+                            const throughput = (bytesInLast5Seconds * 8) / (5 * 1000 * 1000); // Mbps
+                            throughputDiv.textContent = 'Throughput (last 5s): ' + throughput.toFixed(2) + ' Mbps';
+
+                            // Read the next chunk
+                            read();
+                        }).catch(error => {
+                            console.error('Error reading stream:', error);
+                        });
+                    }
+
+                    read();
+                })
+                .catch(error => {
+                    console.error('Failed to fetch stream:', error);
+                });
+        }
+
+        // Start the streaming upon page load
+        window.onload = startStreaming;
+    </script>
+</body>
+</html>

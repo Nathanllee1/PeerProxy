@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"net/http"
 	_ "net/http/pprof"
+	"runtime"
 
 	"github.com/alecthomas/kong"
 )
@@ -35,6 +36,9 @@ func RandStringRunes(n int) string {
 }
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	runtime.SetMutexProfileFraction(1)
+
 	var cli CLI
 	ctx := kong.Parse(&cli,
 		kong.UsageOnError(),
@@ -51,10 +55,11 @@ func main() {
 	if cli.RecordRequest {
 		common.InitializeLog()
 
-		go func() {
-			log.Println(http.ListenAndServe("localhost:6060", nil))
-		}()
 	}
+
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
 
 	ProxyPort = fmt.Sprintf("%d", cli.Port)
 	ServerId = cli.ID
