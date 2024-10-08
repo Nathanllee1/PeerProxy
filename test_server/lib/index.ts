@@ -1,9 +1,6 @@
 import express from "express"
 import multer from 'multer';
 import compression from "compression"
-import { Readable } from 'stream';
-
-
 
 // add dotenv
 import dotenv from "dotenv"
@@ -57,7 +54,7 @@ app.post('/reflect', memUpload.single('file'), (req, res) => {
 });
 
 app.post('/latency', (req, res) => {
-
+  console.log(req.body)
   // gets the timestamp in the body and returns it
   res.send(req.body)
 
@@ -82,6 +79,7 @@ app.get('/cookies', (req, res) => {
 })
 
 
+// Streaming endpoint
 app.get('/stream', (req, res) => {
   res.set({
       'Content-Type': 'application/octet-stream',
@@ -91,21 +89,40 @@ app.get('/stream', (req, res) => {
   });
 
   const packetSize = 1024; // 1 KB
-
-  const readable = new Readable({
-      read(size) {
-          const data = Buffer.alloc(packetSize);
-          this.push(data);
-      }
-  });
-
-  // Pipe the readable stream to the response
-  readable.pipe(res);
+  const maxBufferedPackets = 1024; // Control back pressure
+  let bufferedPackets = 0;
+  let shouldContinue = true;
 
   // Handle client disconnect
   req.on('close', () => {
-      readable.destroy();
+      shouldContinue = false;
   });
+
+  const sendData = () => {
+      if (!shouldContinue) {
+          return;
+      }
+
+      while (bufferedPackets < maxBufferedPackets) {
+          const data = Buffer.alloc(packetSize);
+          const ok = res.write(data);
+          if (!ok) {
+              // The internal buffer is full, wait for 'drain' event
+              res.once('drain', () => {
+                  bufferedPackets = 0;
+                  sendData();
+              });
+              return;
+          }
+          bufferedPackets++;
+      }
+
+      // Reset bufferedPackets and schedule the next send
+      bufferedPackets = 0;
+      setImmediate(sendData);
+  };
+
+  sendData();
 });
 
 app.get('/buffer', (req, res) => {
