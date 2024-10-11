@@ -48,24 +48,17 @@ type PacketStream struct {
 	cancel            context.CancelFunc
 }
 
-func sendPacket(dc *webrtc.DataChannel, packet *common.Packet) error {
+func sendPacket(dc *DataChannel, packet *common.Packet) error {
 
-	err := dc.Send(packet.Serialize())
+	dc.AddPacket(packet.Serialize())
 
-	fmt.Println("Sent packet", packet.PacketNum)
-	fmt.Println(dc.BufferedAmount())
-
-	if err != nil {
-		fmt.Println("Error sending packet", err)
-
-		return err
-	}
+	// fmt.Println(dc.BufferedAmount())
 
 	return nil
 
 }
 
-func makePackets(stream io.ReadCloser, dc *webrtc.DataChannel, streamIdentifier uint32, ctx context.Context, cancel context.CancelFunc) {
+func makePackets(stream io.ReadCloser, dc *DataChannel, streamIdentifier uint32, ctx context.Context, cancel context.CancelFunc) {
 	// const payloadSize = 16*1024 - 11
 	const payloadSize = 65535 - 11
 
@@ -80,6 +73,10 @@ func makePackets(stream io.ReadCloser, dc *webrtc.DataChannel, streamIdentifier 
 		case <-ctx.Done():
 			fmt.Println("Context done")
 			return
+
+		case <-dc.blockPackets:
+			// fmt.Println("Blocking packets")
+			continue
 		default:
 			n, err := io.ReadFull(stream, buffer)
 			// fmt.Println("Read", n, err, buffer[:n])
@@ -96,7 +93,7 @@ func makePackets(stream io.ReadCloser, dc *webrtc.DataChannel, streamIdentifier 
 						Payload:          make([]byte, 0),
 					}
 
-					dc.Send(finalPacket.Serialize())
+					dc.AddPacket(finalPacket.Serialize())
 					return
 				}
 				if err == io.ErrUnexpectedEOF {
@@ -246,7 +243,7 @@ var client = &http.Client{Transport: transport, CheckRedirect: func(req *http.Re
 	return http.ErrUseLastResponse
 }}
 
-func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *webrtc.DataChannel) {
+func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *DataChannel) {
 	// fmt.Println(requests)
 	defer func() {
 		if r := recover(); r != nil {
@@ -348,7 +345,7 @@ func ProxyDCMessage(rawData webrtc.DataChannelMessage, clientId string, dc *webr
 	fmt.Println(time.Now().Format("15:04:05"), headers["method"], resp.StatusCode, serverUrl, '\n')
 
 	headerPacket := makeResponseHeaders(resp, packet.StreamIdentifier)
-	dc.Send(headerPacket.Serialize())
+	dc.AddPacket(headerPacket.Serialize())
 
 	makePackets(resp.Body, dc, packet.StreamIdentifier, ctx, cancel)
 

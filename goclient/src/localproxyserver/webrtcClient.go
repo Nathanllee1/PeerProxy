@@ -117,12 +117,14 @@ func createNewPeer(offer Offer, ws *websocket.Conn, iceServers *[]webrtc.ICEServ
 		d.OnOpen(func() {
 			fmt.Println("Data channel opened")
 
-		})
+			dataChannelObj := NewDataChannel(d)
 
-		d.OnMessage(func(message webrtc.DataChannelMessage) {
-			// fmt.Printf("Message from DataChannel '%s': '%s'\n", d.Label(), string(message.Data))
+			d.OnMessage(func(message webrtc.DataChannelMessage) {
+				// fmt.Printf("Message from DataChannel '%s': '%s'\n", d.Label(), string(message.Data))
 
-			go ProxyDCMessage(message, clientId, d)
+				go ProxyDCMessage(message, clientId, dataChannelObj)
+
+			})
 
 		})
 
