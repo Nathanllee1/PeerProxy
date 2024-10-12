@@ -29,3 +29,5 @@ uploads
 **/*videos/*
 
 build
+
+profiling/chromeDevLogs/*

@@ -362,7 +362,7 @@ async function runTrials(trials, table) {
     // const sizes = [1, 10, 100, 1000, 10000, 100000]
 
     // const sizes = Array(5).fill(0).map((_, i) => ((10 ** 6) / 10) * i)
-    const sizes = makeExponentialSizes(10, 6).slice(3)
+    const sizes = makeExponentialSizes(10, 10) // .slice(3)
     // onst table = new DynamicTable('container', ['Size Response (bytes)', 'Time', 'RPS', 'Average Latency (ms)'], `Load Test Benchmark ${trials} trials`);
 
     for (const size of sizes) {
@@ -375,7 +375,7 @@ document.getElementById("loadtest")?.addEventListener("click", async () => {
     console.log("Starting load test", new Date().toISOString())
     const bigTable = new DynamicTable('container', ['Trials', 'Size Response (bytes)', 'Time', 'Average Latency (ms)', 'Num Packets Transferred'], `Load Test Benchmark`);
 
-    for (let i = 100; i <= 400; i += 100) {
+    for (let i = 1; i <= 100; i += 10) {
         await runTrials(i, bigTable)
 
     }

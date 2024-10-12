@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>HTTP Throughput Benchmark</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        #status {
+            margin-bottom: 20px;
+        }
+
+        #throughput {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        canvas {
+            max-width: 100%;
+            margin-top: 20px;
+        }
+    </style>
+    <!-- Include Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <h1>HTTP Throughput Benchmark</h1>
+    <div id="status">Status: Connecting...</div>
+    <div id="throughput">Throughput: 0 Mbps</div>
+    <div id="rtt">RTT: 0 ms</div>
+    <div id="numPointsCollected">Number of data points collected: 0</div>
+    <button id="download">Download Data</button>
+    <!-- Canvas element for scatter plot -->
+    <canvas id="scatterChart"></canvas>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const throughputDiv = document.getElementById('throughput');
+        const rttDiv = document.getElementById('rtt');
+        const numPointsCollectedDiv = document.getElementById('numPointsCollected');
+        const downloadButton = document.getElementById('download');
+
+        let receivedData = [];
+        let results = [];
+        let rtts = [];
+
+        // Initialize Chart.js scatter plot
+        const ctx = document.getElementById('scatterChart').getContext('2d');
+        const scatterChart = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'RTT vs Throughput',
+                    data: [],
+                    backgroundColor: 'rgba(75, 192, 192, 1)',
+                    pointRadius: 5
+                }]
+            },
+            options: {
+                scales: {
+                    x: {
+                        title: { display: true, text: 'RTT (ms)' },
+                        beginAtZero: true
+                    },
+                    y: {
+                        title: { display: true, text: 'Throughput (Mbps)' },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        function startStreaming() {
+            fetch('/stream')
+                .then(response => {
+                    statusDiv.textContent = 'Status: Receiving Data';
+
+                    const reader = response.body.getReader();
+                    const interval = 800; // 5 seconds
+                    let dataReceived = 0;
+                    let startTime = Date.now();
+
+                    function read() {
+                        reader.read().then(({ done, value }) => {
+                            if (done) {
+                                console.log('Stream closed');
+                                return;
+                            }
+
+                            const now = Date.now();
+                            const chunkSize = value.byteLength;
+                            dataReceived += chunkSize;
+
+                            // Measure RTT by sending timestamp to the server
+
+
+                            read();
+                        }).catch(error => {
+                            console.error('Error reading stream:', error);
+                        });
+                    }
+
+                    // Start reading the stream
+                    read();
+
+                    // Calculate throughput every 5 seconds
+                    setInterval(() => {
+                        const now = Date.now();
+                        const elapsedTime = (now - startTime) / 1000; // in seconds
+                        const throughput = (dataReceived * 8) / (elapsedTime * 1_000_000); // Mbps
+                        throughputDiv.textContent = 'Throughput (last 5s): ' + throughput.toFixed(2) + ' Mbps';
+
+                        // Calculate average RTT
+                        const averageRTT = rtts.length > 0 ? rtts.reduce((a, b) => a + b, 0) / rtts.length : 0;
+
+                        // Store the result
+                        results.push({ rtt: averageRTT, throughput: throughput });
+
+                        // Update the scatter plot
+                        scatterChart.data.datasets[0].data.push({
+                            x: averageRTT,
+                            y: throughput
+                        });
+                        scatterChart.update();
+
+                        // Update the data points collected
+                        numPointsCollectedDiv.textContent = 'Number of data points collected: ' + results.length;
+
+                        // Reset counters
+                        dataReceived = 0;
+                        startTime = now;
+                        rtts = [];
+
+                    }, interval);
+                })
+                .catch(error => {
+                    console.error('Failed to fetch stream:', error);
+                });
+        }
+
+        setInterval(async () => {
+            const latency = await getLatency();
+            rtts.push(latency);
+        }, 500)
+
+        // Function to send timestamp to server and measure RTT
+        async function getLatency() {
+            const res = await fetch("/latency", {
+                body: new Date().getTime().toString(),
+                method: "POST"
+            })
+
+            const time = parseInt(await res.text());
+
+            const latency = new Date().getTime() - time
+
+            return latency
+        }
+
+        // CSV download logic
+        downloadButton.onclick = () => {
+            let csv = 'rtt,throughput\n';
+            csv += results.map(item => `${item.rtt},${item.throughput}`).join('\n');
+
+            // Create a Blob and trigger a download
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'http_rtt_throughput.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        };
+
+        // Start the streaming upon page load
+        window.onload = startStreaming;
+    </script>
+</body>
+
+</html>

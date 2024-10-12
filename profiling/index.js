@@ -1,13 +1,15 @@
 const puppeteer = require('puppeteer');
 
 const proxyURL = 'https://foo.peerproxy.dev/benchmarking/sizetest.html?test=latency';
-const ngrokURL = 'https:/nathanlee.ngrok.io/benchmarking/sizetest.html';
+const ngrokURL = 'https:/nathanlee.ngrok.io/benchmarking/sizetest.html?test=latency';
 
-const TEST = 'peerproxy'
+const TEST = 'pee'
 const url = TEST === 'ngrok' ? ngrokURL : proxyURL;
 
 (async () => {
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({
+        headless: false,
+    });
     const page = await browser.newPage();
 
     await page.goto(url);
@@ -16,17 +18,11 @@ const url = TEST === 'ngrok' ? ngrokURL : proxyURL;
     // Start CPU profiling
     await page.tracing.start({ path: `tests/${TEST}-${new Date().toISOString()}` });
 
-    // Perform some actions on the page
-    await page.evaluate(async () => {
-        console.log("hey");
-        async function sleep(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
+    async function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
 
-        await sleep(10000)
-
-        // await fetchSizes()
-    });
+    await sleep(10000)
 
     // Stop CPU profiling
     await page.tracing.stop();

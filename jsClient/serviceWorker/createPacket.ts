@@ -28,7 +28,7 @@ export function createFrame(identifier: number, messageType: MessageType, payloa
     view.setUint16(8, payload.byteLength & 0xFFFF);
 
 
-    let flags = (messageType === "HEADER" ? 0 : 1) | 
+    let flags = (messageType === "HEADER" ? 1 : 0) | 
         ((finalMessage ? 1 : 0) << 1) | 
         ((heartbeat ? 1 : 0) << 2) |
         ((cancel ? 1 : 0) << 3)
